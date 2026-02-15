@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MAKA LAINA - The Strategic Endspurt</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0e1117;
+            --surface: #1a1d27;
+            --surface2: #242836;
+            --border: #2e3345;
+            --text: #e8eaed;
+            --text-dim: #8b8fa3;
+            --accent: #c9a227;
+            --accent-glow: rgba(201, 162, 39, 0.15);
+            --p1: #e8c547;
+            --p2: #47b8e8;
+            --red: #e85d5d;
+            --green: #5de88a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Subtle grid background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(201,162,39,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(201,162,39,0.03) 1px, transparent 1px);
+            background-size: 44px 44px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        header {
+            text-align: center;
+            padding: 28px 20px 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        header h1 {
+            font-family: 'Playfair Display', serif;
+            font-weight: 900;
+            font-size: 2.2rem;
+            letter-spacing: 0.15em;
+            color: var(--accent);
+            text-shadow: 0 0 40px rgba(201,162,39,0.3);
+        }
+
+        header .subtitle {
+            font-size: 0.7rem;
+            letter-spacing: 0.4em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-top: 4px;
+        }
+
+        /* CONNECTION SCREEN */
+        #connect-screen {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .connect-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 48px 40px;
+            width: 420px;
+            max-width: 90vw;
+            text-align: center;
+        }
+
+        .connect-box h2 {
+            font-family: 'Playfair Display', serif;
+            font-weight: 900;
+            font-size: 2rem;
+            color: var(--accent);
+            letter-spacing: 0.1em;
+            margin-bottom: 6px;
+        }
+
+        .connect-box .tagline {
+            font-size: 0.7rem;
+            letter-spacing: 0.35em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 32px;
+        }
+
+        .field-group {
+            margin-bottom: 16px;
+            text-align: left;
+        }
+
+        .field-group label {
+            display: block;
+            font-size: 0.7rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 6px;
+        }
+
+        .field-group input, .field-group select {
+            width: 100%;
+            padding: 12px 14px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .field-group input:focus, .field-group select:focus {
+            border-color: var(--accent);
+        }
+
+        .field-group select { cursor: pointer; }
+        .field-group select option { background: var(--surface2); }
+
+        .connect-btn {
+            width: 100%;
+            padding: 14px;
+            margin-top: 20px;
+            background: var(--accent);
+            color: var(--bg);
+            border: none;
+            border-radius: 8px;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 700;
+            font-size: 0.9rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .connect-btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
+        .connect-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        #connect-status {
+            margin-top: 16px;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            min-height: 20px;
+        }
+
+        #connect-status.error { color: var(--red); }
+        #connect-status.success { color: var(--green); }
+
+        /* MAIN LAYOUT */
+        #game-wrap {
+            display: none;
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px 40px;
+        }
+
+        #game-container {
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* BOARD */
+        .board-frame {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+
+        #board {
+            display: grid;
+            grid-template-columns: repeat(12, 40px);
+            grid-template-rows: repeat(12, 40px);
+            gap: 1px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .cell {
+            width: 40px; height: 40px;
+            background: var(--surface2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.15s;
+        }
+
+        .cell:hover { background: #2d3248; }
+        .cell.los { background: rgba(201,162,39,0.08); }
+        .cell.selected { background: rgba(33,150,243,0.15); box-shadow: inset 0 0 0 2px #2196f3; }
+
+        .disc {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 0.8rem;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            z-index: 2;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            transition: transform 0.15s;
+        }
+
+        .cell:hover .disc { transform: scale(1.08); }
+
+        .collector {
+            width: 34px; height: 34px;
+            border-radius: 6px;
+            z-index: 3;
+            box-shadow: 0 0 12px rgba(201,162,39,0.4), 0 2px 6px rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        .collector.p1 {
+            background: var(--p1);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: var(--bg);
+        }
+
+        .collector.p2 {
+            background: var(--p2);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: var(--bg);
+        }
+
+        /* SIDEBAR */
+        #sidebar {
+            width: 340px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .panel-title {
+            font-size: 0.65rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 10px;
+        }
+
+        #status-text {
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--accent);
+        }
+
+        .your-turn { animation: pulse-glow 1.5s ease-in-out infinite; }
+
+        @keyframes pulse-glow {
+            0%, 100% { text-shadow: 0 0 8px rgba(201,162,39,0.3); }
+            50% { text-shadow: 0 0 20px rgba(201,162,39,0.6); }
+        }
+
+        .player-indicator {
+            display: inline-block;
+            width: 10px; height: 10px;
+            border-radius: 3px;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+
+        .player-indicator.p1 { background: var(--p1); }
+        .player-indicator.p2 { background: var(--p2); }
+
+        /* Scores */
+        .score-grid {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 4px 12px;
+            font-size: 0.85rem;
+        }
+
+        .score-grid .hdr {
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            padding-bottom: 4px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .score-color {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .score-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .score-val { text-align: center; font-weight: 500; }
+        .worthless { text-decoration: line-through; color: var(--text-dim); opacity: 0.4; }
+
+        /* Buttons */
+        .action-btn {
+            width: 100%;
+            padding: 11px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--surface2);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover { border-color: var(--accent); background: rgba(201,162,39,0.08); }
+
+        .action-btn.danger { border-color: #5d3333; }
+        .action-btn.danger:hover { border-color: var(--red); background: rgba(232,93,93,0.08); }
+
+        /* CHAT */
+        #chat-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 200px;
+            max-height: 300px;
+        }
+
+        #chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column-reverse;
+            gap: 4px;
+            padding-right: 4px;
+        }
+
+        #chat-messages::-webkit-scrollbar { width: 4px; }
+        #chat-messages::-webkit-scrollbar-track { background: transparent; }
+        #chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+        .chat-msg {
+            font-size: 0.8rem;
+            line-height: 1.4;
+            padding: 4px 0;
+        }
+
+        .chat-msg .sender {
+            font-weight: 700;
+            margin-right: 6px;
+        }
+
+        .chat-msg .sender.p1 { color: var(--p1); }
+        .chat-msg .sender.p2 { color: var(--p2); }
+
+        .chat-msg.system {
+            color: var(--text-dim);
+            font-style: italic;
+            font-size: 0.75rem;
+        }
+
+        .chat-input-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .chat-input-row input {
+            flex: 1;
+            padding: 9px 12px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.8rem;
+            outline: none;
+        }
+
+        .chat-input-row input:focus { border-color: var(--accent); }
+
+        .chat-input-row button {
+            padding: 9px 16px;
+            background: var(--accent);
+            color: var(--bg);
+            border: none;
+            border-radius: 6px;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 700;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: filter 0.2s;
+        }
+
+        .chat-input-row button:hover { filter: brightness(1.15); }
+
+        /* MODAL */
+        #modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px);
+        }
+
+        #modal {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            width: 560px;
+            max-width: 90vw;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 32px;
+        }
+
+        #modal h2 {
+            font-family: 'Playfair Display', serif;
+            color: var(--accent);
+            margin-bottom: 16px;
+        }
+
+        #modal h3 { color: var(--text); margin: 16px 0 8px; font-size: 0.95rem; }
+        #modal p, #modal li { color: var(--text-dim); font-size: 0.85rem; line-height: 1.6; }
+        #modal ul { padding-left: 20px; }
+        #modal li { margin-bottom: 6px; }
+        #modal b { color: var(--text); }
+
+        @media (max-width: 900px) {
+            #game-container { flex-direction: column; align-items: center; }
+            #sidebar { width: 100%; max-width: 500px; }
+            #board { grid-template-columns: repeat(12, 32px); grid-template-rows: repeat(12, 32px); }
+            .cell { width: 32px; height: 32px; }
+            .disc { width: 26px; height: 26px; font-size: 0.7rem; }
+            .collector { width: 28px; height: 28px; font-size: 0.85rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- CONNECTION SCREEN -->
+<div id="connect-screen">
+    <div class="connect-box">
+        <h2>MAKA LAINA</h2>
+        <div class="tagline">The Strategic Endspurt</div>
+
+        <div class="field-group">
+            <label>Your Name</label>
+            <input type="text" id="player-name" placeholder="Enter your name" maxlength="20">
+        </div>
+        <div class="field-group">
+            <label>Room ID (both players enter the same ID)</label>
+            <input type="text" id="room-id" placeholder="e.g. myroom42">
+        </div>
+
+        <button class="connect-btn" id="connect-btn" onclick="startConnection()">Connect</button>
+        <div id="connect-status"></div>
+    </div>
+</div>
+
+<!-- GAME -->
+<header>
+    <h1>MAKA LAINA</h1>
+    <div class="subtitle">The Strategic Endspurt</div>
+</header>
+
+<div id="game-wrap">
+    <div id="game-container">
+        <div class="board-frame">
+            <div id="board"></div>
+        </div>
+        <div id="sidebar">
+            <div class="panel">
+                <div class="panel-title">Status</div>
+                <div id="status-text">Waiting…</div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">Scores</div>
+                <div class="score-grid">
+                    <div class="hdr">Color</div>
+                    <div class="hdr" style="text-align:center"><span class="player-indicator p1"></span>P1</div>
+                    <div class="hdr" style="text-align:center"><span class="player-indicator p2"></span>P2</div>
+                </div>
+                <div class="score-grid" id="score-body"></div>
+            </div>
+
+            <div class="panel" style="display:flex; flex-direction:column; gap:8px;">
+                <button class="action-btn" onclick="toggleRules(true)">📖 View Rules</button>
+                <button class="action-btn" id="relinquish-btn" onclick="doRelinquish()" style="display:none;">⏭ Relinquish Turn</button>
+                <button class="action-btn danger" onclick="window.location.reload()">✕ Leave Game</button>
+            </div>
+
+            <div class="panel" id="chat-panel">
+                <div class="panel-title">Chat</div>
+                <div id="chat-messages"></div>
+                <div class="chat-input-row">
+                    <input type="text" id="chat-input" placeholder="Type a message…" onkeydown="if(event.key==='Enter')sendChat()">
+                    <button onclick="sendChat()">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- RULES MODAL -->
+<div id="modal-overlay" onclick="toggleRules(false)">
+    <div id="modal" onclick="event.stopPropagation()">
+        <h2>The Endspurt Rule</h2>
+        <p>The game ends when all discs are collected, or both players relinquish their moves. Crucially, to keep the tension, the game ends before the very last possible connection can be made.</p>
+        <h3>Shifting & Collection</h3>
+        <ul>
+            <li>Shift a disc 1 square into your Line of Sight (LOS).</li>
+            <li>The disc <b>cannot</b> have been in your LOS at start of turn.</li>
+            <li>LOS is blocked by other discs or collectors.</li>
+        </ul>
+        <h3>Special Mechanics</h3>
+        <ul>
+            <li><b>Number 1:</b> Immediate extra turn.</li>
+            <li><b>Number 6:</b> Future discs of that color are worthless.</li>
+            <li><b>Stuck?:</b> Sacrifice a collected primary disc to move your collector up to that disc's value.</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+// ─── NETWORKING ──────────────────────────────────────────────
+let peer = null;
+let conn = null;
+let myRole = null;    // 'host' or 'join'
+let myPlayer = null;  // 1 or 2
+let myName = '';
+let opponentName = '';
+
+function setConnStatus(msg, cls = '') {
+    const el = document.getElementById('connect-status');
+    el.textContent = msg;
+    el.className = cls;
+}
+
+function startConnection() {
+    const name = document.getElementById('player-name').value.trim();
+    const room = document.getElementById('room-id').value.trim();
+
+    if (!name) { setConnStatus('Please enter your name.', 'error'); return; }
+    if (!room) { setConnStatus('Please enter a Room ID.', 'error'); return; }
+
+    myName = name;
+    document.getElementById('connect-btn').disabled = true;
+    setConnStatus('Connecting…');
+
+    // Try to claim host. If the host ID is taken, become the joiner.
+    const hostId = `makalaina-${room}-host`;
+
+    peer = new Peer(hostId);
+
+    peer.on('open', () => {
+        // Successfully claimed host
+        myRole = 'host';
+        myPlayer = 1;
+        setConnStatus('Waiting for another player to join room "' + room + '"…');
+        peer.on('connection', (c) => {
+            conn = c;
+            setupConn();
+        });
+    });
+
+    peer.on('error', (err) => {
+        if (err.type === 'unavailable-id') {
+            // Host already exists — join as player 2
+            peer.destroy();
+            peer = new Peer();
+            peer.on('open', () => {
+                myRole = 'join';
+                myPlayer = 2;
+                setConnStatus('Joining room "' + room + '"…');
+                conn = peer.connect(hostId, { reliable: true });
+                setupConn();
+            });
+            peer.on('error', (err2) => {
+                setConnStatus('Error: ' + err2.message, 'error');
+                document.getElementById('connect-btn').disabled = false;
+            });
+        } else {
+            setConnStatus('Error: ' + err.message, 'error');
+            document.getElementById('connect-btn').disabled = false;
+        }
+    });
+}
+
+function setupConn() {
+    conn.on('open', () => {
+        setConnStatus('Connected!', 'success');
+        conn.send({ type: 'hello', name: myName, player: myPlayer });
+        setTimeout(() => {
+            document.getElementById('connect-screen').style.display = 'none';
+            document.getElementById('game-wrap').style.display = 'block';
+            addSystemMsg('Connected! You are Player ' + myPlayer + '.');
+        }, 400);
+    });
+
+    conn.on('data', (data) => {
+        handleNetMessage(data);
+    });
+
+    conn.on('close', () => {
+        addSystemMsg('Opponent disconnected.');
+    });
+}
+
+function sendNet(msg) {
+    if (conn && conn.open) conn.send(msg);
+}
+
+function handleNetMessage(data) {
+    switch (data.type) {
+        case 'hello':
+            opponentName = data.name;
+            addSystemMsg(opponentName + ' joined as Player ' + data.player + '.');
+            break;
+        case 'chat':
+            addChatMsg(data.player, data.name, data.text);
+            break;
+        case 'click':
+            handleClick(data.idx, true);
+            break;
+        case 'relinquish':
+            performRelinquish(true);
+            break;
+        case 'state_sync':
+            // Host sends full state to joiner
+            applySyncState(data);
+            break;
+    }
+}
+
+// ─── CHAT ────────────────────────────────────────────────────
+function addSystemMsg(text) {
+    const div = document.createElement('div');
+    div.className = 'chat-msg system';
+    div.textContent = text;
+    const container = document.getElementById('chat-messages');
+    container.prepend(div);
+}
+
+function addChatMsg(player, name, text) {
+    const div = document.createElement('div');
+    div.className = 'chat-msg';
+    const span = document.createElement('span');
+    span.className = 'sender p' + player;
+    span.textContent = name + ':';
+    div.appendChild(span);
+    div.appendChild(document.createTextNode(' ' + text));
+    const container = document.getElementById('chat-messages');
+    container.prepend(div);
+}
+
+function scrollChat() {
+    const el = document.getElementById('chat-messages');
+    el.scrollTop = el.scrollHeight;
+}
+
+function sendChat() {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text) return;
+    addChatMsg(myPlayer, myName, text);
+    sendNet({ type: 'chat', player: myPlayer, name: myName, text: text });
+    input.value = '';
+}
+
+// ─── GAME STATE ──────────────────────────────────────────────
+let gameState = 'PLACEMENT';
+let currentPlayer = 1;
+let collectors = { 1: null, 2: null };
+let selectedIdx = null;
+let cells = Array(144).fill(null);
+let bag = [];
+let playerFlags = { 1: {}, 2: {} };
+let scores = { 1: {}, 2: {} };
+let relinquished = { 1: false, 2: false };
+const allColors = ['red', 'blue', 'yellow', 'green', 'orange', 'purple'];
+const discColorMap = {
+    red: '#e85d5d', blue: '#5d8de8', yellow: '#e8c547',
+    green: '#5de88a', orange: '#e8995d', purple: '#a85de8'
+};
+
+function toggleRules(show) {
+    document.getElementById('modal-overlay').style.display = show ? 'flex' : 'none';
+}
+
+function initBag() {
+    ['red', 'blue', 'yellow'].forEach(c =>
+        [1,2,2,3,3,3,4,4,4,5,5,6].forEach(n => bag.push({ color: c, num: n, type: 'primary' }))
+    );
+    ['green', 'orange', 'purple'].forEach(c => {
+        for (let i = 0; i < 6; i++) bag.push({ color: c, num: '', type: 'secondary' });
+    });
+    // Use seeded shuffle for host, will sync to joiner
+    bag.sort(() => Math.random() - 0.5);
+    bag.splice(0, 6);
+    allColors.forEach(c => { scores[1][c] = 0; scores[2][c] = 0; });
+}
+
+function createBoard() {
+    const boardDiv = document.getElementById('board');
+    for (let i = 0; i < 144; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.id = `cell-${i}`;
+        cell.onclick = () => {
+            if (!isMyTurn() && gameState === 'PLAY') return;
+            if (gameState === 'PLACEMENT' && currentPlayer !== myPlayer) return;
+            handleClick(i, false);
+        };
+        boardDiv.appendChild(cell);
+    }
+}
+
+function isMyTurn() {
+    return currentPlayer === myPlayer;
+}
+
+function handleClick(i, isRemote) {
+    if (gameState === 'PLACEMENT') {
+        if (cells[i]) return;
+        if (!collectors[1]) {
+            collectors[1] = i;
+            cells[i] = { type: 'collector', player: 1 };
+            currentPlayer = 2;
+        } else if (!collectors[2]) {
+            collectors[2] = i;
+            cells[i] = { type: 'collector', player: 2 };
+            startPlay();
+        }
+        if (!isRemote) sendNet({ type: 'click', idx: i });
+        render(); updateUI();
+    } else if (gameState === 'PLAY') {
+        handleMove(i, isRemote);
+    }
+}
+
+function startPlay() {
+    gameState = 'PLAY';
+    currentPlayer = 1;
+    document.getElementById('relinquish-btn').style.display = 'block';
+    // Only host places discs, then syncs
+    if (myRole === 'host') {
+        for (let i = 0; i < 24; i++) {
+            let r;
+            do { r = Math.floor(Math.random() * 144); } while (cells[r]);
+            cells[r] = bag.pop();
+        }
+        // Send full state to joiner
+        setTimeout(() => syncState(), 100);
+    }
+}
+
+function syncState() {
+    sendNet({
+        type: 'state_sync',
+        cells: JSON.parse(JSON.stringify(cells)),
+        collectors: { ...collectors },
+        currentPlayer,
+        scores: JSON.parse(JSON.stringify(scores)),
+        playerFlags: JSON.parse(JSON.stringify(playerFlags)),
+        relinquished: { ...relinquished },
+        gameState
+    });
+}
+
+function applySyncState(data) {
+    cells = data.cells;
+    collectors = data.collectors;
+    currentPlayer = data.currentPlayer;
+    scores = data.scores;
+    playerFlags = data.playerFlags;
+    relinquished = data.relinquished;
+    gameState = data.gameState;
+    if (gameState === 'PLAY') {
+        document.getElementById('relinquish-btn').style.display = 'block';
+    }
+    render(); updateUI();
+}
+
+function getLOS(idx) {
+    const los = [];
+    const r = Math.floor(idx / 12), c = idx % 12;
+    [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([dr, dc]) => {
+        for (let d = 1; d < 12; d++) {
+            let nr = r + dr * d, nc = c + dc * d;
+            if (nr < 0 || nr >= 12 || nc < 0 || nc >= 12) break;
+            let id = nr * 12 + nc;
+            los.push(id);
+            if (cells[id]) break;
+        }
+    });
+    return los;
+}
+
+function handleMove(i, isRemote) {
+    const los = getLOS(collectors[currentPlayer]);
+    if (selectedIdx === null) {
+        if (cells[i] && cells[i].type !== 'collector' && !los.includes(i)) {
+            selectedIdx = i;
+            render();
+        }
+    } else {
+        const dist = Math.max(
+            Math.abs(Math.floor(i / 12) - Math.floor(selectedIdx / 12)),
+            Math.abs((i % 12) - (selectedIdx % 12))
+        );
+        if (!cells[i] && dist === 1 && getLOS(collectors[currentPlayer]).includes(i)) {
+            if (!isRemote) sendNet({ type: 'click', idx: i });
+            processCollection(cells[selectedIdx], i);
+        } else {
+            selectedIdx = null;
+            render();
+        }
+    }
+}
+
+function processCollection(disc, newIdx) {
+    const colorKey = disc.color + '6';
+    if (!playerFlags[currentPlayer][colorKey]) {
+        scores[currentPlayer][disc.color] += (disc.num || 1);
+        if (disc.num === 6) playerFlags[currentPlayer][colorKey] = true;
+    }
+    cells[collectors[currentPlayer]] = null;
+    cells[selectedIdx] = null;
+    collectors[currentPlayer] = newIdx;
+    cells[newIdx] = { type: 'collector', player: currentPlayer };
+    selectedIdx = null;
+    relinquished[1] = relinquished[2] = false;
+
+    const remaining = cells.filter(c => c && c.type !== 'collector').length;
+    if (remaining <= 1) {
+        gameState = 'END';
+        addSystemMsg('Game Over! The final sprint is complete.');
+    } else if (disc.num !== 1) {
+        currentPlayer = currentPlayer === 1 ? 2 : 1;
+    }
+    updateUI(); render();
+}
+
+function doRelinquish() {
+    if (!isMyTurn() || gameState !== 'PLAY') return;
+    performRelinquish(false);
+    sendNet({ type: 'relinquish' });
+}
+
+function performRelinquish(isRemote) {
+    relinquished[currentPlayer] = true;
+    if (relinquished[1] && relinquished[2]) {
+        gameState = 'END';
+        addSystemMsg('Both players relinquished. Game Over.');
+    } else {
+        addSystemMsg('Player ' + currentPlayer + ' relinquished their turn.');
+        currentPlayer = currentPlayer === 1 ? 2 : 1;
+    }
+    updateUI();
+}
+
+function updateUI() {
+    const statusEl = document.getElementById('status-text');
+    if (gameState === 'END') {
+        statusEl.textContent = '🏁 GAME OVER';
+        statusEl.classList.remove('your-turn');
+    } else if (gameState === 'PLACEMENT') {
+        const who = currentPlayer === myPlayer ? 'You' : 'Opponent';
+        statusEl.innerHTML = `<span class="player-indicator p${currentPlayer}"></span> ${who}: Place collector`;
+        statusEl.classList.toggle('your-turn', currentPlayer === myPlayer);
+    } else if (gameState === 'PLAY') {
+        const who = currentPlayer === myPlayer ? 'YOUR TURN' : "Opponent's turn";
+        statusEl.innerHTML = `<span class="player-indicator p${currentPlayer}"></span> ${who}`;
+        statusEl.classList.toggle('your-turn', currentPlayer === myPlayer);
+    }
+
+    // Scores
+    const body = document.getElementById('score-body');
+    body.innerHTML = '';
+    allColors.forEach(c => {
+        const p1W = playerFlags[1][c + '6'] ? ' worthless' : '';
+        const p2W = playerFlags[2][c + '6'] ? ' worthless' : '';
+        body.innerHTML += `
+            <div class="score-color"><span class="score-dot" style="background:${discColorMap[c]}"></span>${c}</div>
+            <div class="score-val${p1W}">${scores[1][c]}</div>
+            <div class="score-val${p2W}">${scores[2][c]}</div>`;
+    });
+}
+
+function render() {
+    const los = (gameState === 'PLAY') ? getLOS(collectors[currentPlayer]) : [];
+    for (let i = 0; i < 144; i++) {
+        const el = document.getElementById(`cell-${i}`);
+        el.innerHTML = '';
+        el.className = 'cell' +
+            (los.includes(i) ? ' los' : '') +
+            (selectedIdx === i ? ' selected' : '');
+
+        if (cells[i]) {
+            const d = document.createElement('div');
+            if (cells[i].type === 'collector') {
+                d.className = `collector p${cells[i].player}`;
+                d.textContent = cells[i].player === 1 ? '♚' : '♛';
+            } else {
+                d.className = 'disc';
+                d.style.backgroundColor = discColorMap[cells[i].color] || cells[i].color;
+                d.textContent = cells[i].num;
+            }
+            el.appendChild(d);
+        }
+    }
+}
+
+// ─── INIT ────────────────────────────────────────────────────
+initBag();
+createBoard();
+render();
+</script>
+</body>
+</html>
