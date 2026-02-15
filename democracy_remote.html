@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="de">
 <head>
     <meta charset="UTF-8">
@@ -205,8 +206,8 @@
                     else if (v2 > v1) owner = 2;
                     else {
                         // Equal: whoever just moved (created/expanded the colony)
-                        // Use existing owner if it exists, otherwise the current player who just moved
-                        const justMoved = currentPlayer === 1 ? 2 : 1; // currentPlayer already switched
+                        // Note: rebuildColonies is called BEFORE currentPlayer switches
+                        const justMoved = currentPlayer;
                         owner = existing ? existing.owner : justMoved;
                     }
 
@@ -1006,5 +1007,6 @@
     render();
     logChat(0, "Lokaler 2-Spieler-Modus. Für Online: ID eingeben und ONLINE klicken.");
 </script>
+
 </body>
 </html>
