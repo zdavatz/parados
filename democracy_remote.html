@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="de">
 <head>
     <meta charset="UTF-8">
@@ -216,6 +215,16 @@
                         cells: group, owner, crowned, v1, v2,
                         total: v1 + v2
                     });
+
+                    // Log colony creation/update
+                    const colId = existing ? existing.id : nextColonyId - 1;
+                    const ownerName = owner === 1 ? 'Rot' : 'Blau';
+                    const isNew = !existing;
+                    if (isNew) {
+                        logChat(0, `Neue Kolonie #${colId}: ${group.length} Sat., Rot=${v1} Blau=${v2} → ${ownerName} gewinnt`);
+                    } else if (existing.owner !== owner) {
+                        logChat(0, `Kolonie #${colId} wechselt! Rot=${v1} Blau=${v2} → jetzt ${ownerName}`);
+                    }
                 }
             }
         }
@@ -368,10 +377,12 @@
     // ============================================================
     function executeMove(sr, sc, dr, dc) {
         const sat = board[sr][sc];
+        const playerName = sat.player === 1 ? 'Rot' : 'Blau';
         board[dr][dc] = sat;
         board[sr][sc] = null;
 
         let madeConnection = false;
+        const connectedWith = [];
         for (const [or, oc] of ORTHO) {
             const nr = dr + or, nc = dc + oc;
             if (nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE && board[nr][nc]) {
@@ -379,11 +390,17 @@
                     board[dr][dc].connected = true;
                     board[nr][nc].connected = true;
                     madeConnection = true;
+                    connectedWith.push(`${board[nr][nc].player===1?'R':'B'}${board[nr][nc].val}`);
                 }
             }
         }
 
-        if (madeConnection) rebuildColonies();
+        if (madeConnection) {
+            logChat(0, `${playerName} ${sat.val}: (${sr},${sc})→(${dr},${dc}) ⚡ verbindet mit ${connectedWith.join(', ')}`);
+            rebuildColonies();
+        } else {
+            logChat(0, `${playerName} ${sat.val}: (${sr},${sc})→(${dr},${dc})`);
+        }
         currentPlayer = (currentPlayer === 1) ? 2 : 1;
     }
 
@@ -922,9 +939,13 @@
             setTimeout(() => syncState(), 500);
         });
         peer.on('error', err => {
-            logChat(0, "Netzwerk-Fehler: " + err.type);
             if (err.type === 'peer-unavailable') {
                 becomeHost(document.getElementById('peer-id-input').value.trim());
+            } else if (err.type === 'unavailable-id') {
+                logChat(0, "Diese ID ist bereits vergeben. Versuche zu verbinden...");
+                connectToPeer(document.getElementById('peer-id-input').value.trim());
+            } else {
+                logChat(0, "Netzwerk-Fehler: " + err.type);
             }
         });
     }
@@ -1007,6 +1028,5 @@
     render();
     logChat(0, "Lokaler 2-Spieler-Modus. Für Online: ID eingeben und ONLINE klicken.");
 </script>
-
 </body>
 </html>
