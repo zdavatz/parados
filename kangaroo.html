@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Impatient Kangaroo</title>
+    <style>
+        :root {
+            --bg-color: #f4e4bc; /* Outback Farbe */
+            --grid-color: #dcbfa6;
+            --green-dish: #4CAF50;
+            --blue-dish: #2196F3;
+            --kangy-color: #e67e22;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #2c3e50;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 { margin-bottom: 10px; }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .status-panel {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            min-width: 300px;
+        }
+
+        .status-text { font-size: 1.2em; margin-bottom: 10px; }
+        .sub-status { font-size: 0.9em; color: #ccc; }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 1em;
+            transition: background 0.2s;
+        }
+
+        .btn-action { background-color: #9b59b6; color: white; }
+        .btn-action:disabled { background-color: #555; cursor: not-allowed; opacity: 0.6; }
+        .btn-reset { background-color: #e74c3c; color: white; }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(10, 50px);
+            grid-template-rows: repeat(7, 50px);
+            gap: 4px;
+            background-color: var(--bg-color);
+            padding: 10px;
+            border-radius: 8px;
+            border: 5px solid #8d6e63;
+        }
+
+        .cell {
+            width: 50px;
+            height: 50px;
+            background-color: rgba(255,255,255,0.2);
+            border-radius: 4px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            position: relative;
+            font-size: 24px;
+            user-select: none;
+        }
+
+        .cell:hover { background-color: rgba(255,255,255,0.4); }
+
+        /* Pieces */
+        .dish {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+        }
+        .dish.green { background-color: var(--green-dish); }
+        .dish.blue { background-color: var(--blue-dish); }
+        
+        .kangy {
+            font-size: 32px;
+            z-index: 10;
+            filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5));
+        }
+
+        .selected { outline: 3px solid yellow; box-shadow: 0 0 10px yellow; }
+        .highlight { background-color: rgba(255, 255, 0, 0.3); }
+
+        .rules {
+            max-width: 600px;
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .board {
+                grid-template-columns: repeat(10, 32px);
+                grid-template-rows: repeat(7, 32px);
+                gap: 2px;
+            }
+            .cell { width: 32px; height: 32px; font-size: 18px; }
+            .dish { width: 20px; height: 20px; }
+            .kangy { font-size: 22px; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>The Impatient Kangaroo 🦘</h1>
+
+    <div class="game-container">
+        <div class="status-panel">
+            <div id="gameStatus" class="status-text">Platziere Kangy auf einem leeren Feld.</div>
+            <div id="turnInfo" class="sub-status"></div>
+            <div id="dishCount" class="sub-status">Verbleibende Schalen: 24</div>
+        </div>
+
+        <div class="controls">
+            <button id="btnMoveDish" class="btn-action" onclick="toggleDishMoveMode()" disabled>Schale verschieben</button>
+            <button class="btn-reset" onclick="initGame()">Neues Spiel</button>
+        </div>
+
+        <div id="board" class="board">
+            </div>
+
+        <div class="rules">
+            <strong>Regeln:</strong><br>
+            1. <b>Ziel:</b> Springe über alle Schalen, bis nur noch Kangy übrig ist.<br>
+            2. <b>Springen:</b> Kangy muss abwechselnd über Grüne und Blaue Schalen springen. Der erste Sprung legt die Reihenfolge fest.<br>
+            3. <b>Hilfe:</b> Vor jedem Sprung darfst du <u>eine</u> Schale um 1 Feld verschieben (klicke dazu auf "Schale verschieben").
+        </div>
+    </div>
+
+<script>
+    /**
+     * GAME CONFIGURATION
+     * Based on PDF Source
+     */
+    const COLS = 10; // [cite: 8]
+    const ROWS = 7;  // [cite: 8]
+    const GREEN_COUNT = 12; // [cite: 10]
+    const BLUE_COUNT = 12;  // [cite: 11]
+
+    // State
+    let board = []; // 2D array: null, 'G', 'B', 'K'
+    let gameState = 'SETUP'; // SETUP, PLAYING, WON, LOST
+    let nextTarget = null; // 'G', 'B', or null (any for first move)
+    let kangyPos = {x: -1, y: -1};
+    let dishMoveAvailable = true; // Reset every turn
+    let isMovingDish = false;
+    let selectedDishPos = null;
+
+    const boardEl = document.getElementById('board');
+    const statusEl = document.getElementById('gameStatus');
+    const turnInfoEl = document.getElementById('turnInfo');
+    const btnMoveDish = document.getElementById('btnMoveDish');
+    const countEl = document.getElementById('dishCount');
+
+    // Initialize
+    function initGame() {
+        board = Array(ROWS).fill(null).map(() => Array(COLS).fill(null));
+        gameState = 'SETUP';
+        nextTarget = null;
+        kangyPos = {x: -1, y: -1};
+        dishMoveAvailable = true;
+        isMovingDish = false;
+        selectedDishPos = null;
+
+        // Place Dishes randomly [cite: 15]
+        let placedG = 0;
+        let placedB = 0;
+
+        while (placedG < GREEN_COUNT) {
+            let x = Math.floor(Math.random() * COLS);
+            let y = Math.floor(Math.random() * ROWS);
+            if (board[y][x] === null) { board[y][x] = 'G'; placedG++; }
+        }
+        while (placedB < BLUE_COUNT) {
+            let x = Math.floor(Math.random() * COLS);
+            let y = Math.floor(Math.random() * ROWS);
+            if (board[y][x] === null) { board[y][x] = 'B'; placedB++; }
+        }
+
+        renderBoard();
+        updateUI();
+    }
+
+    function renderBoard() {
+        boardEl.innerHTML = '';
+        let dishesLeft = 0;
+
+        for (let y = 0; y < ROWS; y++) {
+            for (let x = 0; x < COLS; x++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.dataset.x = x;
+                cell.dataset.y = y;
+                cell.onclick = () => handleCellClick(x, y);
+
+                const content = board[y][x];
+                if (content === 'G') {
+                    const d = document.createElement('div');
+                    d.className = 'dish green';
+                    cell.appendChild(d);
+                    dishesLeft++;
+                } else if (content === 'B') {
+                    const d = document.createElement('div');
+                    d.className = 'dish blue';
+                    cell.appendChild(d);
+                    dishesLeft++;
+                } else if (content === 'K') {
+                    const k = document.createElement('div');
+                    k.className = 'kangy';
+                    k.innerText = '🦘';
+                    cell.appendChild(k);
+                }
+
+                // Highlight selection logic
+                if (gameState === 'PLAYING') {
+                    if (isMovingDish) {
+                        // Highlight selected dish
+                        if (selectedDishPos && selectedDishPos.x === x && selectedDishPos.y === y) {
+                            cell.classList.add('selected');
+                        }
+                    } else {
+                        // Highlight valid jump targets for Kangy
+                        if (isValidJump(kangyPos.x, kangyPos.y, x, y)) {
+                            cell.classList.add('highlight');
+                        }
+                    }
+                }
+
+                boardEl.appendChild(cell);
+            }
+        }
+        countEl.innerText = `Verbleibende Schalen: ${dishesLeft}`;
+        
+        // Check Win Condition [cite: 18]
+        if (gameState === 'PLAYING' && dishesLeft === 0) {
+            gameState = 'WON';
+            statusEl.innerText = "🎉 GEWONNEN! Der Outback ist leer!";
+            statusEl.style.color = "#4CAF50";
+            btnMoveDish.disabled = true;
+        } else if (gameState === 'PLAYING' && !canKangyMove() && dishesLeft > 0) {
+            // Check Loss Condition [cite: 19]
+            // Only lose if we also can't move a dish to fix it, but that's complex to calc.
+            // Simplified: If no jumps available right now and dish move already used/useless.
+            statusEl.innerText = "Keine Sprünge mehr möglich!";
+            // We don't hard lock immediately because maybe moving a dish helps.
+        }
+    }
+
+    function updateUI() {
+        if (gameState === 'SETUP') {
+            statusEl.innerText = "Klicke auf ein leeres Feld, um Kangy zu platzieren.";
+            turnInfoEl.innerText = "";
+            btnMoveDish.disabled = true;
+        } else if (gameState === 'PLAYING') {
+            btnMoveDish.disabled = !dishMoveAvailable;
+            
+            let targetText = "Beliebig";
+            if (nextTarget === 'G') targetText = "GRÜN (Futter)";
+            if (nextTarget === 'B') targetText = "BLAU (Wasser)";
+            
+            if (isMovingDish) {
+                statusEl.innerText = "Wähle eine Schale zum Verschieben.";
+                turnInfoEl.innerText = "Klicke danach auf ein benachbartes leeres Feld.";
+                btnMoveDish.innerText = "Abbrechen";
+            } else {
+                statusEl.innerText = `Kangy ist am Zug!`;
+                turnInfoEl.innerText = `Nächstes Ziel: ${targetText}`;
+                btnMoveDish.innerText = "Schale verschieben";
+            }
+        }
+    }
+
+    function handleCellClick(x, y) {
+        if (gameState === 'SETUP') {
+            // Place Kangy 
+            if (board[y][x] === null) {
+                board[y][x] = 'K';
+                kangyPos = {x, y};
+                gameState = 'PLAYING';
+                updateUI();
+                renderBoard();
+            }
+        } else if (gameState === 'PLAYING') {
+            
+            if (isMovingDish) {
+                handleDishMove(x, y);
+            } else {
+                // Try to jump
+                if (isValidJump(kangyPos.x, kangyPos.y, x, y)) {
+                    executeJump(x, y);
+                }
+            }
+        }
+    }
+
+    // --- DISH MOVEMENT LOGIC  ---
+    function toggleDishMoveMode() {
+        if (!dishMoveAvailable) return;
+        isMovingDish = !isMovingDish;
+        selectedDishPos = null;
+        updateUI();
+        renderBoard();
+    }
+
+    function handleDishMove(x, y) {
+        const content = board[y][x];
+
+        // Select a dish
+        if (content === 'G' || content === 'B') {
+            selectedDishPos = {x, y};
+            renderBoard(); // Update selection highlight
+            return;
+        }
+
+        // Move to empty square
+        if (selectedDishPos && content === null) {
+            // Check adjacency (including diagonals)
+            const dx = Math.abs(x - selectedDishPos.x);
+            const dy = Math.abs(y - selectedDishPos.y);
+            
+            if (dx <= 1 && dy <= 1 && (dx + dy > 0)) {
+                // Execute Move
+                board[y][x] = board[selectedDishPos.y][selectedDishPos.x];
+                board[selectedDishPos.y][selectedDishPos.x] = null;
+                
+                dishMoveAvailable = false; // Used the move for this turn
+                isMovingDish = false;
+                selectedDishPos = null;
+                updateUI();
+                renderBoard();
+            }
+        }
+    }
+
+    // --- JUMP LOGIC [cite: 22, 23, 25, 27] ---
+    function isValidJump(fromX, fromY, toX, toY) {
+        if (board[toY][toX] !== null) return false; // Must land on empty
+
+        const dx = toX - fromX;
+        const dy = toY - fromY;
+
+        // Must be a straight line (horizontal, vertical, or diagonal)
+        if (dx === 0 && dy === 0) return false;
+        if (dx !== 0 && dy !== 0 && Math.abs(dx) !== Math.abs(dy)) return false;
+
+        // Determine step direction
+        const stepX = dx === 0 ? 0 : dx / Math.abs(dx);
+        const stepY = dy === 0 ? 0 : dy / Math.abs(dy);
+
+        // Scan path
+        let currentX = fromX + stepX;
+        let currentY = fromY + stepY;
+        let jumpedDishes = [];
+        let hasGap = false;
+
+        while (currentX !== toX || currentY !== toY) {
+            const content = board[currentY][currentX];
+            
+            if (content === null) {
+                hasGap = true; // Found an empty square in the path
+            } else if (content === 'G' || content === 'B') {
+                if (hasGap) return false; //  "no empty squares between these dishes"
+                jumpedDishes.push(content);
+            } else if (content === 'K') {
+                return false; // Can't jump over self (shouldn't happen)
+            }
+
+            currentX += stepX;
+            currentY += stepY;
+        }
+
+        if (jumpedDishes.length === 0) return false; // Must jump something
+
+        // Validate Colors
+        // 1. Check against global Next Target
+        if (nextTarget !== null && jumpedDishes[0] !== nextTarget) return false;
+
+        // 2. Check internal alternation for multi-jumps 
+        for (let i = 0; i < jumpedDishes.length - 1; i++) {
+            if (jumpedDishes[i] === jumpedDishes[i+1]) return false;
+        }
+
+        return true;
+    }
+
+    function executeJump(toX, toY) {
+        const dx = toX - kangyPos.x;
+        const dy = toY - kangyPos.y;
+        const stepX = dx === 0 ? 0 : dx / Math.abs(dx);
+        const stepY = dy === 0 ? 0 : dy / Math.abs(dy);
+
+        let currentX = kangyPos.x + stepX;
+        let currentY = kangyPos.y + stepY;
+        let lastColor = null;
+
+        // Remove dishes along path
+        while (currentX !== toX || currentY !== toY) {
+            const content = board[currentY][currentX];
+            if (content === 'G' || content === 'B') {
+                board[currentY][currentX] = null;
+                lastColor = content;
+            }
+            currentX += stepX;
+            currentY += stepY;
+        }
+
+        // Update Board
+        board[kangyPos.y][kangyPos.x] = null;
+        board[toY][toX] = 'K';
+        kangyPos = {x: toX, y: toY};
+
+        // Set Next Target [cite: 21] "MUST ALWAYS ALTERNATE"
+        // If we just jumped Green, next must be Blue.
+        if (lastColor === 'G') nextTarget = 'B';
+        else if (lastColor === 'B') nextTarget = 'G';
+
+        // Reset turn flags
+        dishMoveAvailable = true; 
+        
+        updateUI();
+        renderBoard();
+    }
+
+    function canKangyMove() {
+        // Simple check: iterate all empty squares and see if valid jump exists
+        // (Not highly optimized but fine for 10x7)
+        for(let y=0; y<ROWS; y++){
+            for(let x=0; x<COLS; x++){
+                if(board[y][x] === null) {
+                    if(isValidJump(kangyPos.x, kangyPos.y, x, y)) return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    // Start
+    initGame();
+
+</script>
+</body>
+</html>
