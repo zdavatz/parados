@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Impatient Kangaroo - Architect Edition 🏗️</title>
+    <title>The Impatient Kangaroo - Comfort Edition 🛋️</title>
     <style>
         :root {
             --bg-color: #e3c4a8;
@@ -38,26 +38,21 @@
             max-width: 800px;
         }
 
-        /* CONFIG PANEL */
-        .config-panel {
-            background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
-            padding: 10px 20px;
-            border-radius: 8px;
-            margin-bottom: 15px;
+        /* TOP BAR: Config & Info */
+        .top-bar {
             display: flex;
-            gap: 15px;
+            gap: 10px;
+            width: 100%;
+            justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
-            justify-content: center;
-            border: 1px solid rgba(255,255,255,0.2);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            margin-bottom: 10px;
+            background: rgba(0,0,0,0.2);
+            padding: 8px;
+            border-radius: 6px;
         }
-
-        label { font-size: 0.9em; color: #ffe0b2; font-weight: bold; }
-        select {
-            background: #37474f; color: white; border: 1px solid #78909c;
-            padding: 5px; border-radius: 4px; cursor: pointer;
-        }
+        
+        .config-mini { display: flex; gap: 8px; align-items: center; }
+        select { background: #37474f; color: white; border: 1px solid #78909c; padding: 4px; border-radius: 4px; }
 
         /* STATUS & CONTROLS */
         .status-panel {
@@ -66,38 +61,50 @@
             border-radius: 8px;
             text-align: center;
             width: 100%;
-            margin-bottom: 10px;
-            border-left: 4px solid #ff9800; /* Orange accent */
+            margin-bottom: 15px;
+            border-left: 4px solid #ff9800;
+            box-sizing: border-box;
         }
         .status-text { font-size: 1.1em; font-weight: bold; color: #ffcc80; margin-bottom: 4px; }
         .sub-status { font-size: 0.9em; color: #cfd8dc; }
-        .warning-text { color: #ffab91; font-weight: bold; animation: pulse 2s infinite; }
 
-        @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } }
-
-        .controls {
+        .main-controls {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             margin-bottom: 15px;
-            flex-wrap: wrap;
+            width: 100%;
             justify-content: center;
         }
 
         button {
-            padding: 8px 18px;
+            padding: 10px 16px;
             cursor: pointer;
             border: none;
-            border-radius: 4px;
+            border-radius: 6px;
             font-weight: 600;
-            font-size: 0.9em;
+            font-size: 0.95em;
             transition: all 0.2s;
-            box-shadow: 0 3px 0 rgba(0,0,0,0.3);
+            box-shadow: 0 4px 0 rgba(0,0,0,0.3);
+            display: flex; align-items: center; gap: 6px;
         }
         button:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.3); }
-        .btn-action { background-color: #8e24aa; color: white; }
-        .btn-action:disabled { background-color: #546e7a; opacity: 0.5; box-shadow: none; cursor: default;}
-        .btn-reset { background-color: #c62828; color: white; }
-        .btn-info { background-color: #0277bd; color: white; }
+        button:disabled { opacity: 0.5; cursor: default; box-shadow: none; transform: none; background-color: #546e7a !important; }
+
+        .btn-move { background-color: #8e24aa; color: white; flex-grow: 1; justify-content: center; max-width: 200px;}
+        .btn-undo { background-color: #fbc02d; color: #37474f; min-width: 100px; justify-content: center;}
+        .btn-rules { background-color: #0277bd; color: white; }
+
+        /* DANGER ZONE */
+        .danger-zone {
+            margin-top: 25px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 15px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+        .btn-reset { background-color: #c62828; color: white; opacity: 0.9; }
+        .btn-reset:hover { opacity: 1; }
 
         /* BOARD */
         .board {
@@ -108,6 +115,7 @@
             border-radius: 6px;
             border: 6px solid #5d4037;
             box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            margin-bottom: 10px;
         }
 
         .cell {
@@ -140,7 +148,7 @@
             z-index: 10;
             filter: drop-shadow(0 3px 3px rgba(0,0,0,0.5));
             pointer-events: none;
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); /* Bounce effect */
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
         .selected { outline: 3px dashed #ffeb3b; box-shadow: inset 0 0 10px rgba(255, 235, 59, 0.4); z-index: 5; }
@@ -148,11 +156,7 @@
             background-color: rgba(100, 255, 218, 0.25); 
             box-shadow: inset 0 0 8px rgba(100, 255, 218, 0.4);
         }
-        .highlight::after {
-            content: ''; width: 20%; height: 20%;
-            background-color: rgba(100, 255, 218, 0.9);
-            border-radius: 50%;
-        }
+        .highlight::after { content: ''; width: 20%; height: 20%; background-color: rgba(100, 255, 218, 0.9); border-radius: 50%; }
 
         /* MODAL */
         .modal {
@@ -170,8 +174,8 @@
         .close-btn { background-color: #37474f; color: white; width: 100%; margin-top: 20px; }
         .close { float: right; font-size: 24px; cursor: pointer; color: #90a4ae; }
         h2 { border-bottom: 2px solid #eceff1; padding-bottom: 10px; margin-top: 0; }
-        h3 { color: #d84315; margin-top: 15px; margin-bottom: 5px; font-size: 1.1em;}
-        ul { padding-left: 20px; font-size: 0.95em;}
+        h3 { color: #d84315; margin-top: 15px; margin-bottom: 5px; }
+        ul { padding-left: 20px; }
         li { margin-bottom: 6px; }
         .emphasis { font-weight: bold; color: #c62828; }
     </style>
@@ -179,42 +183,42 @@
 <body>
 
     <h1>The Impatient Kangaroo 🦘</h1>
-    <div class="subtitle">Architect Edition</div>
+    <div class="subtitle">Comfort Edition</div>
 
     <div class="game-wrapper">
         
-        <div class="config-panel" id="configPanel">
-            <div>
-                <label for="boardSize">Größe:</label>
-                <select id="boardSize">
+        <div class="top-bar">
+            <div class="config-mini">
+                <select id="boardSize" onchange="confirmReset()">
                     <option value="10x7">10 x 7 (Klassik)</option>
                     <option value="10x10" selected>10 x 10 (Quadrat)</option>
                     <option value="12x12">12 x 12 (Riesig)</option>
                 </select>
-            </div>
-            <div>
-                <label for="difficulty">Dichte:</label>
-                <select id="difficulty">
-                    <option value="low">Wenig (Einfacher)</option>
+                <select id="difficulty" onchange="confirmReset()">
+                    <option value="low">Locker</option>
                     <option value="normal" selected>Normal</option>
-                    <option value="high">Viel (Schwer)</option>
+                    <option value="high">Knifflig</option>
                 </select>
             </div>
+            <button class="btn-rules" onclick="openRules()">❓ Regeln</button>
         </div>
 
         <div class="status-panel">
-            <div id="gameStatus" class="status-text">Wähle Einstellungen & Start</div>
-            <div id="turnInfo" class="sub-status">Outback wird berechnet...</div>
+            <div id="gameStatus" class="status-text">Willkommen im Outback</div>
+            <div id="turnInfo" class="sub-status">Platziere Kangy zum Starten</div>
             <div id="dishCount" class="sub-status"></div>
         </div>
 
-        <div class="controls">
-            <button class="btn-info" onclick="openRules()">📖 Regeln</button>
-            <button id="btnMoveDish" class="btn-action" onclick="toggleDishMoveMode()" disabled>Schale verschieben</button>
-            <button class="btn-reset" onclick="initGame()">Neues Spiel generieren</button>
+        <div class="main-controls">
+            <button id="btnUndo" class="btn-undo" onclick="undoMove()" disabled>↩️ Zurück</button>
+            <button id="btnMoveDish" class="btn-move" onclick="toggleDishMoveMode()" disabled>🖐️ Schale verschieben</button>
         </div>
 
         <div id="board" class="board"></div>
+
+        <div class="danger-zone">
+            <button class="btn-reset" onclick="confirmReset()">⚠️ Neues Spiel mischen</button>
+        </div>
     </div>
 
     <div id="rulesModal" class="modal">
@@ -223,24 +227,17 @@
             <h2>Spielregeln</h2>
             
             <h3>Das Ziel</h3>
-            <p>Überspringe alle Schalen, bis nur noch Kangy übrig ist!</p>
+            <p>Das Spielfeld leerräumen. Kangy gewinnt, wenn alle Schalen übersprungen wurden.</p>
 
-            <h3>Die Mathematik des Outbacks 🧮</h3>
+            <h3>Die Regeln</h3>
             <ul>
-                <li>Wenn es ungleich viele grüne und blaue Schalen gibt, <b>schreibt das Spiel vor</b>, welche Farbe du zuerst überspringen musst. Das ist mathematisch notwendig!</li>
+                <li>Kangy springt abwechselnd über <span style="color:#2e7d32; font-weight:bold;">GRÜN</span> und <span style="color:#1565c0; font-weight:bold;">BLAU</span>.</li>
+                <li><b>Symmetrie:</b> Der Absprung-Abstand zur Schale muss gleich dem Lande-Abstand nach der Schale sein. (z.B. 2 Felder hin, 2 Felder weg).</li>
+                <li><b>Block-Sprünge:</b> Du kannst über ganze Gruppen von Schalen springen, wenn sie lückenlos nebeneinander liegen.</li>
+                <li><b>Der Helfer:</b> Vor jedem Sprung darfst du eine Schale um 1 Feld verschieben. Nutze das!</li>
             </ul>
-
-            <h3>Sprung-Regeln (Symmetrie!)</h3>
-            <ul>
-                <li>Kangy muss strikt abwechselnd springen (Grün, Blau, Grün...).</li>
-                <li>Sprünge müssen <b>symmetrisch</b> sein. Wenn du 3 Felder zur Schale "anläufst", musst du hinter der Schale auch 3 Felder weit fliegen.</li>
-                <li>Du kannst über mehrere Schalen gleichzeitig springen (super für große Distanzen!), solange sie direkt nebeneinander liegen.</li>
-            </ul>
-
-            <h3>Der Retter</h3>
-            <p>Vor <b>jedem</b> Sprung darfst du <span class="emphasis">eine Schale um ein Feld verschieben</span>. Ohne das sind die schweren Level kaum zu schaffen!</p>
             
-            <button class="close-btn" onclick="closeRules()">Alles klar!</button>
+            <button class="close-btn" onclick="closeRules()">Verstanden</button>
         </div>
     </div>
 
@@ -254,27 +251,72 @@
     // Game State
     let board = []; 
     let gameState = 'SETUP'; 
-    let nextTarget = null; // 'G', 'B', or null
-    let forcedStartColor = null; // If uneven numbers
+    let nextTarget = null; 
     let kangyPos = {x: -1, y: -1};
     let dishMoveAvailable = true; 
     let isMovingDish = false;
     let selectedDishPos = null;
+
+    // History for UNDO
+    let historyStack = [];
 
     // UI Elements
     const boardEl = document.getElementById('board');
     const statusEl = document.getElementById('gameStatus');
     const turnInfoEl = document.getElementById('turnInfo');
     const btnMoveDish = document.getElementById('btnMoveDish');
+    const btnUndo = document.getElementById('btnUndo');
     const countEl = document.getElementById('dishCount');
     const modal = document.getElementById('rulesModal');
     const sizeSelect = document.getElementById('boardSize');
     const diffSelect = document.getElementById('difficulty');
     const root = document.documentElement;
 
+    // --- UNDO SYSTEM ---
+    function saveState() {
+        const state = {
+            board: JSON.parse(JSON.stringify(board)),
+            gameState,
+            nextTarget,
+            kangyPos: {...kangyPos},
+            dishMoveAvailable,
+            isMovingDish: false, // Always reset move mode on undo
+            selectedDishPos: null
+        };
+        historyStack.push(state);
+        updateUI();
+    }
+
+    function undoMove() {
+        if (historyStack.length === 0) return;
+        
+        const lastState = historyStack.pop();
+        
+        board = lastState.board;
+        gameState = lastState.gameState;
+        nextTarget = lastState.nextTarget;
+        kangyPos = lastState.kangyPos;
+        dishMoveAvailable = lastState.dishMoveAvailable;
+        isMovingDish = false;
+        selectedDishPos = null;
+
+        renderBoard();
+        updateUI();
+    }
+
     // --- INIT ---
+    function confirmReset() {
+        if (gameState === 'PLAYING' || gameState === 'WON') {
+            const confirmed = confirm("Möchtest du das aktuelle Spiel wirklich beenden und neu mischen?");
+            if (!confirmed) {
+                // Reset selectors to current game values if cancelled (optional visual fix)
+                return; 
+            }
+        }
+        initGame();
+    }
+
     function initGame() {
-        // 1. Setup Grid
         const sizeVal = sizeSelect.value.split('x');
         COLS = parseInt(sizeVal[0]);
         ROWS = parseInt(sizeVal[1]);
@@ -287,52 +329,32 @@
         const finalSize = Math.min(50, Math.max(25, calcSize)); 
         root.style.setProperty('--cell-size', `${finalSize}px`);
 
-        // 2. Calculate Dishes
+        // Calculate Dishes (Force Even Split)
         const totalCells = COLS * ROWS;
-        let density = 0.38; // Normal (Slightly higher to account for gaps)
+        let density = 0.38; 
         if (diffSelect.value === 'low') density = 0.25;
-        if (diffSelect.value === 'high') density = 0.50; // Challenge mode
+        if (diffSelect.value === 'high') density = 0.48;
 
-        const totalDishes = Math.floor(totalCells * density);
-        
-        // Randomly split, allowing odd numbers
-        const base = Math.floor(totalDishes / 2);
-        const remainder = totalDishes % 2;
-        
-        // Randomize who gets the extra one
-        if (Math.random() > 0.5) {
-            GREEN_COUNT = base + remainder;
-            BLUE_COUNT = base;
-        } else {
-            GREEN_COUNT = base;
-            BLUE_COUNT = base + remainder;
-        }
+        let totalDishes = Math.floor(totalCells * density);
+        if (totalDishes % 2 !== 0) totalDishes--; // Force even number
 
-        // 3. Logic: Determine Forced Start
-        forcedStartColor = null;
-        if (GREEN_COUNT > BLUE_COUNT) forcedStartColor = 'G';
-        else if (BLUE_COUNT > GREEN_COUNT) forcedStartColor = 'B';
+        GREEN_COUNT = totalDishes / 2;
+        BLUE_COUNT = totalDishes / 2;
 
-        // 4. Reset State
         board = Array(ROWS).fill(null).map(() => Array(COLS).fill(null));
         gameState = 'SETUP';
-        nextTarget = forcedStartColor; // If null, user can choose. If set, locked.
+        nextTarget = null;
         kangyPos = {x: -1, y: -1};
         dishMoveAvailable = true;
         isMovingDish = false;
         selectedDishPos = null;
+        historyStack = []; // Clear history
 
-        // 5. Smart Placement
         placeDishesArchitect();
-
         renderBoard();
         updateUI();
     }
 
-    /**
-     * THE ARCHITECT
-     * Ensures edges aren't clogged and clumps are minimal.
-     */
     function placeDishesArchitect() {
         let deck = [];
         for(let i=0; i<GREEN_COUNT; i++) deck.push('G');
@@ -345,12 +367,11 @@
                 coords.push({x, y});
             }
         }
-        coords.sort(() => Math.random() - 0.5); // Random positions
+        coords.sort(() => Math.random() - 0.5);
 
         let retryQueue = [];
         let coordIndex = 0;
 
-        // Try to place everything with strict rules
         while(deck.length > 0 && coordIndex < coords.length) {
             let item = deck.pop();
             let pos = coords[coordIndex];
@@ -363,8 +384,6 @@
             coordIndex++;
         }
 
-        // Retry failed items in remaining empty slots with slightly relaxed rules?
-        // Actually, let's keep rules strict but try remaining slots.
         let emptySlots = [];
         for(let y=0; y<ROWS; y++) {
             for(let x=0; x<COLS; x++) {
@@ -376,30 +395,11 @@
         while(retryQueue.length > 0 && emptySlots.length > 0) {
             let item = retryQueue.pop();
             let pos = emptySlots.pop();
-            // Still check logic, if fails, we discard the dish (reducing difficulty slightly to keep solvable)
-            // Or force it if we really want to keep the counts?
-            // "Not impossible" is the goal. Better to lose a dish than break the layout.
             if (isPlacementAllowed(pos.x, pos.y, item)) {
                 board[pos.y][pos.x] = item;
             } else {
-                // If we can't place it legally, we remove it from the game to avoid unplayable clumps.
-                // We must update the counts so the logic stays valid!
-                if(item === 'G') GREEN_COUNT--;
-                if(item === 'B') BLUE_COUNT--;
+                // If strictly impossible, remove (keep game solvable)
             }
-        }
-        
-        // Re-evaluate forced start logic based on final counts
-        if (GREEN_COUNT > BLUE_COUNT) {
-            forcedStartColor = 'G';
-            nextTarget = 'G';
-        }
-        else if (BLUE_COUNT > GREEN_COUNT) {
-            forcedStartColor = 'B';
-            nextTarget = 'B';
-        } else {
-            forcedStartColor = null;
-            nextTarget = null;
         }
     }
 
@@ -408,59 +408,45 @@
     }
 
     function isPlacementAllowed(x, y, type) {
-        // 1. CHAIN CHECK (Global): No more than 2 in a row of same color
-        // Horizontal
+        // Chain Check
         if (x >= 2 && board[y][x-1] === type && board[y][x-2] === type) return false;
         if (x < COLS-2 && board[y][x+1] === type && board[y][x+2] === type) return false;
-        // Vertical
         if (y >= 2 && board[y-1][x] === type && board[y-2][x] === type) return false;
         if (y < ROWS-2 && board[y+1][x] === type && board[y+2][x] === type) return false;
 
-        // 2. EDGE SPECIFIC RULES
+        // Edge Rules
         if (isEdge(x, y)) {
-            // Rule: "Not more than a total of 4 (2 of each) on the edges" -> Implies local density limit.
-            // Let's check immediate neighbors on the edge ring.
             let edgeNeighbors = 0;
             let sameColorNeighbors = 0;
-            
             const dirs = [[0,1], [0,-1], [1,0], [-1,0], [1,1], [1,-1], [-1,1], [-1,-1]];
             for (let d of dirs) {
                 let nx = x + d[0];
                 let ny = y + d[1];
                 if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS) {
                     if (board[ny][nx] !== null) {
-                        // If checking local density
-                        if (isEdge(nx, ny)) edgeNeighbors++; // Only count neighbors that are ALSO on edge
+                        if (isEdge(nx, ny)) edgeNeighbors++;
                         if (board[ny][nx] === type) sameColorNeighbors++;
                     }
                 }
             }
-
-            // Strict Edge: Don't place if too many filled neighbors on edge (Avoids solid walls)
             if (edgeNeighbors >= 3) return false; 
-            // Strict Edge: Max 1 neighbor of SAME color (prevents 2x2 blobs on edge)
             if (sameColorNeighbors >= 1) return false;
-        } 
-        else {
-            // MIDDLE RULES (More relaxed for drama)
-            // Just check simple neighbors to avoid 2x2 blobs of SAME color
+        } else {
             let sameColorOrthogonal = 0;
-             const orth = [[0,1], [0,-1], [1,0], [-1,0]];
-             for (let d of orth) {
+            const orth = [[0,1], [0,-1], [1,0], [-1,0]];
+            for (let d of orth) {
                 let nx = x + d[0];
                 let ny = y + d[1];
                 if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS) {
                     if (board[ny][nx] === type) sameColorOrthogonal++;
                 }
-             }
-             // Allow max 1 orthogonal neighbor of same color (allows pairs, but not triples/corners)
-             if (sameColorOrthogonal >= 1) return false;
+            }
+            if (sameColorOrthogonal >= 1) return false;
         }
-
         return true;
     }
 
-    // --- RENDER & GAME LOOP ---
+    // --- GAMEPLAY ---
 
     function renderBoard() {
         boardEl.innerHTML = '';
@@ -500,50 +486,45 @@
                 boardEl.appendChild(cell);
             }
         }
-        countEl.innerText = `Grün: ${gLeft} | Blau: ${bLeft} (Gesamt: ${dishesLeft})`;
+        countEl.innerText = `Grün: ${gLeft} | Blau: ${bLeft}`;
         
         if (gameState === 'PLAYING' && dishesLeft === 0) {
             gameState = 'WON';
-            statusEl.innerText = "🏆 PERFEKTES OUTBACK!";
+            statusEl.innerText = "🏆 SIEG! Das Outback ist leer!";
             statusEl.style.color = "#66bb6a";
             btnMoveDish.disabled = true;
         } else if (gameState === 'PLAYING' && dishesLeft > 0 && !canAnyMovePossible() && !dishMoveAvailable) {
-             statusEl.innerText = "Keine Sprünge mehr möglich... 🌵";
+             statusEl.innerText = "Sackgasse... Versuch 'Zurück' ↩️";
              statusEl.style.color = "#ef9a9a";
         }
     }
 
     function updateUI() {
+        btnUndo.disabled = (historyStack.length === 0);
+
         if (gameState === 'SETUP') {
-            document.getElementById('configPanel').style.pointerEvents = 'auto';
-            document.getElementById('configPanel').style.opacity = '1';
+            document.querySelector('.top-bar').style.pointerEvents = 'auto';
+            document.querySelector('.top-bar').style.opacity = '1';
             btnMoveDish.disabled = true;
-
-            if (forcedStartColor) {
-                let cName = forcedStartColor === 'G' ? "GRÜN" : "BLAU";
-                statusEl.innerHTML = `⚠️ Ungleichgewicht! <span class='warning-text'>Du musst mit ${cName} starten!</span><br>Platziere Kangy.`;
-            } else {
-                statusEl.innerText = "Platziere Kangy auf einem freien Feld.";
-            }
-            turnInfoEl.innerText = `Ziel: ${GREEN_COUNT} Grün, ${BLUE_COUNT} Blau`;
-
+            statusEl.innerText = "Platziere Kangy auf einem freien Feld";
+            turnInfoEl.innerText = "Klick zum Starten";
         } else {
-            document.getElementById('configPanel').style.pointerEvents = 'none';
-            document.getElementById('configPanel').style.opacity = '0.5';
+            document.querySelector('.top-bar').style.pointerEvents = 'none';
+            document.querySelector('.top-bar').style.opacity = '0.6';
             
             btnMoveDish.disabled = !dishMoveAvailable;
             let targetText = nextTarget === 'G' ? "GRÜN (Futter)" : (nextTarget === 'B' ? "BLAU (Wasser)" : "Freie Wahl");
             
             if (gameState === 'WON') {
-                 turnInfoEl.innerText = "";
+                 turnInfoEl.innerText = "Alle Schalen übersprungen!";
             } else if (isMovingDish) {
                 statusEl.innerText = "Schale verschieben";
-                turnInfoEl.innerText = "Klicke auf Ziel (1 Feld, auch diagonal)";
-                btnMoveDish.innerText = "Abbrechen";
+                turnInfoEl.innerText = "Wähle Ziel (1 Feld, auch diagonal)";
+                btnMoveDish.innerText = "❌ Abbrechen";
             } else {
                 statusEl.innerHTML = `Kangy ist am Zug! Ziel: <b>${targetText}</b>`;
-                turnInfoEl.innerText = "Denke an weite Sprünge!";
-                btnMoveDish.innerText = "Schale verschieben";
+                turnInfoEl.innerText = "Denke an Symmetrie & Blöcke";
+                btnMoveDish.innerText = "🖐️ Schale verschieben";
             }
         }
     }
@@ -551,6 +532,7 @@
     function handleCellClick(x, y) {
         if (gameState === 'SETUP') {
             if (board[y][x] === null) {
+                saveState(); // Save empty board before placing Kangy (allows undoing start pos)
                 board[y][x] = 'K';
                 kangyPos = {x, y};
                 gameState = 'PLAYING';
@@ -562,6 +544,7 @@
                 handleDishMove(x, y);
             } else {
                 if (isValidJump(kangyPos.x, kangyPos.y, x, y)) {
+                    saveState(); // Save BEFORE jump
                     executeJump(x, y);
                 }
             }
@@ -584,6 +567,7 @@
             const dx = Math.abs(x - selectedDishPos.x);
             const dy = Math.abs(y - selectedDishPos.y);
             if (dx <= 1 && dy <= 1 && (dx+dy > 0)) {
+                saveState(); // Save BEFORE moving dish
                 board[y][x] = board[selectedDishPos.y][selectedDishPos.x];
                 board[selectedDishPos.y][selectedDishPos.x] = null;
                 dishMoveAvailable = false;
@@ -595,13 +579,11 @@
         }
     }
 
-    // --- PHYSICS (Symmetry & Blocks) ---
+    // --- PHYSICS ---
     function isValidJump(fromX, fromY, toX, toY) {
         if (board[toY][toX] !== null) return false;
-
         const dx = toX - fromX;
         const dy = toY - fromY;
-
         if (dx === 0 && dy === 0) return false;
         if (dx !== 0 && dy !== 0 && Math.abs(dx) !== Math.abs(dy)) return false;
 
@@ -610,27 +592,21 @@
 
         let currentX = fromX + stepX;
         let currentY = fromY + stepY;
-        
         let emptyBefore = 0;
         let emptyAfter = 0;
         let dishesInMiddle = [];
-        let state = 0; // 0=Before, 1=InDish, 2=After
+        let state = 0; 
 
         while (currentX !== toX || currentY !== toY) {
             const content = board[currentY][currentX];
-            
             if (state === 0) {
                 if (content === null) emptyBefore++;
-                else if (content === 'G' || content === 'B') {
-                    state = 1;
-                    dishesInMiddle.push(content);
-                } else return false; 
+                else if (content === 'G' || content === 'B') { state = 1; dishesInMiddle.push(content); }
+                else return false; 
             } else if (state === 1) {
                 if (content === 'G' || content === 'B') dishesInMiddle.push(content);
-                else if (content === null) {
-                    state = 2;
-                    emptyAfter++;
-                } else return false;
+                else if (content === null) { state = 2; emptyAfter++; }
+                else return false;
             } else if (state === 2) {
                 if (content === null) emptyAfter++;
                 else return false; 
@@ -640,12 +616,11 @@
         }
 
         if (dishesInMiddle.length === 0) return false;
-        if (emptyBefore !== emptyAfter) return false; // Symmetry Rule
+        if (emptyBefore !== emptyAfter) return false;
         if (nextTarget !== null && dishesInMiddle[0] !== nextTarget) return false;
         for (let i = 0; i < dishesInMiddle.length - 1; i++) {
             if (dishesInMiddle[i] === dishesInMiddle[i+1]) return false;
         }
-
         return true;
     }
 
@@ -654,7 +629,6 @@
         const dy = toY - kangyPos.y;
         const stepX = dx === 0 ? 0 : dx / Math.abs(dx);
         const stepY = dy === 0 ? 0 : dy / Math.abs(dy);
-
         let currentX = kangyPos.x + stepX;
         let currentY = kangyPos.y + stepY;
         let lastColor = null;
@@ -673,7 +647,6 @@
         board[toY][toX] = 'K';
         kangyPos = {x: toX, y: toY};
         
-        // Alternation Logic
         if (lastColor === 'G') nextTarget = 'B';
         else if (lastColor === 'B') nextTarget = 'G';
 
@@ -693,14 +666,14 @@
         return false;
     }
 
-    // Modal & Storage
+    // Modal
     function openRules() { modal.style.display = "block"; }
     function closeRules() { 
         modal.style.display = "none";
-        localStorage.setItem('kangy_architect_v1', 'true');
+        localStorage.setItem('kangy_comfort_v1', 'true');
     }
     window.onclick = (e) => { if (e.target == modal) closeRules(); }
-    if (!localStorage.getItem('kangy_architect_v1')) openRules();
+    if (!localStorage.getItem('kangy_comfort_v1')) openRules();
 
     initGame();
 
