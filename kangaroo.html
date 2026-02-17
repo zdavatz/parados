@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Impatient Kangaroo - Comfort Edition 🛋️</title>
+    <title>The Impatient Kangaroo - Final Edition 🦘</title>
     <style>
         :root {
             --bg-color: #e3c4a8;
@@ -52,7 +52,20 @@
         }
         
         .config-mini { display: flex; gap: 8px; align-items: center; }
-        select { background: #37474f; color: white; border: 1px solid #78909c; padding: 4px; border-radius: 4px; }
+        
+        select { 
+            background: #37474f; 
+            color: white; 
+            border: 1px solid #78909c; 
+            padding: 6px; 
+            border-radius: 4px; 
+            font-size: 0.9em;
+        }
+        select:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            border-color: #546e7a;
+        }
 
         /* STATUS & CONTROLS */
         .status-panel {
@@ -183,7 +196,7 @@
 <body>
 
     <h1>The Impatient Kangaroo 🦘</h1>
-    <div class="subtitle">Comfort Edition</div>
+    <div class="subtitle">Finale Edition</div>
 
     <div class="game-wrapper">
         
@@ -280,7 +293,7 @@
             nextTarget,
             kangyPos: {...kangyPos},
             dishMoveAvailable,
-            isMovingDish: false, // Always reset move mode on undo
+            isMovingDish: false, 
             selectedDishPos: null
         };
         historyStack.push(state);
@@ -309,7 +322,8 @@
         if (gameState === 'PLAYING' || gameState === 'WON') {
             const confirmed = confirm("Möchtest du das aktuelle Spiel wirklich beenden und neu mischen?");
             if (!confirmed) {
-                // Reset selectors to current game values if cancelled (optional visual fix)
+                // If cancelled, reset select boxes to current values (visual only)
+                // (In a real app we'd bind values to state, here we just let it be or reload)
                 return; 
             }
         }
@@ -348,7 +362,7 @@
         dishMoveAvailable = true;
         isMovingDish = false;
         selectedDishPos = null;
-        historyStack = []; // Clear history
+        historyStack = []; 
 
         placeDishesArchitect();
         renderBoard();
@@ -397,9 +411,8 @@
             let pos = emptySlots.pop();
             if (isPlacementAllowed(pos.x, pos.y, item)) {
                 board[pos.y][pos.x] = item;
-            } else {
-                // If strictly impossible, remove (keep game solvable)
-            }
+            } 
+            // If strictly impossible, remove (keep game solvable, balance remains mostly ok)
         }
     }
 
@@ -502,15 +515,19 @@
     function updateUI() {
         btnUndo.disabled = (historyStack.length === 0);
 
+        // UI STATE LOGIC
+        const selects = document.querySelectorAll('select');
+        
         if (gameState === 'SETUP') {
-            document.querySelector('.top-bar').style.pointerEvents = 'auto';
-            document.querySelector('.top-bar').style.opacity = '1';
+            // Enable selects in setup
+            selects.forEach(s => s.disabled = false);
+            
             btnMoveDish.disabled = true;
             statusEl.innerText = "Platziere Kangy auf einem freien Feld";
             turnInfoEl.innerText = "Klick zum Starten";
         } else {
-            document.querySelector('.top-bar').style.pointerEvents = 'none';
-            document.querySelector('.top-bar').style.opacity = '0.6';
+            // Disable selects during game to prevent accidents
+            selects.forEach(s => s.disabled = true);
             
             btnMoveDish.disabled = !dishMoveAvailable;
             let targetText = nextTarget === 'G' ? "GRÜN (Futter)" : (nextTarget === 'B' ? "BLAU (Wasser)" : "Freie Wahl");
@@ -532,7 +549,7 @@
     function handleCellClick(x, y) {
         if (gameState === 'SETUP') {
             if (board[y][x] === null) {
-                saveState(); // Save empty board before placing Kangy (allows undoing start pos)
+                saveState(); 
                 board[y][x] = 'K';
                 kangyPos = {x, y};
                 gameState = 'PLAYING';
@@ -544,7 +561,7 @@
                 handleDishMove(x, y);
             } else {
                 if (isValidJump(kangyPos.x, kangyPos.y, x, y)) {
-                    saveState(); // Save BEFORE jump
+                    saveState(); 
                     executeJump(x, y);
                 }
             }
@@ -567,7 +584,7 @@
             const dx = Math.abs(x - selectedDishPos.x);
             const dy = Math.abs(y - selectedDishPos.y);
             if (dx <= 1 && dy <= 1 && (dx+dy > 0)) {
-                saveState(); // Save BEFORE moving dish
+                saveState(); 
                 board[y][x] = board[selectedDishPos.y][selectedDishPos.x];
                 board[selectedDishPos.y][selectedDishPos.x] = null;
                 dishMoveAvailable = false;
@@ -670,10 +687,10 @@
     function openRules() { modal.style.display = "block"; }
     function closeRules() { 
         modal.style.display = "none";
-        localStorage.setItem('kangy_comfort_v1', 'true');
+        localStorage.setItem('kangy_final_v1', 'true');
     }
     window.onclick = (e) => { if (e.target == modal) closeRules(); }
-    if (!localStorage.getItem('kangy_comfort_v1')) openRules();
+    if (!localStorage.getItem('kangy_final_v1')) openRules();
 
     initGame();
 
