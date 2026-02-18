@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Impatient Kangaroo - Final Edition 🦘</title>
+    <title>The Impatient Kangaroo - Data Analyst Edition 📊</title>
     <style>
         :root {
             --bg-color: #e3c4a8;
@@ -38,7 +38,7 @@
             max-width: 800px;
         }
 
-        /* TOP BAR: Config & Info */
+        /* TOP BAR */
         .top-bar {
             display: flex;
             gap: 10px;
@@ -61,11 +61,7 @@
             border-radius: 4px; 
             font-size: 0.9em;
         }
-        select:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            border-color: #546e7a;
-        }
+        select:disabled { opacity: 0.5; cursor: not-allowed; border-color: #546e7a; }
 
         /* STATUS & CONTROLS */
         .status-panel {
@@ -107,17 +103,21 @@
         .btn-undo { background-color: #fbc02d; color: #37474f; min-width: 100px; justify-content: center;}
         .btn-rules { background-color: #0277bd; color: white; }
 
-        /* DANGER ZONE */
-        .danger-zone {
+        /* DANGER ZONE / DATA */
+        .bottom-zone {
             margin-top: 25px;
             border-top: 1px solid rgba(255,255,255,0.1);
             padding-top: 15px;
             width: 100%;
             display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
             justify-content: center;
         }
         .btn-reset { background-color: #c62828; color: white; opacity: 0.9; }
         .btn-reset:hover { opacity: 1; }
+        .btn-csv { background-color: #2e7d32; color: white; opacity: 0.9; }
+        .btn-csv:hover { opacity: 1; }
 
         /* BOARD */
         .board {
@@ -196,7 +196,7 @@
 <body>
 
     <h1>The Impatient Kangaroo 🦘</h1>
-    <div class="subtitle">Finale Edition</div>
+    <div class="subtitle">Data Analyst Edition</div>
 
     <div class="game-wrapper">
         
@@ -229,8 +229,9 @@
 
         <div id="board" class="board"></div>
 
-        <div class="danger-zone">
+        <div class="bottom-zone">
             <button class="btn-reset" onclick="confirmReset()">⚠️ Neues Spiel mischen</button>
+            <button class="btn-csv" onclick="downloadCSV()">💾 Spielverlauf als CSV speichern</button>
         </div>
     </div>
 
@@ -270,8 +271,13 @@
     let isMovingDish = false;
     let selectedDishPos = null;
 
-    // History for UNDO
+    // Undo & Logging
     let historyStack = [];
+    
+    // DATA LOGGING
+    let sessionLog = []; // Stores all moves from all games
+    let currentGameId = 0;
+    let turnCounter = 0;
 
     // UI Elements
     const boardEl = document.getElementById('board');
@@ -284,6 +290,60 @@
     const sizeSelect = document.getElementById('boardSize');
     const diffSelect = document.getElementById('difficulty');
     const root = document.documentElement;
+
+    // --- LOGGING SYSTEM ---
+    function logAction(actionType, fromX, fromY, toX, toY, details) {
+        sessionLog.push({
+            gameId: currentGameId,
+            turn: turnCounter,
+            action: actionType,
+            fromX: fromX,
+            fromY: fromY,
+            toX: toX,
+            toY: toY,
+            details: details,
+            timestamp: new Date().toISOString()
+        });
+        turnCounter++;
+    }
+
+    function removeLastLog() {
+        // Called when undoing
+        if (sessionLog.length > 0) {
+            // Only remove if it belongs to current game
+            const lastEntry = sessionLog[sessionLog.length - 1];
+            if (lastEntry.gameId === currentGameId) {
+                sessionLog.pop();
+                turnCounter--;
+            }
+        }
+    }
+
+    function downloadCSV() {
+        if (sessionLog.length === 0) {
+            alert("Keine Daten zum Exportieren vorhanden.");
+            return;
+        }
+
+        // CSV Header
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "Spiel_ID,Zug_Nr,Aktion,Von_X,Von_Y,Nach_X,Nach_Y,Details,Zeitstempel\n";
+
+        // Rows
+        sessionLog.forEach(row => {
+            let rowStr = `${row.gameId},${row.turn},${row.action},${row.fromX},${row.fromY},${row.toX},${row.toY},"${row.details}",${row.timestamp}`;
+            csvContent += rowStr + "\n";
+        });
+
+        // Trigger Download
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "kangaroo_spielverlauf.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
 
     // --- UNDO SYSTEM ---
     function saveState() {
@@ -313,6 +373,8 @@
         isMovingDish = false;
         selectedDishPos = null;
 
+        removeLastLog(); // Remove from CSV log
+
         renderBoard();
         updateUI();
     }
@@ -322,8 +384,6 @@
         if (gameState === 'PLAYING' || gameState === 'WON') {
             const confirmed = confirm("Möchtest du das aktuelle Spiel wirklich beenden und neu mischen?");
             if (!confirmed) {
-                // If cancelled, reset select boxes to current values (visual only)
-                // (In a real app we'd bind values to state, here we just let it be or reload)
                 return; 
             }
         }
@@ -343,14 +403,13 @@
         const finalSize = Math.min(50, Math.max(25, calcSize)); 
         root.style.setProperty('--cell-size', `${finalSize}px`);
 
-        // Calculate Dishes (Force Even Split)
         const totalCells = COLS * ROWS;
         let density = 0.38; 
         if (diffSelect.value === 'low') density = 0.25;
         if (diffSelect.value === 'high') density = 0.48;
 
         let totalDishes = Math.floor(totalCells * density);
-        if (totalDishes % 2 !== 0) totalDishes--; // Force even number
+        if (totalDishes % 2 !== 0) totalDishes--; 
 
         GREEN_COUNT = totalDishes / 2;
         BLUE_COUNT = totalDishes / 2;
@@ -363,6 +422,10 @@
         isMovingDish = false;
         selectedDishPos = null;
         historyStack = []; 
+        
+        // Data Logging Init for new Game
+        currentGameId++;
+        turnCounter = 1;
 
         placeDishesArchitect();
         renderBoard();
@@ -412,7 +475,6 @@
             if (isPlacementAllowed(pos.x, pos.y, item)) {
                 board[pos.y][pos.x] = item;
             } 
-            // If strictly impossible, remove (keep game solvable, balance remains mostly ok)
         }
     }
 
@@ -421,13 +483,11 @@
     }
 
     function isPlacementAllowed(x, y, type) {
-        // Chain Check
         if (x >= 2 && board[y][x-1] === type && board[y][x-2] === type) return false;
         if (x < COLS-2 && board[y][x+1] === type && board[y][x+2] === type) return false;
         if (y >= 2 && board[y-1][x] === type && board[y-2][x] === type) return false;
         if (y < ROWS-2 && board[y+1][x] === type && board[y+2][x] === type) return false;
 
-        // Edge Rules
         if (isEdge(x, y)) {
             let edgeNeighbors = 0;
             let sameColorNeighbors = 0;
@@ -506,6 +566,8 @@
             statusEl.innerText = "🏆 SIEG! Das Outback ist leer!";
             statusEl.style.color = "#66bb6a";
             btnMoveDish.disabled = true;
+            // Final log
+            logAction("WIN", -1, -1, -1, -1, "Game Won");
         } else if (gameState === 'PLAYING' && dishesLeft > 0 && !canAnyMovePossible() && !dishMoveAvailable) {
              statusEl.innerText = "Sackgasse... Versuch 'Zurück' ↩️";
              statusEl.style.color = "#ef9a9a";
@@ -514,21 +576,15 @@
 
     function updateUI() {
         btnUndo.disabled = (historyStack.length === 0);
-
-        // UI STATE LOGIC
         const selects = document.querySelectorAll('select');
         
         if (gameState === 'SETUP') {
-            // Enable selects in setup
             selects.forEach(s => s.disabled = false);
-            
             btnMoveDish.disabled = true;
             statusEl.innerText = "Platziere Kangy auf einem freien Feld";
             turnInfoEl.innerText = "Klick zum Starten";
         } else {
-            // Disable selects during game to prevent accidents
             selects.forEach(s => s.disabled = true);
-            
             btnMoveDish.disabled = !dishMoveAvailable;
             let targetText = nextTarget === 'G' ? "GRÜN (Futter)" : (nextTarget === 'B' ? "BLAU (Wasser)" : "Freie Wahl");
             
@@ -553,6 +609,9 @@
                 board[y][x] = 'K';
                 kangyPos = {x, y};
                 gameState = 'PLAYING';
+                
+                logAction("START", -1, -1, x, y, "Kangy placed");
+                
                 renderBoard();
                 updateUI();
             }
@@ -585,6 +644,11 @@
             const dy = Math.abs(y - selectedDishPos.y);
             if (dx <= 1 && dy <= 1 && (dx+dy > 0)) {
                 saveState(); 
+                
+                // LOGGING
+                const color = board[selectedDishPos.y][selectedDishPos.x];
+                logAction("MOVE_DISH", selectedDishPos.x, selectedDishPos.y, x, y, `Moved ${color}`);
+
                 board[y][x] = board[selectedDishPos.y][selectedDishPos.x];
                 board[selectedDishPos.y][selectedDishPos.x] = null;
                 dishMoveAvailable = false;
@@ -649,16 +713,21 @@
         let currentX = kangyPos.x + stepX;
         let currentY = kangyPos.y + stepY;
         let lastColor = null;
+        let skippedDishes = [];
 
         while (currentX !== toX || currentY !== toY) {
             const c = board[currentY][currentX];
             if (c === 'G' || c === 'B') {
                 lastColor = c;
+                skippedDishes.push(c);
                 board[currentY][currentX] = null;
             }
             currentX += stepX;
             currentY += stepY;
         }
+
+        // LOGGING
+        logAction("JUMP", kangyPos.x, kangyPos.y, toX, toY, `Skipped: ${skippedDishes.join('+')}`);
 
         board[kangyPos.y][kangyPos.x] = null;
         board[toY][toX] = 'K';
@@ -687,10 +756,10 @@
     function openRules() { modal.style.display = "block"; }
     function closeRules() { 
         modal.style.display = "none";
-        localStorage.setItem('kangy_final_v1', 'true');
+        localStorage.setItem('kangy_csv_v1', 'true');
     }
     window.onclick = (e) => { if (e.target == modal) closeRules(); }
-    if (!localStorage.getItem('kangy_final_v1')) openRules();
+    if (!localStorage.getItem('kangy_csv_v1')) openRules();
 
     initGame();
 
