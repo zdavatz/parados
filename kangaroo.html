@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Impatient Kangaroo - Data Analyst Edition 📊</title>
+    <title>The Impatient Kangaroo - Playtest Edition 🦘</title>
     <style>
         :root {
             --bg-color: #e3c4a8;
@@ -51,7 +51,7 @@
             border-radius: 6px;
         }
         
-        .config-mini { display: flex; gap: 8px; align-items: center; }
+        .config-mini { display: flex; gap: 8px; align-items: center; flex-wrap: wrap;}
         
         select { 
             background: #37474f; 
@@ -196,7 +196,7 @@
 <body>
 
     <h1>The Impatient Kangaroo 🦘</h1>
-    <div class="subtitle">Data Analyst Edition</div>
+    <div class="subtitle">Playtest Edition</div>
 
     <div class="game-wrapper">
         
@@ -208,9 +208,11 @@
                     <option value="12x12">12 x 12 (Riesig)</option>
                 </select>
                 <select id="difficulty" onchange="confirmReset()">
-                    <option value="low">Locker</option>
-                    <option value="normal" selected>Normal</option>
-                    <option value="high">Knifflig</option>
+                    <option value="beginner1" selected>Anfänger 1 (6+6 Mitte)</option>
+                    <option value="beginner2">Anfänger 2 (8+8 Mitte)</option>
+                    <option value="low">Fortgeschritten (Locker)</option>
+                    <option value="normal">Profi (Normal)</option>
+                    <option value="high">Meister (Knifflig)</option>
                 </select>
             </div>
             <button class="btn-rules" onclick="openRules()">❓ Regeln</button>
@@ -261,6 +263,7 @@
     let ROWS = 10;
     let GREEN_COUNT = 0;
     let BLUE_COUNT = 0;
+    let isCenterOnly = false; // Neu: Zwingt Schalen in die Mitte
 
     // Game State
     let board = []; 
@@ -275,7 +278,7 @@
     let historyStack = [];
     
     // DATA LOGGING
-    let sessionLog = []; // Stores all moves from all games
+    let sessionLog = []; 
     let currentGameId = 0;
     let turnCounter = 0;
 
@@ -308,9 +311,7 @@
     }
 
     function removeLastLog() {
-        // Called when undoing
         if (sessionLog.length > 0) {
-            // Only remove if it belongs to current game
             const lastEntry = sessionLog[sessionLog.length - 1];
             if (lastEntry.gameId === currentGameId) {
                 sessionLog.pop();
@@ -325,17 +326,14 @@
             return;
         }
 
-        // CSV Header
         let csvContent = "data:text/csv;charset=utf-8,";
         csvContent += "Spiel_ID,Zug_Nr,Aktion,Von_X,Von_Y,Nach_X,Nach_Y,Details,Zeitstempel\n";
 
-        // Rows
         sessionLog.forEach(row => {
             let rowStr = `${row.gameId},${row.turn},${row.action},${row.fromX},${row.fromY},${row.toX},${row.toY},"${row.details}",${row.timestamp}`;
             csvContent += rowStr + "\n";
         });
 
-        // Trigger Download
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
@@ -373,7 +371,7 @@
         isMovingDish = false;
         selectedDishPos = null;
 
-        removeLastLog(); // Remove from CSV log
+        removeLastLog(); 
 
         renderBoard();
         updateUI();
@@ -403,16 +401,28 @@
         const finalSize = Math.min(50, Math.max(25, calcSize)); 
         root.style.setProperty('--cell-size', `${finalSize}px`);
 
-        const totalCells = COLS * ROWS;
-        let density = 0.38; 
-        if (diffSelect.value === 'low') density = 0.25;
-        if (diffSelect.value === 'high') density = 0.48;
+        // Check Difficulty / Level
+        isCenterOnly = false;
+        if (diffSelect.value === 'beginner1') {
+            GREEN_COUNT = 6;
+            BLUE_COUNT = 6;
+            isCenterOnly = true;
+        } else if (diffSelect.value === 'beginner2') {
+            GREEN_COUNT = 8;
+            BLUE_COUNT = 8;
+            isCenterOnly = true;
+        } else {
+            const totalCells = COLS * ROWS;
+            let density = 0.38; 
+            if (diffSelect.value === 'low') density = 0.25;
+            if (diffSelect.value === 'high') density = 0.48;
 
-        let totalDishes = Math.floor(totalCells * density);
-        if (totalDishes % 2 !== 0) totalDishes--; 
+            let totalDishes = Math.floor(totalCells * density);
+            if (totalDishes % 2 !== 0) totalDishes--; 
 
-        GREEN_COUNT = totalDishes / 2;
-        BLUE_COUNT = totalDishes / 2;
+            GREEN_COUNT = totalDishes / 2;
+            BLUE_COUNT = totalDishes / 2;
+        }
 
         board = Array(ROWS).fill(null).map(() => Array(COLS).fill(null));
         gameState = 'SETUP';
@@ -423,7 +433,6 @@
         selectedDishPos = null;
         historyStack = []; 
         
-        // Data Logging Init for new Game
         currentGameId++;
         turnCounter = 1;
 
@@ -439,8 +448,13 @@
         deck.sort(() => Math.random() - 0.5);
 
         let coords = [];
-        for(let y=0; y<ROWS; y++) {
-            for(let x=0; x<COLS; x++) {
+        
+        // Define Playable Area based on "isCenterOnly"
+        let padX = isCenterOnly ? Math.max(1, Math.floor(COLS / 4)) : 0;
+        let padY = isCenterOnly ? Math.max(1, Math.floor(ROWS / 4)) : 0;
+
+        for(let y = padY; y < ROWS - padY; y++) {
+            for(let x = padX; x < COLS - padX; x++) {
                 coords.push({x, y});
             }
         }
@@ -461,9 +475,10 @@
             coordIndex++;
         }
 
+        // Fill remaining slots if Architect was too strict
         let emptySlots = [];
-        for(let y=0; y<ROWS; y++) {
-            for(let x=0; x<COLS; x++) {
+        for(let y = padY; y < ROWS - padY; y++) {
+            for(let x = padX; x < COLS - padX; x++) {
                 if(board[y][x] === null) emptySlots.push({x,y});
             }
         }
@@ -472,9 +487,8 @@
         while(retryQueue.length > 0 && emptySlots.length > 0) {
             let item = retryQueue.pop();
             let pos = emptySlots.pop();
-            if (isPlacementAllowed(pos.x, pos.y, item)) {
-                board[pos.y][pos.x] = item;
-            } 
+            // Just place it, even if slightly clumpy, to ensure counts match
+            board[pos.y][pos.x] = item;
         }
     }
 
@@ -488,6 +502,7 @@
         if (y >= 2 && board[y-1][x] === type && board[y-2][x] === type) return false;
         if (y < ROWS-2 && board[y+1][x] === type && board[y+2][x] === type) return false;
 
+        // Rand-Regeln gelten nur für den echten Spielfeldrand, nicht für die "Mitte"
         if (isEdge(x, y)) {
             let edgeNeighbors = 0;
             let sameColorNeighbors = 0;
@@ -582,7 +597,7 @@
             selects.forEach(s => s.disabled = false);
             btnMoveDish.disabled = true;
             statusEl.innerText = "Platziere Kangy auf einem freien Feld";
-            turnInfoEl.innerText = "Klick zum Starten";
+            turnInfoEl.innerText = isCenterOnly ? "Die Schalen sind in der Mitte zentriert." : "Klick zum Starten";
         } else {
             selects.forEach(s => s.disabled = true);
             btnMoveDish.disabled = !dishMoveAvailable;
@@ -645,7 +660,6 @@
             if (dx <= 1 && dy <= 1 && (dx+dy > 0)) {
                 saveState(); 
                 
-                // LOGGING
                 const color = board[selectedDishPos.y][selectedDishPos.x];
                 logAction("MOVE_DISH", selectedDishPos.x, selectedDishPos.y, x, y, `Moved ${color}`);
 
@@ -726,7 +740,6 @@
             currentY += stepY;
         }
 
-        // LOGGING
         logAction("JUMP", kangyPos.x, kangyPos.y, toX, toY, `Skipped: ${skippedDishes.join('+')}`);
 
         board[kangyPos.y][kangyPos.x] = null;
@@ -752,14 +765,13 @@
         return false;
     }
 
-    // Modal
     function openRules() { modal.style.display = "block"; }
     function closeRules() { 
         modal.style.display = "none";
-        localStorage.setItem('kangy_csv_v1', 'true');
+        localStorage.setItem('kangy_playtest_v1', 'true');
     }
     window.onclick = (e) => { if (e.target == modal) closeRules(); }
-    if (!localStorage.getItem('kangy_csv_v1')) openRules();
+    if (!localStorage.getItem('kangy_playtest_v1')) openRules();
 
     initGame();
 
