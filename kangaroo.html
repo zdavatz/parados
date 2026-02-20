@@ -183,13 +183,14 @@
             width: 90%; max-width: 550px;
             box-shadow: 0 15px 40px rgba(0,0,0,0.6);
             max-height: 85vh; overflow-y: auto;
+            line-height: 1.5;
         }
         .close-btn { background-color: #37474f; color: white; width: 100%; margin-top: 20px; }
         .close { float: right; font-size: 24px; cursor: pointer; color: #90a4ae; }
         h2 { border-bottom: 2px solid #eceff1; padding-bottom: 10px; margin-top: 0; }
         h3 { color: #d84315; margin-top: 15px; margin-bottom: 5px; }
         ul { padding-left: 20px; }
-        li { margin-bottom: 6px; }
+        li { margin-bottom: 10px; }
         .emphasis { font-weight: bold; color: #c62828; }
     </style>
 </head>
@@ -245,15 +246,17 @@
             <h3>Das Ziel</h3>
             <p>Das Spielfeld leerräumen. Kangy gewinnt, wenn alle Schalen übersprungen wurden.</p>
 
-            <h3>Die Regeln</h3>
+            <h3>Die Sprung-Regeln</h3>
             <ul>
-                <li>Kangy springt abwechselnd über <span style="color:#2e7d32; font-weight:bold;">GRÜN</span> und <span style="color:#1565c0; font-weight:bold;">BLAU</span>.</li>
-                <li><b>Symmetrie:</b> Der Absprung-Abstand zur Schale muss gleich dem Lande-Abstand nach der Schale sein. (z.B. 2 Felder hin, 2 Felder weg).</li>
-                <li><b>Block-Sprünge:</b> Du kannst über ganze Gruppen von Schalen springen, wenn sie lückenlos nebeneinander liegen.</li>
-                <li><b>Der Helfer:</b> Vor jedem Sprung darfst du eine Schale um 1 Feld verschieben. Nutze das!</li>
+                <li><b>Freier Start & Abwechslung:</b> Du entscheidest frei, ob du deinen ersten Sprung über eine <span style="color:#2e7d32; font-weight:bold;">GRÜNE</span> oder eine <span style="color:#1565c0; font-weight:bold;">BLAUE</span> Schale machst. Danach muss die Farbe jedoch strikt abwechseln (Grün, Blau, Grün, Blau...).</li>
+                <li><b>Symmetrie:</b> Der Absprung-Abstand zur Schale muss exakt gleich dem Lande-Abstand nach der Schale sein. (z.B. 2 Felder Anlauf = 2 Felder nach der Schale landen).</li>
+                <li><b>Block-Sprünge:</b> Du kannst über ganze Gruppen von Schalen in einem einzigen großen Sprung hüpfen, wenn sie lückenlos nebeneinander liegen. <b>Wichtig:</b> Auch innerhalb dieses Blocks muss die Farb-Abwechslung korrekt eingehalten werden (z.B. eine Reihe aus Grün-Blau-Grün)!</li>
             </ul>
+
+            <h3>Der Helfer</h3>
+            <p>Vor <b>jedem</b> Sprung darfst du genau eine Schale um 1 Feld verschieben. Nutze diesen Zug weise, um Lücken zu schließen oder Sprünge vorzubereiten!</p>
             
-            <button class="close-btn" onclick="closeRules()">Verstanden</button>
+            <button class="close-btn" onclick="closeRules()">Verstanden, los geht's!</button>
         </div>
     </div>
 
@@ -263,7 +266,7 @@
     let ROWS = 10;
     let GREEN_COUNT = 0;
     let BLUE_COUNT = 0;
-    let isCenterOnly = false; // Neu: Zwingt Schalen in die Mitte
+    let isCenterOnly = false; 
 
     // Game State
     let board = []; 
@@ -768,10 +771,10 @@
     function openRules() { modal.style.display = "block"; }
     function closeRules() { 
         modal.style.display = "none";
-        localStorage.setItem('kangy_playtest_v1', 'true');
+        localStorage.setItem('kangy_playtest_v2', 'true');
     }
     window.onclick = (e) => { if (e.target == modal) closeRules(); }
-    if (!localStorage.getItem('kangy_playtest_v1')) openRules();
+    if (!localStorage.getItem('kangy_playtest_v2')) openRules();
 
     initGame();
 
