@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Impatient Kangaroo - Playtest Edition 🦘</title>
+    <title>DUK: Das Ungeduldige Känguru 🦘</title>
     <style>
         :root {
             --bg-color: #e3c4a8;
@@ -38,190 +38,168 @@
             max-width: 800px;
         }
 
+        /* MODE SWITCHER */
+        .mode-tabs {
+            display: flex;
+            width: 100%;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+        .mode-tab {
+            flex: 1;
+            padding: 10px;
+            background: #37474f;
+            border: 1px solid #546e7a;
+            color: white;
+            cursor: pointer;
+            border-radius: 6px 6px 0 0;
+            font-weight: bold;
+            text-align: center;
+            transition: background 0.2s;
+        }
+        .mode-tab.active { background: #ff9800; color: #263238; border-color: #ff9800; }
+
         /* TOP BAR */
         .top-bar {
             display: flex;
+            flex-direction: column;
             gap: 10px;
             width: 100%;
-            justify-content: space-between;
-            align-items: center;
             margin-bottom: 10px;
             background: rgba(0,0,0,0.2);
-            padding: 8px;
-            border-radius: 6px;
+            padding: 15px;
+            border-radius: 0 0 6px 6px;
+            box-sizing: border-box;
         }
         
-        .config-mini { display: flex; gap: 8px; align-items: center; flex-wrap: wrap;}
+        .config-panel { display: none; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center;}
+        .config-panel.active { display: flex; }
         
-        select { 
-            background: #37474f; 
-            color: white; 
-            border: 1px solid #78909c; 
-            padding: 6px; 
-            border-radius: 4px; 
-            font-size: 0.9em;
-        }
+        select { background: #455a64; color: white; border: 1px solid #78909c; padding: 6px; border-radius: 4px; font-size: 0.9em; }
         select:disabled { opacity: 0.5; cursor: not-allowed; border-color: #546e7a; }
+
+        /* EDITOR PALETTE */
+        .editor-palette {
+            display: flex; gap: 10px; align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 20px;
+        }
+        .brush-btn {
+            width: 35px; height: 35px; border-radius: 50%; border: 2px solid transparent; cursor: pointer;
+            display: flex; justify-content: center; align-items: center; font-size: 1.2em;
+        }
+        .brush-btn.active { border-color: #ffeb3b; box-shadow: 0 0 10px rgba(255,235,59,0.5); transform: scale(1.1);}
+        .brush-g { background: radial-gradient(circle at 30% 30%, #66bb6a, var(--green-dish)); }
+        .brush-b { background: radial-gradient(circle at 30% 30%, #42a5f5, var(--blue-dish)); }
+        .brush-k { background: #e65100; }
+        .brush-e { background: #eceff1; color: black; font-size: 0.9em; font-weight: bold;}
 
         /* STATUS & CONTROLS */
         .status-panel {
-            background: rgba(0, 0, 0, 0.25);
-            padding: 12px;
-            border-radius: 8px;
-            text-align: center;
-            width: 100%;
-            margin-bottom: 15px;
-            border-left: 4px solid #ff9800;
-            box-sizing: border-box;
+            background: rgba(0, 0, 0, 0.25); padding: 12px; border-radius: 8px; text-align: center;
+            width: 100%; margin-bottom: 15px; border-left: 4px solid #ff9800; box-sizing: border-box;
         }
         .status-text { font-size: 1.1em; font-weight: bold; color: #ffcc80; margin-bottom: 4px; }
         .sub-status { font-size: 0.9em; color: #cfd8dc; }
 
-        .main-controls {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 15px;
-            width: 100%;
-            justify-content: center;
-        }
+        .main-controls { display: flex; gap: 12px; margin-bottom: 15px; width: 100%; justify-content: center; }
 
         button {
-            padding: 10px 16px;
-            cursor: pointer;
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            font-size: 0.95em;
-            transition: all 0.2s;
-            box-shadow: 0 4px 0 rgba(0,0,0,0.3);
-            display: flex; align-items: center; gap: 6px;
+            padding: 8px 14px; cursor: pointer; border: none; border-radius: 6px; font-weight: 600; font-size: 0.95em;
+            transition: all 0.2s; box-shadow: 0 4px 0 rgba(0,0,0,0.3); display: flex; align-items: center; gap: 6px;
         }
         button:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.3); }
         button:disabled { opacity: 0.5; cursor: default; box-shadow: none; transform: none; background-color: #546e7a !important; }
 
         .btn-move { background-color: #8e24aa; color: white; flex-grow: 1; justify-content: center; max-width: 200px;}
-        .btn-undo { background-color: #fbc02d; color: #37474f; min-width: 100px; justify-content: center;}
-        .btn-rules { background-color: #0277bd; color: white; }
-
-        /* DANGER ZONE / DATA */
-        .bottom-zone {
-            margin-top: 25px;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            padding-top: 15px;
-            width: 100%;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            justify-content: center;
-        }
-        .btn-reset { background-color: #c62828; color: white; opacity: 0.9; }
-        .btn-reset:hover { opacity: 1; }
-        .btn-csv { background-color: #2e7d32; color: white; opacity: 0.9; }
-        .btn-csv:hover { opacity: 1; }
+        .btn-undo { background-color: #fbc02d; color: #37474f; min-width: 90px; justify-content: center;}
+        .btn-start { background-color: #43a047; color: white; }
 
         /* BOARD */
         .board {
-            display: grid;
-            gap: 3px;
-            background-color: var(--bg-color);
-            padding: 10px;
-            border-radius: 6px;
-            border: 6px solid #5d4037;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            margin-bottom: 10px;
+            display: grid; gap: 3px; background-color: var(--bg-color); padding: 10px;
+            border-radius: 6px; border: 6px solid #5d4037; box-shadow: 0 10px 25px rgba(0,0,0,0.5); margin-bottom: 10px;
         }
-
         .cell {
-            width: var(--cell-size);
-            height: var(--cell-size);
-            background-color: rgba(255,255,255,0.15);
-            border-radius: 4px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            position: relative;
-            user-select: none;
+            width: var(--cell-size); height: var(--cell-size); background-color: rgba(255,255,255,0.15);
+            border-radius: 4px; display: flex; justify-content: center; align-items: center; cursor: pointer; position: relative; user-select: none;
         }
         .cell:hover { background-color: rgba(255,255,255,0.3); }
 
         .dish {
-            width: 60%;
-            height: 60%;
-            border-radius: 50%;
-            border: 2px solid rgba(255,255,255,0.8);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
-            pointer-events: none;
+            width: 60%; height: 60%; border-radius: 50%; border: 2px solid rgba(255,255,255,0.8);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.4); pointer-events: none;
         }
         .dish.green { background: radial-gradient(circle at 30% 30%, #66bb6a, var(--green-dish)); }
         .dish.blue { background: radial-gradient(circle at 30% 30%, #42a5f5, var(--blue-dish)); }
         
         .kangy {
-            font-size: calc(var(--cell-size) * 0.75);
-            z-index: 10;
-            filter: drop-shadow(0 3px 3px rgba(0,0,0,0.5));
-            pointer-events: none;
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            font-size: calc(var(--cell-size) * 0.75); z-index: 10; filter: drop-shadow(0 3px 3px rgba(0,0,0,0.5));
+            pointer-events: none; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
+        .ghost-kangy { opacity: 0.4; filter: grayscale(50%); animation: float 2s infinite ease-in-out; }
+        @keyframes float { 0% {transform: translateY(0px);} 50% {transform: translateY(-5px);} 100% {transform: translateY(0px);} }
 
         .selected { outline: 3px dashed #ffeb3b; box-shadow: inset 0 0 10px rgba(255, 235, 59, 0.4); z-index: 5; }
-        .highlight { 
-            background-color: rgba(100, 255, 218, 0.25); 
-            box-shadow: inset 0 0 8px rgba(100, 255, 218, 0.4);
-        }
+        .highlight { background-color: rgba(100, 255, 218, 0.25); box-shadow: inset 0 0 8px rgba(100, 255, 218, 0.4); }
         .highlight::after { content: ''; width: 20%; height: 20%; background-color: rgba(100, 255, 218, 0.9); border-radius: 50%; }
 
-        /* MODAL */
-        .modal {
-            display: none; position: fixed; z-index: 2000; left: 0; top: 0;
-            width: 100%; height: 100%; background-color: var(--modal-bg);
-            backdrop-filter: blur(3px);
-        }
-        .modal-content {
-            background-color: #fff; color: #37474f;
-            margin: 5% auto; padding: 25px; border-radius: 10px;
-            width: 90%; max-width: 550px;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
-            max-height: 85vh; overflow-y: auto;
-            line-height: 1.5;
-        }
-        .close-btn { background-color: #37474f; color: white; width: 100%; margin-top: 20px; }
-        .close { float: right; font-size: 24px; cursor: pointer; color: #90a4ae; }
-        h2 { border-bottom: 2px solid #eceff1; padding-bottom: 10px; margin-top: 0; }
-        h3 { color: #d84315; margin-top: 15px; margin-bottom: 5px; }
-        ul { padding-left: 20px; }
-        li { margin-bottom: 10px; }
-        .emphasis { font-weight: bold; color: #c62828; }
+        .bottom-zone { margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; width: 100%; display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; }
+        .btn-reset { background-color: #c62828; color: white; opacity: 0.9; }
+        .btn-rules { background-color: #0277bd; color: white; }
     </style>
 </head>
 <body>
 
-    <h1>The Impatient Kangaroo 🦘</h1>
-    <div class="subtitle">Playtest Edition</div>
+    <h1>DUK 🦘</h1>
+    <div class="subtitle">Das Ungeduldige Känguru</div>
 
     <div class="game-wrapper">
         
+        <div class="mode-tabs">
+            <div class="mode-tab active" onclick="switchMode('LEVEL')">🏆 Level</div>
+            <div class="mode-tab" onclick="switchMode('RANDOM')">🎲 Take a Chance</div>
+            <div class="mode-tab" onclick="switchMode('EDITOR')">🛠️ Eigene</div>
+        </div>
+
         <div class="top-bar">
-            <div class="config-mini">
-                <select id="boardSize" onchange="confirmReset()">
-                    <option value="10x7">10 x 7 (Klassik)</option>
-                    <option value="10x10" selected>10 x 10 (Quadrat)</option>
-                    <option value="12x12">12 x 12 (Riesig)</option>
-                </select>
-                <select id="difficulty" onchange="confirmReset()">
-                    <option value="beginner1" selected>Anfänger 1 (6+6 Mitte)</option>
-                    <option value="beginner2">Anfänger 2 (8+8 Mitte)</option>
-                    <option value="low">Fortgeschritten (Locker)</option>
-                    <option value="normal">Profi (Normal)</option>
-                    <option value="high">Meister (Knifflig)</option>
-                </select>
+            <div id="panel-LEVEL" class="config-panel active">
+                <select id="levelSelect" onchange="confirmReset()">
+                    </select>
+                <button class="btn-start" onclick="confirmReset()">Level Starten</button>
             </div>
-            <button class="btn-rules" onclick="openRules()">❓ Regeln</button>
+
+            <div id="panel-RANDOM" class="config-panel">
+                <select id="boardSize">
+                    <option value="10x10" selected>10 x 10</option>
+                    <option value="12x12">12 x 12</option>
+                </select>
+                <select id="difficulty">
+                    <option value="beginner">Mitte (Einfach)</option>
+                    <option value="normal" selected>Normal</option>
+                    <option value="high">Knifflig</option>
+                </select>
+                <button class="btn-start" onclick="confirmReset()">Würfeln</button>
+            </div>
+
+            <div id="panel-EDITOR" class="config-panel">
+                <select id="editorSize" onchange="initEditorBoard()">
+                    <option value="8x8">8 x 8</option>
+                    <option value="10x10" selected>10 x 10</option>
+                    <option value="12x12">12 x 12</option>
+                </select>
+                <div class="editor-palette">
+                    <div class="brush-btn brush-g active" onclick="setBrush('G')"></div>
+                    <div class="brush-btn brush-b" onclick="setBrush('B')"></div>
+                    <div class="brush-btn brush-k" onclick="setBrush('K')">🦘</div>
+                    <div class="brush-btn brush-e" onclick="setBrush('E')">X</div>
+                </div>
+                <button class="btn-start" onclick="startCustomGame()">Spielen!</button>
+            </div>
         </div>
 
         <div class="status-panel">
-            <div id="gameStatus" class="status-text">Willkommen im Outback</div>
-            <div id="turnInfo" class="sub-status">Platziere Kangy zum Starten</div>
+            <div id="gameStatus" class="status-text">Lade DUK...</div>
+            <div id="turnInfo" class="sub-status"></div>
             <div id="dishCount" class="sub-status"></div>
         </div>
 
@@ -233,317 +211,302 @@
         <div id="board" class="board"></div>
 
         <div class="bottom-zone">
-            <button class="btn-reset" onclick="confirmReset()">⚠️ Neues Spiel mischen</button>
-            <button class="btn-csv" onclick="downloadCSV()">💾 Spielverlauf als CSV speichern</button>
-        </div>
-    </div>
-
-    <div id="rulesModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeRules()">&times;</span>
-            <h2>Spielregeln</h2>
-            
-            <h3>Das Ziel</h3>
-            <p>Das Spielfeld leerräumen. Kangy gewinnt, wenn alle Schalen übersprungen wurden.</p>
-
-            <h3>Die Sprung-Regeln</h3>
-            <ul>
-                <li><b>Freier Start & Abwechslung:</b> Du entscheidest frei, ob du deinen ersten Sprung über eine <span style="color:#2e7d32; font-weight:bold;">GRÜNE</span> oder eine <span style="color:#1565c0; font-weight:bold;">BLAUE</span> Schale machst. Danach muss die Farbe jedoch strikt abwechseln (Grün, Blau, Grün, Blau...).</li>
-                <li><b>Symmetrie:</b> Der Absprung-Abstand zur Schale muss exakt gleich dem Lande-Abstand nach der Schale sein. (z.B. 2 Felder Anlauf = 2 Felder nach der Schale landen).</li>
-                <li><b>Block-Sprünge:</b> Du kannst über ganze Gruppen von Schalen in einem einzigen großen Sprung hüpfen, wenn sie lückenlos nebeneinander liegen. <b>Wichtig:</b> Auch innerhalb dieses Blocks muss die Farb-Abwechslung korrekt eingehalten werden (z.B. eine Reihe aus Grün-Blau-Grün)!</li>
-            </ul>
-
-            <h3>Der Helfer</h3>
-            <p>Vor <b>jedem</b> Sprung darfst du genau eine Schale um 1 Feld verschieben. Nutze diesen Zug weise, um Lücken zu schließen oder Sprünge vorzubereiten!</p>
-            
-            <button class="close-btn" onclick="closeRules()">Verstanden, los geht's!</button>
+            <button class="btn-rules" onclick="openRules()">❓ Regeln</button>
+            <button class="btn-reset" onclick="confirmReset()">⚠️ Neustart</button>
         </div>
     </div>
 
 <script>
-    // Configuration
-    let COLS = 10;
-    let ROWS = 10;
-    let GREEN_COUNT = 0;
-    let BLUE_COUNT = 0;
-    let isCenterOnly = false; 
+    /** * LEVEL DATABASE
+     * Hier kannst du alle deine handgemachten Level eintragen!
+     * G = Grün, B = Blau, . = Leer
+     */
+    const LEVEL_DATABASE = [
+        {
+            id: 'tut1',
+            group: 'Anfänger',
+            name: 'Level 1: Erste Schritte',
+            cols: 10, rows: 10,
+            layout: [
+                "..........",
+                "..........",
+                "..........",
+                "....G.....",
+                "..........",
+                "....B.....",
+                "..........",
+                "....G.....",
+                "..........",
+                ".........."
+            ],
+            startHint: {x: 4, y: 8} // x (Spalte), y (Zeile) -> nullbasiert
+        },
+        {
+            id: 'tut2',
+            group: 'Anfänger',
+            name: 'Level 2: Der Block',
+            cols: 10, rows: 10,
+            layout: [
+                "..........",
+                "..........",
+                "..........",
+                "....G.....",
+                "....B.....",
+                "....G.....",
+                "..........",
+                "..........",
+                "..........",
+                ".........."
+            ],
+            startHint: {x: 4, y: 7}
+        },
+        {
+            id: 'tut3',
+            group: 'Anfänger',
+            name: 'Level 3: Verschieben üben',
+            cols: 10, rows: 10,
+            layout: [
+                "..........",
+                "..........",
+                "....B.....",
+                "..........",
+                "..........",
+                ".....G....",
+                "..........",
+                "..........",
+                "..........",
+                ".........."
+            ],
+            startHint: {x: 4, y: 7} // Man muss G nach links schieben um zu springen!
+        },
+        {
+            id: 'adv1',
+            group: 'Fortgeschritten',
+            name: 'Level 1: Das Kreuz',
+            cols: 10, rows: 10,
+            layout: [
+                "..........",
+                "..........",
+                "....G.....",
+                "....B.....",
+                "..GB.BG...",
+                "....B.....",
+                "....G.....",
+                "..........",
+                "..........",
+                ".........."
+            ],
+            startHint: {x: 4, y: 8}
+        }
+    ];
 
-    // Game State
+    // Globals
+    let currentMode = 'LEVEL'; // LEVEL, RANDOM, EDITOR
+    let COLS = 10, ROWS = 10;
     let board = []; 
-    let gameState = 'SETUP'; 
+    let gameState = 'SETUP'; // SETUP, PLAYING, WON, EDITOR
     let nextTarget = null; 
     let kangyPos = {x: -1, y: -1};
     let dishMoveAvailable = true; 
     let isMovingDish = false;
     let selectedDishPos = null;
-
-    // Undo & Logging
     let historyStack = [];
-    
-    // DATA LOGGING
-    let sessionLog = []; 
-    let currentGameId = 0;
-    let turnCounter = 0;
+    let currentBrush = 'G'; // Für Editor: G, B, K, E (Empty)
+    let currentLevelData = null; // Speichert aktives Level für Reset
 
-    // UI Elements
+    // UI
     const boardEl = document.getElementById('board');
     const statusEl = document.getElementById('gameStatus');
     const turnInfoEl = document.getElementById('turnInfo');
     const btnMoveDish = document.getElementById('btnMoveDish');
     const btnUndo = document.getElementById('btnUndo');
     const countEl = document.getElementById('dishCount');
-    const modal = document.getElementById('rulesModal');
-    const sizeSelect = document.getElementById('boardSize');
-    const diffSelect = document.getElementById('difficulty');
     const root = document.documentElement;
 
-    // --- LOGGING SYSTEM ---
-    function logAction(actionType, fromX, fromY, toX, toY, details) {
-        sessionLog.push({
-            gameId: currentGameId,
-            turn: turnCounter,
-            action: actionType,
-            fromX: fromX,
-            fromY: fromY,
-            toX: toX,
-            toY: toY,
-            details: details,
-            timestamp: new Date().toISOString()
-        });
-        turnCounter++;
-    }
-
-    function removeLastLog() {
-        if (sessionLog.length > 0) {
-            const lastEntry = sessionLog[sessionLog.length - 1];
-            if (lastEntry.gameId === currentGameId) {
-                sessionLog.pop();
-                turnCounter--;
+    // --- INITIALIZATION ---
+    function populateLevelSelect() {
+        const select = document.getElementById('levelSelect');
+        select.innerHTML = '';
+        let currentGroup = '';
+        
+        LEVEL_DATABASE.forEach((lvl, index) => {
+            if (lvl.group !== currentGroup) {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = lvl.group;
+                select.appendChild(optgroup);
+                currentGroup = lvl.group;
             }
-        }
-    }
-
-    function downloadCSV() {
-        if (sessionLog.length === 0) {
-            alert("Keine Daten zum Exportieren vorhanden.");
-            return;
-        }
-
-        let csvContent = "data:text/csv;charset=utf-8,";
-        csvContent += "Spiel_ID,Zug_Nr,Aktion,Von_X,Von_Y,Nach_X,Nach_Y,Details,Zeitstempel\n";
-
-        sessionLog.forEach(row => {
-            let rowStr = `${row.gameId},${row.turn},${row.action},${row.fromX},${row.fromY},${row.toX},${row.toY},"${row.details}",${row.timestamp}`;
-            csvContent += rowStr + "\n";
+            const opt = document.createElement('option');
+            opt.value = index;
+            opt.innerText = lvl.name;
+            select.lastChild.appendChild(opt);
         });
-
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "kangaroo_spielverlauf.csv");
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
     }
 
-    // --- UNDO SYSTEM ---
-    function saveState() {
-        const state = {
-            board: JSON.parse(JSON.stringify(board)),
-            gameState,
-            nextTarget,
-            kangyPos: {...kangyPos},
-            dishMoveAvailable,
-            isMovingDish: false, 
-            selectedDishPos: null
-        };
-        historyStack.push(state);
-        updateUI();
-    }
-
-    function undoMove() {
-        if (historyStack.length === 0) return;
+    function switchMode(mode) {
+        if (gameState === 'PLAYING' && board.some(row => row.includes('G') || row.includes('B'))) {
+            if (!confirm("Spiel abbrechen und Modus wechseln?")) return;
+        }
         
-        const lastState = historyStack.pop();
+        currentMode = mode;
+        document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.config-panel').forEach(p => p.classList.remove('active'));
         
-        board = lastState.board;
-        gameState = lastState.gameState;
-        nextTarget = lastState.nextTarget;
-        kangyPos = lastState.kangyPos;
-        dishMoveAvailable = lastState.dishMoveAvailable;
-        isMovingDish = false;
-        selectedDishPos = null;
+        event.target.classList.add('active');
+        document.getElementById('panel-' + mode).classList.add('active');
 
-        removeLastLog(); 
-
-        renderBoard();
-        updateUI();
+        if (mode === 'EDITOR') {
+            initEditorBoard();
+        } else {
+            initGame();
+        }
     }
 
-    // --- INIT ---
     function confirmReset() {
-        if (gameState === 'PLAYING' || gameState === 'WON') {
-            const confirmed = confirm("Möchtest du das aktuelle Spiel wirklich beenden und neu mischen?");
-            if (!confirmed) {
-                return; 
-            }
+        if (gameState === 'PLAYING') {
+            if (!confirm("Wirklich neu starten?")) return;
         }
         initGame();
     }
 
     function initGame() {
-        const sizeVal = sizeSelect.value.split('x');
-        COLS = parseInt(sizeVal[0]);
-        ROWS = parseInt(sizeVal[1]);
-        
-        boardEl.style.gridTemplateColumns = `repeat(${COLS}, 1fr)`;
-        boardEl.style.gridTemplateRows = `repeat(${ROWS}, 1fr)`;
-        
-        const maxBoardWidth = Math.min(window.innerWidth - 30, 800);
-        const calcSize = Math.floor(maxBoardWidth / COLS) - 4; 
-        const finalSize = Math.min(50, Math.max(25, calcSize)); 
-        root.style.setProperty('--cell-size', `${finalSize}px`);
-
-        // Check Difficulty / Level
-        isCenterOnly = false;
-        if (diffSelect.value === 'beginner1') {
-            GREEN_COUNT = 6;
-            BLUE_COUNT = 6;
-            isCenterOnly = true;
-        } else if (diffSelect.value === 'beginner2') {
-            GREEN_COUNT = 8;
-            BLUE_COUNT = 8;
-            isCenterOnly = true;
-        } else {
-            const totalCells = COLS * ROWS;
-            let density = 0.38; 
-            if (diffSelect.value === 'low') density = 0.25;
-            if (diffSelect.value === 'high') density = 0.48;
-
-            let totalDishes = Math.floor(totalCells * density);
-            if (totalDishes % 2 !== 0) totalDishes--; 
-
-            GREEN_COUNT = totalDishes / 2;
-            BLUE_COUNT = totalDishes / 2;
-        }
-
-        board = Array(ROWS).fill(null).map(() => Array(COLS).fill(null));
-        gameState = 'SETUP';
-        nextTarget = null;
-        kangyPos = {x: -1, y: -1};
+        historyStack = [];
         dishMoveAvailable = true;
         isMovingDish = false;
         selectedDishPos = null;
-        historyStack = []; 
-        
-        currentGameId++;
-        turnCounter = 1;
+        kangyPos = {x: -1, y: -1};
+        nextTarget = null;
+        currentLevelData = null;
 
-        placeDishesArchitect();
+        if (currentMode === 'LEVEL') {
+            const lvlIndex = document.getElementById('levelSelect').value;
+            const lvl = LEVEL_DATABASE[lvlIndex];
+            currentLevelData = lvl;
+            COLS = lvl.cols; ROWS = lvl.rows;
+            board = Array(ROWS).fill(null).map(() => Array(COLS).fill(null));
+            
+            for(let y=0; y<ROWS; y++) {
+                for(let x=0; x<COLS; x++) {
+                    let char = lvl.layout[y][x];
+                    if (char === 'G') board[y][x] = 'G';
+                    if (char === 'B') board[y][x] = 'B';
+                    if (char === 'K') { board[y][x] = 'K'; kangyPos = {x,y}; }
+                }
+            }
+            gameState = kangyPos.x !== -1 ? 'PLAYING' : 'SETUP';
+
+        } else if (currentMode === 'RANDOM') {
+            const sizeVal = document.getElementById('boardSize').value.split('x');
+            COLS = parseInt(sizeVal[0]); ROWS = parseInt(sizeVal[1]);
+            board = Array(ROWS).fill(null).map(() => Array(COLS).fill(null));
+            generateRandomBoard();
+            gameState = 'SETUP';
+        }
+
+        updateGridCSS();
         renderBoard();
         updateUI();
     }
 
-    function placeDishesArchitect() {
+    // --- RANDOM GENERATOR ---
+    function generateRandomBoard() {
+        const diff = document.getElementById('difficulty').value;
+        const totalCells = COLS * ROWS;
+        let density = diff === 'high' ? 0.45 : (diff === 'beginner' ? 0.2 : 0.35);
+        
+        let totalDishes = Math.floor(totalCells * density);
+        if (totalDishes % 2 !== 0) totalDishes--; 
+        let greenCount = totalDishes / 2;
+        let blueCount = totalDishes / 2;
+
         let deck = [];
-        for(let i=0; i<GREEN_COUNT; i++) deck.push('G');
-        for(let i=0; i<BLUE_COUNT; i++) deck.push('B');
+        for(let i=0; i<greenCount; i++) deck.push('G');
+        for(let i=0; i<blueCount; i++) deck.push('B');
         deck.sort(() => Math.random() - 0.5);
 
         let coords = [];
-        
-        // Define Playable Area based on "isCenterOnly"
-        let padX = isCenterOnly ? Math.max(1, Math.floor(COLS / 4)) : 0;
-        let padY = isCenterOnly ? Math.max(1, Math.floor(ROWS / 4)) : 0;
-
-        for(let y = padY; y < ROWS - padY; y++) {
-            for(let x = padX; x < COLS - padX; x++) {
-                coords.push({x, y});
-            }
+        let pad = diff === 'beginner' ? Math.floor(COLS/4) : 0;
+        for(let y = pad; y < ROWS - pad; y++) {
+            for(let x = pad; x < COLS - pad; x++) { coords.push({x, y}); }
         }
         coords.sort(() => Math.random() - 0.5);
 
-        let retryQueue = [];
-        let coordIndex = 0;
-
-        while(deck.length > 0 && coordIndex < coords.length) {
-            let item = deck.pop();
-            let pos = coords[coordIndex];
-            
-            if (isPlacementAllowed(pos.x, pos.y, item)) {
-                board[pos.y][pos.x] = item;
-            } else {
-                retryQueue.push(item);
-            }
-            coordIndex++;
-        }
-
-        // Fill remaining slots if Architect was too strict
-        let emptySlots = [];
-        for(let y = padY; y < ROWS - padY; y++) {
-            for(let x = padX; x < COLS - padX; x++) {
-                if(board[y][x] === null) emptySlots.push({x,y});
-            }
-        }
-        emptySlots.sort(() => Math.random() - 0.5);
-
-        while(retryQueue.length > 0 && emptySlots.length > 0) {
-            let item = retryQueue.pop();
-            let pos = emptySlots.pop();
-            // Just place it, even if slightly clumpy, to ensure counts match
-            board[pos.y][pos.x] = item;
+        for(let i=0; i<deck.length && i<coords.length; i++) {
+            board[coords[i].y][coords[i].x] = deck[i];
         }
     }
 
-    function isEdge(x, y) {
-        return x === 0 || x === COLS - 1 || y === 0 || y === ROWS - 1;
+    // --- EDITOR MODE ---
+    function initEditorBoard() {
+        const sizeVal = document.getElementById('editorSize').value.split('x');
+        COLS = parseInt(sizeVal[0]); ROWS = parseInt(sizeVal[1]);
+        board = Array(ROWS).fill(null).map(() => Array(COLS).fill(null));
+        kangyPos = {x: -1, y: -1};
+        gameState = 'EDITOR';
+        updateGridCSS();
+        renderBoard();
+        updateUI();
     }
 
-    function isPlacementAllowed(x, y, type) {
-        if (x >= 2 && board[y][x-1] === type && board[y][x-2] === type) return false;
-        if (x < COLS-2 && board[y][x+1] === type && board[y][x+2] === type) return false;
-        if (y >= 2 && board[y-1][x] === type && board[y-2][x] === type) return false;
-        if (y < ROWS-2 && board[y+1][x] === type && board[y+2][x] === type) return false;
+    function setBrush(type) {
+        currentBrush = type;
+        document.querySelectorAll('.brush-btn').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+    }
 
-        // Rand-Regeln gelten nur für den echten Spielfeldrand, nicht für die "Mitte"
-        if (isEdge(x, y)) {
-            let edgeNeighbors = 0;
-            let sameColorNeighbors = 0;
-            const dirs = [[0,1], [0,-1], [1,0], [-1,0], [1,1], [1,-1], [-1,1], [-1,-1]];
-            for (let d of dirs) {
-                let nx = x + d[0];
-                let ny = y + d[1];
-                if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS) {
-                    if (board[ny][nx] !== null) {
-                        if (isEdge(nx, ny)) edgeNeighbors++;
-                        if (board[ny][nx] === type) sameColorNeighbors++;
-                    }
-                }
+    function startCustomGame() {
+        // Validate
+        let g=0, b=0, k=0;
+        for(let y=0; y<ROWS; y++) {
+            for(let x=0; x<COLS; x++) {
+                if(board[y][x]==='G') g++;
+                if(board[y][x]==='B') b++;
+                if(board[y][x]==='K') k++;
             }
-            if (edgeNeighbors >= 3) return false; 
-            if (sameColorNeighbors >= 1) return false;
+        }
+        if (g===0 && b===0) return alert("Das Outback ist komplett leer!");
+        
+        // Handle Imbalance
+        nextTarget = null;
+        if (g > b) nextTarget = 'G';
+        if (b > g) nextTarget = 'B';
+
+        dishMoveAvailable = true;
+        isMovingDish = false;
+        historyStack = [];
+        
+        if (k === 0) {
+            gameState = 'SETUP';
         } else {
-            let sameColorOrthogonal = 0;
-            const orth = [[0,1], [0,-1], [1,0], [-1,0]];
-            for (let d of orth) {
-                let nx = x + d[0];
-                let ny = y + d[1];
-                if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS) {
-                    if (board[ny][nx] === type) sameColorOrthogonal++;
+            gameState = 'PLAYING';
+            // Find Kangy
+            for(let y=0; y<ROWS; y++) {
+                for(let x=0; x<COLS; x++) {
+                    if(board[y][x]==='K') kangyPos = {x,y};
                 }
             }
-            if (sameColorOrthogonal >= 1) return false;
         }
-        return true;
+        
+        // Hide editor controls visually during play
+        document.querySelectorAll('.brush-btn').forEach(b => b.style.pointerEvents = 'none');
+        
+        renderBoard();
+        updateUI();
     }
 
-    // --- GAMEPLAY ---
+    // --- RENDER & LOGIC ---
+    function updateGridCSS() {
+        boardEl.style.gridTemplateColumns = `repeat(${COLS}, 1fr)`;
+        boardEl.style.gridTemplateRows = `repeat(${ROWS}, 1fr)`;
+        const maxBoardWidth = Math.min(window.innerWidth - 30, 800);
+        const calcSize = Math.floor(maxBoardWidth / COLS) - 4; 
+        const finalSize = Math.min(55, Math.max(25, calcSize)); 
+        root.style.setProperty('--cell-size', `${finalSize}px`);
+    }
 
     function renderBoard() {
         boardEl.innerHTML = '';
-        let dishesLeft = 0;
-        let gLeft = 0;
-        let bLeft = 0;
+        let gLeft = 0, bLeft = 0;
 
         for (let y = 0; y < ROWS; y++) {
             for (let x = 0; x < COLS; x++) {
@@ -553,87 +516,107 @@
 
                 if (content === 'G') {
                     const d = document.createElement('div'); d.className = 'dish green'; cell.appendChild(d);
-                    dishesLeft++; gLeft++;
+                    gLeft++;
                 } else if (content === 'B') {
                     const d = document.createElement('div'); d.className = 'dish blue'; cell.appendChild(d);
-                    dishesLeft++; bLeft++;
+                    bLeft++;
                 } else if (content === 'K') {
                     const k = document.createElement('div'); k.className = 'kangy'; k.innerText = '🦘'; cell.appendChild(k);
+                } 
+                // Ghost Kangy Logic
+                else if (gameState === 'SETUP' && currentMode === 'LEVEL' && currentLevelData && currentLevelData.startHint) {
+                    if (currentLevelData.startHint.x === x && currentLevelData.startHint.y === y) {
+                        const gk = document.createElement('div'); gk.className = 'kangy ghost-kangy'; gk.innerText = '🦘'; cell.appendChild(gk);
+                    }
                 }
 
                 cell.onclick = () => handleCellClick(x, y);
 
                 if (gameState === 'PLAYING') {
-                    if (isMovingDish) {
-                        if (selectedDishPos && selectedDishPos.x === x && selectedDishPos.y === y) {
-                            cell.classList.add('selected');
-                        }
-                    } else {
-                        if (isValidJump(kangyPos.x, kangyPos.y, x, y)) {
-                            cell.classList.add('highlight');
-                        }
+                    if (isMovingDish && selectedDishPos && selectedDishPos.x === x && selectedDishPos.y === y) {
+                        cell.classList.add('selected');
+                    } else if (!isMovingDish && isValidJump(kangyPos.x, kangyPos.y, x, y)) {
+                        cell.classList.add('highlight');
                     }
                 }
                 boardEl.appendChild(cell);
             }
         }
-        countEl.innerText = `Grün: ${gLeft} | Blau: ${bLeft}`;
         
-        if (gameState === 'PLAYING' && dishesLeft === 0) {
-            gameState = 'WON';
-            statusEl.innerText = "🏆 SIEG! Das Outback ist leer!";
-            statusEl.style.color = "#66bb6a";
-            btnMoveDish.disabled = true;
-            // Final log
-            logAction("WIN", -1, -1, -1, -1, "Game Won");
-        } else if (gameState === 'PLAYING' && dishesLeft > 0 && !canAnyMovePossible() && !dishMoveAvailable) {
-             statusEl.innerText = "Sackgasse... Versuch 'Zurück' ↩️";
-             statusEl.style.color = "#ef9a9a";
+        if (gameState !== 'EDITOR') {
+            countEl.innerText = `Grün: ${gLeft} | Blau: ${bLeft}`;
+            if (gameState === 'PLAYING' && gLeft===0 && bLeft===0) {
+                gameState = 'WON';
+                statusEl.innerText = "🏆 SIEG! Das Outback ist leer!";
+                statusEl.style.color = "#66bb6a";
+                btnMoveDish.disabled = true;
+            } else if (gameState === 'PLAYING' && (gLeft>0 || bLeft>0) && !canAnyMovePossible() && !dishMoveAvailable) {
+                 statusEl.innerText = "Sackgasse... Versuch 'Zurück' ↩️";
+                 statusEl.style.color = "#ef9a9a";
+            }
+        } else {
+            countEl.innerText = `Baumeister-Modus (G:${gLeft} B:${bLeft})`;
         }
     }
 
     function updateUI() {
         btnUndo.disabled = (historyStack.length === 0);
-        const selects = document.querySelectorAll('select');
-        
-        if (gameState === 'SETUP') {
-            selects.forEach(s => s.disabled = false);
+        document.querySelectorAll('select').forEach(s => s.disabled = (gameState === 'PLAYING' || gameState === 'WON'));
+
+        if (gameState === 'EDITOR') {
+            statusEl.style.color = "#ffcc80";
+            statusEl.innerText = "Baue dein Outback";
+            turnInfoEl.innerText = "Wähle Pinsel und klicke ins Feld";
             btnMoveDish.disabled = true;
-            statusEl.innerText = "Platziere Kangy auf einem freien Feld";
-            turnInfoEl.innerText = isCenterOnly ? "Die Schalen sind in der Mitte zentriert." : "Klick zum Starten";
-        } else {
-            selects.forEach(s => s.disabled = true);
+        } else if (gameState === 'SETUP') {
+            statusEl.style.color = "#ffcc80";
+            statusEl.innerText = nextTarget ? `⚠️ Ungleichgewicht! Start muss ${nextTarget==='G'?'GRÜN':'BLAU'} sein!` : "Platziere Kangy zum Starten";
+            turnInfoEl.innerText = currentLevelData && currentLevelData.startHint ? "Tipp: Nutze den Geister-Kangy 👻" : "Klick auf ein freies Feld";
+            btnMoveDish.disabled = true;
+        } else if (gameState === 'PLAYING') {
             btnMoveDish.disabled = !dishMoveAvailable;
             let targetText = nextTarget === 'G' ? "GRÜN (Futter)" : (nextTarget === 'B' ? "BLAU (Wasser)" : "Freie Wahl");
             
-            if (gameState === 'WON') {
-                 turnInfoEl.innerText = "Alle Schalen übersprungen!";
-            } else if (isMovingDish) {
+            if (isMovingDish) {
                 statusEl.innerText = "Schale verschieben";
-                turnInfoEl.innerText = "Wähle Ziel (1 Feld, auch diagonal)";
+                turnInfoEl.innerText = "Klick auf ein angrenzendes leeres Feld";
                 btnMoveDish.innerText = "❌ Abbrechen";
             } else {
                 statusEl.innerHTML = `Kangy ist am Zug! Ziel: <b>${targetText}</b>`;
-                turnInfoEl.innerText = "Denke an Symmetrie & Blöcke";
+                turnInfoEl.innerText = "Denke an weite Katapult-Sprünge!";
                 btnMoveDish.innerText = "🖐️ Schale verschieben";
             }
+        } else if (gameState === 'WON') {
+             turnInfoEl.innerText = "Fantastische Leistung!";
         }
     }
 
     function handleCellClick(x, y) {
-        if (gameState === 'SETUP') {
+        if (gameState === 'EDITOR') {
+            if (currentBrush === 'K') {
+                // Remove old Kangy
+                for(let r=0; r<ROWS; r++) for(let c=0; c<COLS; c++) if(board[r][c]==='K') board[r][c] = null;
+                board[y][x] = 'K';
+            } else if (currentBrush === 'E') {
+                board[y][x] = null;
+            } else {
+                if (board[y][x] === 'K') return; // Don't overwrite Kangy with dish easily
+                board[y][x] = currentBrush;
+            }
+            renderBoard();
+            updateUI();
+        } 
+        else if (gameState === 'SETUP') {
             if (board[y][x] === null) {
                 saveState(); 
                 board[y][x] = 'K';
                 kangyPos = {x, y};
                 gameState = 'PLAYING';
-                
-                logAction("START", -1, -1, x, y, "Kangy placed");
-                
                 renderBoard();
                 updateUI();
             }
-        } else if (gameState === 'PLAYING') {
+        } 
+        else if (gameState === 'PLAYING') {
             if (isMovingDish) {
                 handleDishMove(x, y);
             } else {
@@ -645,12 +628,30 @@
         }
     }
 
+    // --- MOVE & JUMP LOGIC ---
+    function saveState() {
+        historyStack.push({
+            board: JSON.parse(JSON.stringify(board)),
+            gameState, nextTarget, kangyPos: {...kangyPos},
+            dishMoveAvailable, isMovingDish: false, selectedDishPos: null
+        });
+        updateUI();
+    }
+
+    function undoMove() {
+        if (historyStack.length === 0) return;
+        const s = historyStack.pop();
+        board = s.board; gameState = s.gameState; nextTarget = s.nextTarget;
+        kangyPos = s.kangyPos; dishMoveAvailable = s.dishMoveAvailable;
+        isMovingDish = false; selectedDishPos = null;
+        renderBoard(); updateUI();
+    }
+
     function toggleDishMoveMode() {
         if (!dishMoveAvailable) return;
         isMovingDish = !isMovingDish;
         selectedDishPos = null;
-        updateUI();
-        renderBoard();
+        updateUI(); renderBoard();
     }
 
     function handleDishMove(x, y) {
@@ -662,120 +663,89 @@
             const dy = Math.abs(y - selectedDishPos.y);
             if (dx <= 1 && dy <= 1 && (dx+dy > 0)) {
                 saveState(); 
-                
-                const color = board[selectedDishPos.y][selectedDishPos.x];
-                logAction("MOVE_DISH", selectedDishPos.x, selectedDishPos.y, x, y, `Moved ${color}`);
-
                 board[y][x] = board[selectedDishPos.y][selectedDishPos.x];
                 board[selectedDishPos.y][selectedDishPos.x] = null;
-                dishMoveAvailable = false;
-                isMovingDish = false;
-                selectedDishPos = null;
-                renderBoard();
-                updateUI();
+                dishMoveAvailable = false; isMovingDish = false; selectedDishPos = null;
+                renderBoard(); updateUI();
             }
         }
     }
 
-    // --- PHYSICS ---
     function isValidJump(fromX, fromY, toX, toY) {
         if (board[toY][toX] !== null) return false;
-        const dx = toX - fromX;
-        const dy = toY - fromY;
+        const dx = toX - fromX; const dy = toY - fromY;
         if (dx === 0 && dy === 0) return false;
         if (dx !== 0 && dy !== 0 && Math.abs(dx) !== Math.abs(dy)) return false;
 
         const stepX = dx === 0 ? 0 : dx / Math.abs(dx);
         const stepY = dy === 0 ? 0 : dy / Math.abs(dy);
 
-        let currentX = fromX + stepX;
-        let currentY = fromY + stepY;
-        let emptyBefore = 0;
-        let emptyAfter = 0;
-        let dishesInMiddle = [];
-        let state = 0; 
+        let curX = fromX + stepX; let curY = fromY + stepY;
+        let empBefore = 0, empAfter = 0, dishes = [], state = 0; 
 
-        while (currentX !== toX || currentY !== toY) {
-            const content = board[currentY][currentX];
+        while (curX !== toX || curY !== toY) {
+            const c = board[curY][curX];
             if (state === 0) {
-                if (content === null) emptyBefore++;
-                else if (content === 'G' || content === 'B') { state = 1; dishesInMiddle.push(content); }
+                if (c === null) empBefore++;
+                else if (c === 'G' || c === 'B') { state = 1; dishes.push(c); }
                 else return false; 
             } else if (state === 1) {
-                if (content === 'G' || content === 'B') dishesInMiddle.push(content);
-                else if (content === null) { state = 2; emptyAfter++; }
+                if (c === 'G' || c === 'B') dishes.push(c);
+                else if (c === null) { state = 2; empAfter++; }
                 else return false;
             } else if (state === 2) {
-                if (content === null) emptyAfter++;
+                if (c === null) empAfter++;
                 else return false; 
             }
-            currentX += stepX;
-            currentY += stepY;
+            curX += stepX; curY += stepY;
         }
 
-        if (dishesInMiddle.length === 0) return false;
-        if (emptyBefore !== emptyAfter) return false;
-        if (nextTarget !== null && dishesInMiddle[0] !== nextTarget) return false;
-        for (let i = 0; i < dishesInMiddle.length - 1; i++) {
-            if (dishesInMiddle[i] === dishesInMiddle[i+1]) return false;
+        if (dishes.length === 0) return false;
+        if (empBefore !== empAfter) return false;
+        if (nextTarget !== null && dishes[0] !== nextTarget) return false;
+        for (let i = 0; i < dishes.length - 1; i++) {
+            if (dishes[i] === dishes[i+1]) return false;
         }
         return true;
     }
 
     function executeJump(toX, toY) {
-        const dx = toX - kangyPos.x;
-        const dy = toY - kangyPos.y;
+        const dx = toX - kangyPos.x; const dy = toY - kangyPos.y;
         const stepX = dx === 0 ? 0 : dx / Math.abs(dx);
         const stepY = dy === 0 ? 0 : dy / Math.abs(dy);
-        let currentX = kangyPos.x + stepX;
-        let currentY = kangyPos.y + stepY;
+        let curX = kangyPos.x + stepX; let curY = kangyPos.y + stepY;
         let lastColor = null;
-        let skippedDishes = [];
 
-        while (currentX !== toX || currentY !== toY) {
-            const c = board[currentY][currentX];
-            if (c === 'G' || c === 'B') {
-                lastColor = c;
-                skippedDishes.push(c);
-                board[currentY][currentX] = null;
-            }
-            currentX += stepX;
-            currentY += stepY;
+        while (curX !== toX || curY !== toY) {
+            const c = board[curY][curX];
+            if (c === 'G' || c === 'B') { lastColor = c; board[curY][curX] = null; }
+            curX += stepX; curY += stepY;
         }
 
-        logAction("JUMP", kangyPos.x, kangyPos.y, toX, toY, `Skipped: ${skippedDishes.join('+')}`);
-
         board[kangyPos.y][kangyPos.x] = null;
-        board[toY][toX] = 'K';
-        kangyPos = {x: toX, y: toY};
+        board[toY][toX] = 'K'; kangyPos = {x: toX, y: toY};
         
         if (lastColor === 'G') nextTarget = 'B';
         else if (lastColor === 'B') nextTarget = 'G';
 
         dishMoveAvailable = true; 
-        renderBoard();
-        updateUI();
+        renderBoard(); updateUI();
     }
 
     function canAnyMovePossible() {
-        for(let y=0; y<ROWS; y++){
-            for(let x=0; x<COLS; x++){
-                if(board[y][x] === null) {
-                    if(isValidJump(kangyPos.x, kangyPos.y, x, y)) return true;
-                }
+        for(let y=0; y<ROWS; y++) {
+            for(let x=0; x<COLS; x++) {
+                if(board[y][x] === null && isValidJump(kangyPos.x, kangyPos.y, x, y)) return true;
             }
         }
         return false;
     }
 
-    function openRules() { modal.style.display = "block"; }
-    function closeRules() { 
-        modal.style.display = "none";
-        localStorage.setItem('kangy_playtest_v2', 'true');
-    }
-    window.onclick = (e) => { if (e.target == modal) closeRules(); }
-    if (!localStorage.getItem('kangy_playtest_v2')) openRules();
-
+    // Modal
+    function openRules() {} // Platzhalter, falls benötigt
+    
+    // START
+    populateLevelSelect();
     initGame();
 
 </script>
