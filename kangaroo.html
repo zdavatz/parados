@@ -146,6 +146,27 @@
         .bottom-zone { margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; width: 100%; display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; }
         .btn-reset { background-color: #c62828; color: white; opacity: 0.9; }
         .btn-rules { background-color: #0277bd; color: white; }
+
+        /* MODAL */
+        .modal {
+            display: none; position: fixed; z-index: 2000; left: 0; top: 0;
+            width: 100%; height: 100%; background-color: var(--modal-bg);
+            backdrop-filter: blur(3px);
+        }
+        .modal-content {
+            background-color: #fff; color: #37474f;
+            margin: 5% auto; padding: 25px; border-radius: 10px;
+            width: 90%; max-width: 550px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+            max-height: 85vh; overflow-y: auto;
+            line-height: 1.5;
+        }
+        .close-btn { background-color: #37474f; color: white; width: 100%; margin-top: 20px; justify-content: center; padding: 12px;}
+        .close { float: right; font-size: 24px; cursor: pointer; color: #90a4ae; }
+        .modal-content h2 { border-bottom: 2px solid #eceff1; padding-bottom: 10px; margin-top: 0; }
+        .modal-content h3 { color: #d84315; margin-top: 15px; margin-bottom: 5px; }
+        .modal-content ul { padding-left: 20px; }
+        .modal-content li { margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -213,6 +234,28 @@
         <div class="bottom-zone">
             <button class="btn-rules" onclick="openRules()">❓ Regeln</button>
             <button class="btn-reset" onclick="confirmReset()">⚠️ Neustart</button>
+        </div>
+    </div>
+
+    <div id="rulesModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeRules()">&times;</span>
+            <h2>Spielregeln</h2>
+            
+            <h3>Das Ziel</h3>
+            <p>Das Spielfeld leerräumen. Kangy gewinnt, wenn alle Schalen übersprungen wurden.</p>
+
+            <h3>Die Sprung-Regeln</h3>
+            <ul>
+                <li><b>Freier Start & Abwechslung:</b> Du entscheidest frei, ob du deinen ersten Sprung über eine <span style="color:#2e7d32; font-weight:bold;">GRÜNE</span> oder eine <span style="color:#1565c0; font-weight:bold;">BLAUE</span> Schale machst. Danach muss die Farbe jedoch strikt abwechseln (Grün, Blau, Grün, Blau...).</li>
+                <li><b>Symmetrie:</b> Der Absprung-Abstand zur Schale muss exakt gleich dem Lande-Abstand nach der Schale sein. (z.B. 2 Felder Anlauf = 2 Felder nach der Schale landen).</li>
+                <li><b>Block-Sprünge:</b> Du kannst über ganze Gruppen von Schalen in einem einzigen großen Sprung hüpfen, wenn sie lückenlos nebeneinander liegen. <b>Wichtig:</b> Auch innerhalb dieses Blocks muss die Farb-Abwechslung korrekt eingehalten werden (z.B. eine Reihe aus Grün-Blau-Grün)!</li>
+            </ul>
+
+            <h3>Der Helfer</h3>
+            <p>Vor <b>jedem</b> Sprung darfst du genau eine Schale um 1 Feld (auch diagonal) verschieben. Nutze diesen Zug weise, um Lücken zu schließen oder Sprünge vorzubereiten!</p>
+            
+            <button class="close-btn" onclick="closeRules()">Verstanden, los geht's!</button>
         </div>
     </div>
 
@@ -322,6 +365,7 @@
     const btnUndo = document.getElementById('btnUndo');
     const countEl = document.getElementById('dishCount');
     const root = document.documentElement;
+    const modal = document.getElementById('rulesModal');
 
     // --- INITIALIZATION ---
     function populateLevelSelect() {
@@ -741,8 +785,18 @@
         return false;
     }
 
-    // Modal
-    function openRules() {} // Platzhalter, falls benötigt
+    // Modal Funktionen repariert
+    function openRules() { 
+        modal.style.display = "block"; 
+    }
+    
+    function closeRules() { 
+        modal.style.display = "none"; 
+    }
+    
+    window.onclick = (e) => { 
+        if (e.target == modal) closeRules(); 
+    }
     
     // START
     populateLevelSelect();
