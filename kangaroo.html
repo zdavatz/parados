@@ -157,17 +157,19 @@
         .modal-content {
             background-color: #fff; color: #37474f;
             margin: 5% auto; padding: 25px; border-radius: 10px;
-            width: 90%; max-width: 550px;
+            width: 90%; max-width: 600px;
             box-shadow: 0 15px 40px rgba(0,0,0,0.6);
             max-height: 85vh; overflow-y: auto;
             line-height: 1.5;
         }
         .close-btn { background-color: #37474f; color: white; width: 100%; margin-top: 20px; justify-content: center; padding: 12px;}
         .close { float: right; font-size: 24px; cursor: pointer; color: #90a4ae; }
-        .modal-content h2 { border-bottom: 2px solid #eceff1; padding-bottom: 10px; margin-top: 0; }
-        .modal-content h3 { color: #d84315; margin-top: 15px; margin-bottom: 5px; }
-        .modal-content ul { padding-left: 20px; }
-        .modal-content li { margin-bottom: 10px; }
+        .modal-content h2 { border-bottom: 2px solid #eceff1; padding-bottom: 10px; margin-top: 0; color: #263238;}
+        .modal-content h3 { color: #d84315; margin-top: 20px; margin-bottom: 5px; border-bottom: 1px solid #cfd8dc; padding-bottom: 5px;}
+        .modal-content p { margin-bottom: 15px; font-size: 0.95em; }
+        .modal-content ul { padding-left: 20px; margin-top: 5px; }
+        .modal-content li { margin-bottom: 10px; font-size: 0.95em; }
+        .emphasis { font-weight: bold; color: #c62828; }
     </style>
 </head>
 <body>
@@ -242,20 +244,27 @@
     <div id="rulesModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeRules()">&times;</span>
-            <h2>Spielregeln</h2>
+            <h2>Das Ungeduldige Känguru</h2>
             
             <h3>Das Ziel</h3>
-            <p>Das Spielfeld leerräumen. Kangy gewinnt, wenn alle Schalen übersprungen wurden.</p>
+            <p>Räume alle Schalen aus dem Spielbereich (dem "Outback"), indem du über sie springst.</p>
 
-            <h3>Die Sprung-Regeln</h3>
+            <h3>Spielablauf</h3>
             <ul>
-                <li><b>Freier Start & Abwechslung:</b> Du entscheidest frei, ob du deinen ersten Sprung über eine <span style="color:#2e7d32; font-weight:bold;">GRÜNE</span> oder eine <span style="color:#1565c0; font-weight:bold;">BLAUE</span> Schale machst. Danach muss die Farbe jedoch strikt abwechseln (Grün, Blau, Grün, Blau...).</li>
-                <li><b>Symmetrie:</b> Der Absprung-Abstand zur Schale muss exakt gleich dem Lande-Abstand nach der Schale sein. (z.B. 2 Felder Anlauf = 2 Felder nach der Schale landen).</li>
-                <li><b>Block-Sprünge:</b> Du kannst über ganze Gruppen von Schalen in einem einzigen großen Sprung hüpfen, wenn sie lückenlos nebeneinander liegen. <b>Wichtig:</b> Auch innerhalb dieses Blocks muss die Farb-Abwechslung korrekt eingehalten werden (z.B. eine Reihe aus Grün-Blau-Grün)!</li>
+                <li>Du entscheidest, wo Kangy startet und ob sie zuerst über eine blaue oder grüne Schale springt.</li>
+                <li>Nach dem ersten Sprung müssen die Farben <b>immer abwechseln</b>. Auch wenn du über eine Gruppe von Schalen springst, muss der Farbwechsel beibehalten werden.</li>
+                <li>Die Schalen in einer solchen Gruppe müssen direkt nebeneinander in einer Linie liegen (keine Lücken!).</li>
+                <li>In allen Fällen muss die Entfernung zwischen Kangys Absprungfeld und dem Landefeld <b>exakt gleich sein</b> (Symmetrie / Katapult-Sprung).</li>
             </ul>
 
-            <h3>Der Helfer</h3>
-            <p>Vor <b>jedem</b> Sprung darfst du genau eine Schale um 1 Feld (auch diagonal) verschieben. Nutze diesen Zug weise, um Lücken zu schließen oder Sprünge vorzubereiten!</p>
+            <h3>Wichtig!</h3>
+            <p>Vor JEDEM Sprung darfst (und solltest!) du genau eine beliebige Schale um ein Feld in eine beliebige Richtung (auch diagonal) verschieben.</p>
+            <p>Ein Sieg ist ohne diese Züge nicht möglich... Erfahrene Spieler verschieben Schalen oft schon lange bevor Kangy diesen Teil des Outbacks erreicht.</p>
+
+            <h3>Taktische Tipps</h3>
+            <p>Die Wahl von Kangys Startposition ist eine deiner wichtigsten Entscheidungen. Wenn du einen Bereich im Outback entdeckst, in dem die Schalen bereits abwechselnd liegen, ist es eine gute Idee, dort zu starten.</p>
+            <p>Nutze diese "freien" Züge (Züge, bei denen du keine Schalen für Kangys direkten Weg verschieben musst), um andere Schalen an Positionen zu bringen, die Kangy später – vielleicht viel später! – helfen werden.</p>
+            <p>Ein genereller Rat: Versuche, die Schalen an den Rändern "aufzuräumen" und bewege alles von den Ecken weg, wann immer du kannst.</p>
             
             <button class="close-btn" onclick="closeRules()">Verstanden, los geht's!</button>
         </div>
@@ -828,11 +837,11 @@
         let skippedDishes = [];
 
         while (curX !== toX || curY !== toY) {
-            const c = board[curY][curX];
+            const c = board[currentY][currentX];
             if (c === 'G' || c === 'B') { 
                 lastColor = c; 
                 skippedDishes.push(c);
-                board[curY][curX] = null; // FIXED HERE IN PREVIOUS STEP
+                board[currentY][currentX] = null; 
             }
             curX += stepX; curY += stepY;
         }
@@ -864,14 +873,14 @@
     
     function closeRules() { 
         modal.style.display = "none"; 
-        localStorage.setItem('kangy_master_v1', 'true');
+        localStorage.setItem('kangy_master_v2', 'true');
     }
     
     window.onclick = (e) => { 
         if (e.target == modal) closeRules(); 
     }
     
-    if (!localStorage.getItem('kangy_master_v1')) openRules();
+    if (!localStorage.getItem('kangy_master_v2')) openRules();
     
     // START
     populateLevelSelect();
