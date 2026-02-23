@@ -828,11 +828,11 @@
         let skippedDishes = [];
 
         while (curX !== toX || curY !== toY) {
-            const c = board[currentY][currentX];
+            const c = board[curY][curX];
             if (c === 'G' || c === 'B') { 
                 lastColor = c; 
                 skippedDishes.push(c);
-                board[currentY][currentX] = null; 
+                board[curY][curX] = null; // FIXED HERE IN PREVIOUS STEP
             }
             curX += stepX; curY += stepY;
         }
@@ -864,11 +864,14 @@
     
     function closeRules() { 
         modal.style.display = "none"; 
+        localStorage.setItem('kangy_master_v1', 'true');
     }
     
     window.onclick = (e) => { 
         if (e.target == modal) closeRules(); 
     }
+    
+    if (!localStorage.getItem('kangy_master_v1')) openRules();
     
     // START
     populateLevelSelect();
