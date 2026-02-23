@@ -146,6 +146,7 @@
         .bottom-zone { margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; width: 100%; display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; }
         .btn-reset { background-color: #c62828; color: white; opacity: 0.9; }
         .btn-rules { background-color: #0277bd; color: white; }
+        .btn-csv { background-color: #2e7d32; color: white; opacity: 0.9; }
 
         /* MODAL */
         .modal {
@@ -234,6 +235,7 @@
         <div class="bottom-zone">
             <button class="btn-rules" onclick="openRules()">❓ Regeln</button>
             <button class="btn-reset" onclick="confirmReset()">⚠️ Neustart</button>
+            <button class="btn-csv" onclick="downloadCSV()">💾 CSV Speichern</button>
         </div>
     </div>
 
@@ -356,6 +358,11 @@
     let historyStack = [];
     let currentBrush = 'G'; // Für Editor: G, B, K, E (Empty)
     let currentLevelData = null; // Speichert aktives Level für Reset
+    
+    // DATA LOGGING
+    let sessionLog = []; 
+    let currentGameId = 0;
+    let turnCounter = 0;
 
     // UI
     const boardEl = document.getElementById('board');
@@ -366,6 +373,56 @@
     const countEl = document.getElementById('dishCount');
     const root = document.documentElement;
     const modal = document.getElementById('rulesModal');
+
+    // --- LOGGING SYSTEM ---
+    function logAction(actionType, fromX, fromY, toX, toY, details) {
+        sessionLog.push({
+            gameId: currentGameId,
+            mode: currentMode,
+            turn: turnCounter,
+            action: actionType,
+            fromX: fromX,
+            fromY: fromY,
+            toX: toX,
+            toY: toY,
+            details: details,
+            timestamp: new Date().toISOString()
+        });
+        turnCounter++;
+    }
+
+    function removeLastLog() {
+        if (sessionLog.length > 0) {
+            const lastEntry = sessionLog[sessionLog.length - 1];
+            if (lastEntry.gameId === currentGameId) {
+                sessionLog.pop();
+                turnCounter--;
+            }
+        }
+    }
+
+    function downloadCSV() {
+        if (sessionLog.length === 0) {
+            alert("Keine Daten zum Exportieren vorhanden.");
+            return;
+        }
+
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "Spiel_ID,Modus,Zug_Nr,Aktion,Von_X,Von_Y,Nach_X,Nach_Y,Details,Zeitstempel\n";
+
+        sessionLog.forEach(row => {
+            let rowStr = `${row.gameId},${row.mode},${row.turn},${row.action},${row.fromX},${row.fromY},${row.toX},${row.toY},"${row.details}",${row.timestamp}`;
+            csvContent += rowStr + "\n";
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "duk_spielverlauf.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
 
     // --- INITIALIZATION ---
     function populateLevelSelect() {
@@ -421,6 +478,9 @@
         kangyPos = {x: -1, y: -1};
         nextTarget = null;
         currentLevelData = null;
+        
+        currentGameId++;
+        turnCounter = 1;
 
         if (currentMode === 'LEVEL') {
             const lvlIndex = document.getElementById('levelSelect').value;
@@ -438,6 +498,7 @@
                 }
             }
             gameState = kangyPos.x !== -1 ? 'PLAYING' : 'SETUP';
+            if (gameState === 'PLAYING') logAction("START", -1, -1, kangyPos.x, kangyPos.y, "Auto Kangy placed");
 
         } else if (currentMode === 'RANDOM') {
             const sizeVal = document.getElementById('boardSize').value.split('x');
@@ -499,7 +560,6 @@
     }
 
     function startCustomGame() {
-        // Validate
         let g=0, b=0, k=0;
         for(let y=0; y<ROWS; y++) {
             for(let x=0; x<COLS; x++) {
@@ -510,7 +570,6 @@
         }
         if (g===0 && b===0) return alert("Das Outback ist komplett leer!");
         
-        // Handle Imbalance
         nextTarget = null;
         if (g > b) nextTarget = 'G';
         if (b > g) nextTarget = 'B';
@@ -519,19 +578,21 @@
         isMovingDish = false;
         historyStack = [];
         
+        currentGameId++;
+        turnCounter = 1;
+
         if (k === 0) {
             gameState = 'SETUP';
         } else {
             gameState = 'PLAYING';
-            // Find Kangy
             for(let y=0; y<ROWS; y++) {
                 for(let x=0; x<COLS; x++) {
                     if(board[y][x]==='K') kangyPos = {x,y};
                 }
             }
+            logAction("START", -1, -1, kangyPos.x, kangyPos.y, "Editor Kangy placed");
         }
         
-        // Hide editor controls visually during play
         document.querySelectorAll('.brush-btn').forEach(b => b.style.pointerEvents = 'none');
         
         renderBoard();
@@ -567,7 +628,6 @@
                 } else if (content === 'K') {
                     const k = document.createElement('div'); k.className = 'kangy'; k.innerText = '🦘'; cell.appendChild(k);
                 } 
-                // Ghost Kangy Logic
                 else if (gameState === 'SETUP' && currentMode === 'LEVEL' && currentLevelData && currentLevelData.startHint) {
                     if (currentLevelData.startHint.x === x && currentLevelData.startHint.y === y) {
                         const gk = document.createElement('div'); gk.className = 'kangy ghost-kangy'; gk.innerText = '🦘'; cell.appendChild(gk);
@@ -594,6 +654,7 @@
                 statusEl.innerText = "🏆 SIEG! Das Outback ist leer!";
                 statusEl.style.color = "#66bb6a";
                 btnMoveDish.disabled = true;
+                logAction("WIN", -1, -1, -1, -1, "Game Won");
             } else if (gameState === 'PLAYING' && (gLeft>0 || bLeft>0) && !canAnyMovePossible() && !dishMoveAvailable) {
                  statusEl.innerText = "Sackgasse... Versuch 'Zurück' ↩️";
                  statusEl.style.color = "#ef9a9a";
@@ -638,13 +699,12 @@
     function handleCellClick(x, y) {
         if (gameState === 'EDITOR') {
             if (currentBrush === 'K') {
-                // Remove old Kangy
                 for(let r=0; r<ROWS; r++) for(let c=0; c<COLS; c++) if(board[r][c]==='K') board[r][c] = null;
                 board[y][x] = 'K';
             } else if (currentBrush === 'E') {
                 board[y][x] = null;
             } else {
-                if (board[y][x] === 'K') return; // Don't overwrite Kangy with dish easily
+                if (board[y][x] === 'K') return; 
                 board[y][x] = currentBrush;
             }
             renderBoard();
@@ -656,6 +716,7 @@
                 board[y][x] = 'K';
                 kangyPos = {x, y};
                 gameState = 'PLAYING';
+                logAction("START", -1, -1, x, y, "Kangy placed");
                 renderBoard();
                 updateUI();
             }
@@ -688,6 +749,7 @@
         board = s.board; gameState = s.gameState; nextTarget = s.nextTarget;
         kangyPos = s.kangyPos; dishMoveAvailable = s.dishMoveAvailable;
         isMovingDish = false; selectedDishPos = null;
+        removeLastLog();
         renderBoard(); updateUI();
     }
 
@@ -707,6 +769,10 @@
             const dy = Math.abs(y - selectedDishPos.y);
             if (dx <= 1 && dy <= 1 && (dx+dy > 0)) {
                 saveState(); 
+                
+                const color = board[selectedDishPos.y][selectedDishPos.x];
+                logAction("MOVE_DISH", selectedDishPos.x, selectedDishPos.y, x, y, `Moved ${color}`);
+
                 board[y][x] = board[selectedDishPos.y][selectedDishPos.x];
                 board[selectedDishPos.y][selectedDishPos.x] = null;
                 dishMoveAvailable = false; isMovingDish = false; selectedDishPos = null;
@@ -759,12 +825,19 @@
         const stepY = dy === 0 ? 0 : dy / Math.abs(dy);
         let curX = kangyPos.x + stepX; let curY = kangyPos.y + stepY;
         let lastColor = null;
+        let skippedDishes = [];
 
         while (curX !== toX || curY !== toY) {
-            const c = board[curY][curX];
-            if (c === 'G' || c === 'B') { lastColor = c; board[curY][curX] = null; }
+            const c = board[currentY][currentX];
+            if (c === 'G' || c === 'B') { 
+                lastColor = c; 
+                skippedDishes.push(c);
+                board[currentY][currentX] = null; 
+            }
             curX += stepX; curY += stepY;
         }
+
+        logAction("JUMP", kangyPos.x, kangyPos.y, toX, toY, `Skipped: ${skippedDishes.join('+')}`);
 
         board[kangyPos.y][kangyPos.x] = null;
         board[toY][toX] = 'K'; kangyPos = {x: toX, y: toY};
@@ -785,7 +858,6 @@
         return false;
     }
 
-    // Modal Funktionen repariert
     function openRules() { 
         modal.style.display = "block"; 
     }
