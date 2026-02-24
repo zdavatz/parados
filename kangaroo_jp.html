@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>せっかちなカンガルー 🦘</title>
+    <style>
+        :root {
+            --bg-color: #e3c4a8;
+            --grid-color: #cfb096;
+            --green-dish: #2e7d32;
+            --blue-dish: #1565c0;
+            --kangy-color: #d84315;
+            --modal-bg: rgba(0, 0, 0, 0.9);
+            --cell-size: 45px;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #263238;
+            color: #eceff1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 10px;
+        }
+
+        h1 { margin: 10px 0 5px 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); font-size: 1.8em; }
+        .subtitle { font-size: 0.9em; color: #b0bec5; margin-bottom: 15px; font-style: italic; }
+
+        .game-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        /* MODE SWITCHER */
+        .mode-tabs {
+            display: flex;
+            width: 100%;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+        .mode-tab {
+            flex: 1;
+            padding: 10px;
+            background: #37474f;
+            border: 1px solid #546e7a;
+            color: white;
+            cursor: pointer;
+            border-radius: 6px 6px 0 0;
+            font-weight: bold;
+            text-align: center;
+            transition: background 0.2s;
+        }
+        .mode-tab.active { background: #ff9800; color: #263238; border-color: #ff9800; }
+
+        /* TOP BAR */
+        .top-bar {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+            margin-bottom: 10px;
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 0 0 6px 6px;
+            box-sizing: border-box;
+        }
+        
+        .config-panel { display: none; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center;}
+        .config-panel.active { display: flex; }
+        
+        select { background: #455a64; color: white; border: 1px solid #78909c; padding: 6px; border-radius: 4px; font-size: 0.9em; }
+        select:disabled { opacity: 0.5; cursor: not-allowed; border-color: #546e7a; }
+
+        /* EDITOR PALETTE */
+        .editor-palette {
+            display: flex; gap: 10px; align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 20px;
+        }
+        .brush-btn {
+            width: 35px; height: 35px; border-radius: 50%; border: 2px solid transparent; cursor: pointer;
+            display: flex; justify-content: center; align-items: center; font-size: 1.2em;
+        }
+        .brush-btn.active { border-color: #ffeb3b; box-shadow: 0 0 10px rgba(255,235,59,0.5); transform: scale(1.1);}
+        .brush-g { background: radial-gradient(circle at 30% 30%, #66bb6a, var(--green-dish)); }
+        .brush-b { background: radial-gradient(circle at 30% 30%, #42a5f5, var(--blue-dish)); }
+        .brush-k { background: #e65100; }
+        .brush-e { background: #eceff1; color: black; font-size: 0.9em; font-weight: bold;}
+
+        /* STATUS & CONTROLS */
+        .status-panel {
+            background: rgba(0, 0, 0, 0.25); padding: 12px; border-radius: 8px; text-align: center;
+            width: 100%; margin-bottom: 15px; border-left: 4px solid #ff9800; box-sizing: border-box;
+        }
+        .status-text { font-size: 1.1em; font-weight: bold; color: #ffcc80; margin-bottom: 4px; }
+        .sub-status { font-size: 0.9em; color: #cfd8dc; }
+
+        .main-controls { display: flex; gap: 12px; margin-bottom: 15px; width: 100%; justify-content: center; }
+
+        button {
+            padding: 8px 14px; cursor: pointer; border: none; border-radius: 6px; font-weight: 600; font-size: 0.95em;
+            transition: all 0.2s; box-shadow: 0 4px 0 rgba(0,0,0,0.3); display: flex; align-items: center; gap: 6px;
+        }
+        button:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.3); }
+        button:disabled { opacity: 0.5; cursor: default; box-shadow: none; transform: none; background-color: #546e7a !important; }
+
+        .btn-move { background-color: #8e24aa; color: white; flex-grow: 1; justify-content: center; max-width: 200px;}
+        .btn-undo { background-color: #fbc02d; color: #37474f; min-width: 90px; justify-content: center;}
+        .btn-start { background-color: #43a047; color: white; }
+
+        /* BOARD */
+        .board {
+            display: grid; gap: 3px; background-color: var(--bg-color); padding: 10px;
+            border-radius: 6px; border: 6px solid #5d4037; box-shadow: 0 10px 25px rgba(0,0,0,0.5); margin-bottom: 10px;
+        }
+        .cell {
+            width: var(--cell-size); height: var(--cell-size); background-color: rgba(255,255,255,0.15);
+            border-radius: 4px; display: flex; justify-content: center; align-items: center; cursor: pointer; position: relative; user-select: none;
+        }
+        .cell:hover { background-color: rgba(255,255,255,0.3); }
+
+        .dish {
+            width: 60%; height: 60%; border-radius: 50%; border: 2px solid rgba(255,255,255,0.8);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.4); pointer-events: none;
+        }
+        .dish.green { background: radial-gradient(circle at 30% 30%, #66bb6a, var(--green-dish)); }
+        .dish.blue { background: radial-gradient(circle at 30% 30%, #42a5f5, var(--blue-dish)); }
+        
+        .kangy {
+            font-size: calc(var(--cell-size) * 0.75); z-index: 10; filter: drop-shadow(0 3px 3px rgba(0,0,0,0.5));
+            pointer-events: none; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .ghost-kangy { opacity: 0.4; filter: grayscale(50%); animation: float 2s infinite ease-in-out; }
+        @keyframes float { 0% {transform: translateY(0px);} 50% {transform: translateY(-5px);} 100% {transform: translateY(0px);} }
+
+        .selected { outline: 3px dashed #ffeb3b; box-shadow: inset 0 0 10px rgba(255, 235, 59, 0.4); z-index: 5; }
+        .highlight { background-color: rgba(100, 255, 218, 0.25); box-shadow: inset 0 0 8px rgba(100, 255, 218, 0.4); }
+        .highlight::after { content: ''; width: 20%; height: 20%; background-color: rgba(100, 255, 218, 0.9); border-radius: 50%; }
+
+        .bottom-zone { margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; width: 100%; display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; }
+        .btn-reset { background-color: #c62828; color: white; opacity: 0.9; }
+        .btn-rules { background-color: #0277bd; color: white; }
+        .btn-csv { background-color: #2e7d32; color: white; opacity: 0.9; }
+
+        /* MODAL */
+        .modal {
+            display: none; position: fixed; z-index: 2000; left: 0; top: 0;
+            width: 100%; height: 100%; background-color: var(--modal-bg);
+            backdrop-filter: blur(3px);
+        }
+        .modal-content {
+            background-color: #fff; color: #37474f;
+            margin: 5% auto; padding: 25px; border-radius: 10px;
+            width: 90%; max-width: 600px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+            max-height: 85vh; overflow-y: auto;
+            line-height: 1.6;
+        }
+        .close-btn { background-color: #37474f; color: white; width: 100%; margin-top: 20px; justify-content: center; padding: 12px;}
+        .close { float: right; font-size: 24px; cursor: pointer; color: #90a4ae; }
+        .modal-content h2 { border-bottom: 2px solid #eceff1; padding-bottom: 10px; margin-top: 0; color: #263238;}
+        .modal-content h3 { color: #d84315; margin-top: 20px; margin-bottom: 5px; border-bottom: 1px solid #cfd8dc; padding-bottom: 5px;}
+        .modal-content p { margin-bottom: 15px; font-size: 0.95em; }
+        .modal-content ul { padding-left: 20px; margin-top: 5px; }
+        .modal-content li { margin-bottom: 10px; font-size: 0.95em; }
+        .emphasis { font-weight: bold; color: #c62828; }
+    </style>
+</head>
+<body>
+
+    <h1>せっかちなカンガルー 🦘</h1>
+    <div class="subtitle">The Impatient Kangaroo</div>
+
+    <div class="game-wrapper">
+        
+        <div class="mode-tabs">
+            <div class="mode-tab active" onclick="switchMode('LEVEL')">🏆 レベル</div>
+            <div class="mode-tab" onclick="switchMode('RANDOM')">🎲 ランダム</div>
+            <div class="mode-tab" onclick="switchMode('EDITOR')">🛠️ エディター</div>
+        </div>
+
+        <div class="top-bar">
+            <div id="panel-LEVEL" class="config-panel active">
+                <select id="levelSelect" onchange="confirmReset()">
+                    </select>
+                <button class="btn-start" onclick="confirmReset()">スタート</button>
+            </div>
+
+            <div id="panel-RANDOM" class="config-panel">
+                <select id="boardSize">
+                    <option value="10x10" selected>10 x 10</option>
+                    <option value="12x12">12 x 12</option>
+                </select>
+                <select id="difficulty">
+                    <option value="beginner">中央 (簡単)</option>
+                    <option value="normal" selected>普通</option>
+                    <option value="high">難しい</option>
+                </select>
+                <button class="btn-start" onclick="confirmReset()">生成する</button>
+            </div>
+
+            <div id="panel-EDITOR" class="config-panel">
+                <select id="editorSize" onchange="initEditorBoard()">
+                    <option value="8x8">8 x 8</option>
+                    <option value="10x10" selected>10 x 10</option>
+                    <option value="12x12">12 x 12</option>
+                </select>
+                <div class="editor-palette">
+                    <div class="brush-btn brush-g active" onclick="setBrush('G')"></div>
+                    <div class="brush-btn brush-b" onclick="setBrush('B')"></div>
+                    <div class="brush-btn brush-k" onclick="setBrush('K')">🦘</div>
+                    <div class="brush-btn brush-e" onclick="setBrush('E')">X</div>
+                </div>
+                <button class="btn-start" onclick="startCustomGame()">プレイ！</button>
+            </div>
+        </div>
+
+        <div class="status-panel">
+            <div id="gameStatus" class="status-text">読み込み中...</div>
+            <div id="turnInfo" class="sub-status"></div>
+            <div id="dishCount" class="sub-status"></div>
+        </div>
+
+        <div class="main-controls">
+            <button id="btnUndo" class="btn-undo" onclick="undoMove()" disabled>↩️ 戻る</button>
+            <button id="btnMoveDish" class="btn-move" onclick="toggleDishMoveMode()" disabled>🖐️ お皿を動かす</button>
+        </div>
+
+        <div id="board" class="board"></div>
+
+        <div class="bottom-zone">
+            <button class="btn-rules" onclick="openRules()">❓ ルール</button>
+            <button class="btn-reset" onclick="confirmReset()">⚠️ リセット</button>
+            <button class="btn-csv" onclick="downloadCSV()">💾 CSV保存</button>
+        </div>
+    </div>
+
+    <div id="rulesModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeRules()">&times;</span>
+            <h2>せっかちなカンガルー (The Impatient Kangaroo)</h2>
+            
+            <h3>目的 (Aim)</h3>
+            <p>プレイエリア（「アウトバック」）にあるすべてのお皿を、飛び越えることで取り除くこと。</p>
+
+            <h3>遊び方 (Gameplay)</h3>
+            <ul>
+                <li>カンガルーの「カンギー」のスタート位置と、最初に青と緑どちらのお皿を飛び越えるかをあなたが決めます。</li>
+                <li>しかし、最初のジャンプの後は、<b>常に色が交互</b>にならなければなりません。複数のお皿をまとめて飛び越える場合でも、この交互の順序は維持される必要があります。</li>
+                <li>その際、飛び越えるグループのお皿は隙間なく隣り合い、一直線に並んでいる必要があります。</li>
+                <li>どの場合でも、カンギーの「踏み切り地点」からお皿までの距離と、お皿から「着地地点」までの距離は<b>等しくなければなりません</b>。</li>
+            </ul>
+
+            <h3>重要！(Important!)</h3>
+            <p>各ジャンプの前に、任意のお皿1枚を好きな方向へ1マス動かすことができます（絶対に動かすべきです！）。</p>
+            <p>この移動なしで勝つことは不可能です…。熟練のプレイヤーは、カンギーがそのエリアに到達するずっと前にお皿を動かして準備しておきます。</p>
+
+            <h3>戦術のヒント (Tactical tips)</h3>
+            <p>カンギーをどこに配置するかは、最も重要な決断の1つです。もしアウトバック内に、すでにお皿が交互に並んでいるエリアを見つけたら、そこから始めるのが名案です。</p>
+            <p>この「無料の」ターン（カンギーが進むために新たにお皿を動かす必要がないターン）を利用して、後で（おそらくずっと後で！）カンギーの助けになるような場所へ、他のお皿を動かしておくことができるからです。</p>
+            <p>全体的なアドバイスとして、できる限り端にあるお皿を「片付け」、コーナー（角）からお皿を遠ざけるように心がけてください。</p>
+            
+            <button class="close-btn" onclick="closeRules()">わかった、始めよう！</button>
+        </div>
+    </div>
+
+<script>
+    /** * LEVEL DATABASE (Titles localized to Japanese)
+     */
+    const LEVEL_DATABASE = [
+        {
+            id: 'tut1',
+            group: '初級',
+            name: 'レベル 1: はじめてのステップ',
+            cols: 10, rows: 10,
+            layout: [
+                "..........",
+                "..........",
+                "..........",
+                "....G.....",
+                "..........",
+                "....B.....",
+                "..........",
+                "....G.....",
+                "..........",
+                ".........."
+            ],
+            startHint: {x: 4, y: 8}
+        },
+        {
+            id: 'tut2',
+            group: '初級',
+            name: 'レベル 2: ブロック',
+            cols: 10, rows: 10,
+            layout: [
+                "..........",
+                "..........",
+                "..........",
+                "....G.....",
+                "....B.....",
+                "....G.....",
+                "..........",
+                "..........",
+                "..........",
+                ".........."
+            ],
+            startHint: {x: 4, y: 7}
+        },
+        {
+            id: 'tut3',
+            group: '初級',
+            name: 'レベル 3: お皿を動かす練習',
+            cols: 10, rows: 10,
+            layout: [
+                "..........",
+                "..........",
+                "....B.....",
+                "..........",
+                "..........",
+                ".....G....",
+                "..........",
+                "..........",
+                "..........",
+                ".........."
+            ],
+            startHint: {x: 4, y: 7}
+        },
+        {
+            id: 'adv1',
+            group: '上級',
+            name: 'レベル 1: クロス',
+            cols: 10, rows: 10,
+            layout: [
+                "..........",
+                "..........",
+                "....G.....",
+                "....B.....",
+                "..GB.BG...",
+                "....B.....",
+                "....G.....",
+                "..........",
+                "..........",
+                ".........."
+            ],
+            startHint: {x: 4, y: 8}
+        }
+    ];
+
+    // Globals
+    let currentMode = 'LEVEL'; // LEVEL, RANDOM, EDITOR
+    let COLS = 10, ROWS = 10;
+    let board = []; 
+    let gameState = 'SETUP'; // SETUP, PLAYING, WON, EDITOR
+    let nextTarget = null; 
+    let kangyPos = {x: -1, y: -1};
+    let dishMoveAvailable = true; 
+    let isMovingDish = false;
+    let selectedDishPos = null;
+    let historyStack = [];
+    let currentBrush = 'G'; 
+    let currentLevelData = null; 
+    
+    // DATA LOGGING
+    let sessionLog = []; 
+    let currentGameId = 0;
+    let turnCounter = 0;
+
+    // UI
+    const boardEl = document.getElementById('board');
+    const statusEl = document.getElementById('gameStatus');
+    const turnInfoEl = document.getElementById('turnInfo');
+    const btnMoveDish = document.getElementById('btnMoveDish');
+    const btnUndo = document.getElementById('btnUndo');
+    const countEl = document.getElementById('dishCount');
+    const root = document.documentElement;
+    const modal = document.getElementById('rulesModal');
+
+    // --- LOGGING SYSTEM ---
+    function logAction(actionType, fromX, fromY, toX, toY, details) {
+        sessionLog.push({
+            gameId: currentGameId,
+            mode: currentMode,
+            turn: turnCounter,
+            action: actionType,
+            fromX: fromX,
+            fromY: fromY,
+            toX: toX,
+            toY: toY,
+            details: details,
+            timestamp: new Date().toISOString()
+        });
+        turnCounter++;
+    }
+
+    function removeLastLog() {
+        if (sessionLog.length > 0) {
+            const lastEntry = sessionLog[sessionLog.length - 1];
+            if (lastEntry.gameId === currentGameId) {
+                sessionLog.pop();
+                turnCounter--;
+            }
+        }
+    }
+
+    function downloadCSV() {
+        if (sessionLog.length === 0) {
+            alert("エクスポートするデータがありません。");
+            return;
+        }
+
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "Spiel_ID,Modus,Zug_Nr,Aktion,Von_X,Von_Y,Nach_X,Nach_Y,Details,Zeitstempel\n";
+
+        sessionLog.forEach(row => {
+            let rowStr = `${row.gameId},${row.mode},${row.turn},${row.action},${row.fromX},${row.fromY},${row.toX},${row.toY},"${row.details}",${row.timestamp}`;
+            csvContent += rowStr + "\n";
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "kangaroo_jp_log.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // --- INITIALIZATION ---
+    function populateLevelSelect() {
+        const select = document.getElementById('levelSelect');
+        select.innerHTML = '';
+        let currentGroup = '';
+        
+        LEVEL_DATABASE.forEach((lvl, index) => {
+            if (lvl.group !== currentGroup) {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = lvl.group;
+                select.appendChild(optgroup);
+                currentGroup = lvl.group;
+            }
+            const opt = document.createElement('option');
+            opt.value = index;
+            opt.innerText = lvl.name;
+            select.lastChild.appendChild(opt);
+        });
+    }
+
+    function switchMode(mode) {
+        if (gameState === 'PLAYING' && board.some(row => row.includes('G') || row.includes('B'))) {
+            if (!confirm("ゲームを中止してモードを変更しますか？")) return;
+        }
+        
+        currentMode = mode;
+        document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.config-panel').forEach(p => p.classList.remove('active'));
+        
+        event.target.classList.add('active');
+        document.getElementById('panel-' + mode).classList.add('active');
+
+        if (mode === 'EDITOR') {
+            initEditorBoard();
+        } else {
+            initGame();
+        }
+    }
+
+    function confirmReset() {
+        if (gameState === 'PLAYING') {
+            if (!confirm("本当にリセットしますか？")) return;
+        }
+        initGame();
+    }
+
+    function initGame() {
+        historyStack = [];
+        dishMoveAvailable = true;
+        isMovingDish = false;
+        selectedDishPos = null;
+        kangyPos = {x: -1, y: -1};
+        nextTarget = null;
+        currentLevelData = null;
+        
+        currentGameId++;
+        turnCounter = 1;
+
+        if (currentMode === 'LEVEL') {
+            const lvlIndex = document.getElementById('levelSelect').value;
+            const lvl = LEVEL_DATABASE[lvlIndex];
+            currentLevelData = lvl;
+            COLS = lvl.cols; ROWS = lvl.rows;
+            board = Array(ROWS).fill(null).map(() => Array(COLS).fill(null));
+            
+            for(let y=0; y<ROWS; y++) {
+                for(let x=0; x<COLS; x++) {
+                    let char = lvl.layout[y][x];
+                    if (char === 'G') board[y][x] = 'G';
+                    if (char === 'B') board[y][x] = 'B';
+                    if (char === 'K') { board[y][x] = 'K'; kangyPos = {x,y}; }
+                }
+            }
+            gameState = kangyPos.x !== -1 ? 'PLAYING' : 'SETUP';
+            if (gameState === 'PLAYING') logAction("START", -1, -1, kangyPos.x, kangyPos.y, "Auto Kangy placed");
+
+        } else if (currentMode === 'RANDOM') {
+            const sizeVal = document.getElementById('boardSize').value.split('x');
+            COLS = parseInt(sizeVal[0]); ROWS = parseInt(sizeVal[1]);
+            board = Array(ROWS).fill(null).map(() => Array(COLS).fill(null));
+            generateRandomBoard();
+            gameState = 'SETUP';
+        }
+
+        updateGridCSS();
+        renderBoard();
+        updateUI();
+    }
+
+    // --- RANDOM GENERATOR ---
+    function generateRandomBoard() {
+        const diff = document.getElementById('difficulty').value;
+        const totalCells = COLS * ROWS;
+        let density = diff === 'high' ? 0.45 : (diff === 'beginner' ? 0.2 : 0.35);
+        
+        let totalDishes = Math.floor(totalCells * density);
+        if (totalDishes % 2 !== 0) totalDishes--; 
+        let greenCount = totalDishes / 2;
+        let blueCount = totalDishes / 2;
+
+        let deck = [];
+        for(let i=0; i<greenCount; i++) deck.push('G');
+        for(let i=0; i<blueCount; i++) deck.push('B');
+        deck.sort(() => Math.random() - 0.5);
+
+        let coords = [];
+        let pad = diff === 'beginner' ? Math.floor(COLS/4) : 0;
+        for(let y = pad; y < ROWS - pad; y++) {
+            for(let x = pad; x < COLS - pad; x++) { coords.push({x, y}); }
+        }
+        coords.sort(() => Math.random() - 0.5);
+
+        for(let i=0; i<deck.length && i<coords.length; i++) {
+            board[coords[i].y][coords[i].x] = deck[i];
+        }
+    }
+
+    // --- EDITOR MODE ---
+    function initEditorBoard() {
+        const sizeVal = document.getElementById('editorSize').value.split('x');
+        COLS = parseInt(sizeVal[0]); ROWS = parseInt(sizeVal[1]);
+        board = Array(ROWS).fill(null).map(() => Array(COLS).fill(null));
+        kangyPos = {x: -1, y: -1};
+        gameState = 'EDITOR';
+        updateGridCSS();
+        renderBoard();
+        updateUI();
+    }
+
+    function setBrush(type) {
+        currentBrush = type;
+        document.querySelectorAll('.brush-btn').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+    }
+
+    function startCustomGame() {
+        let g=0, b=0, k=0;
+        for(let y=0; y<ROWS; y++) {
+            for(let x=0; x<COLS; x++) {
+                if(board[y][x]==='G') g++;
+                if(board[y][x]==='B') b++;
+                if(board[y][x]==='K') k++;
+            }
+        }
+        if (g===0 && b===0) return alert("アウトバックが完全に空です！");
+        
+        nextTarget = null;
+        if (g > b) nextTarget = 'G';
+        if (b > g) nextTarget = 'B';
+
+        dishMoveAvailable = true;
+        isMovingDish = false;
+        historyStack = [];
+        
+        currentGameId++;
+        turnCounter = 1;
+
+        if (k === 0) {
+            gameState = 'SETUP';
+        } else {
+            gameState = 'PLAYING';
+            for(let y=0; y<ROWS; y++) {
+                for(let x=0; x<COLS; x++) {
+                    if(board[y][x]==='K') kangyPos = {x,y};
+                }
+            }
+            logAction("START", -1, -1, kangyPos.x, kangyPos.y, "Editor Kangy placed");
+        }
+        
+        document.querySelectorAll('.brush-btn').forEach(b => b.style.pointerEvents = 'none');
+        
+        renderBoard();
+        updateUI();
+    }
+
+    // --- RENDER & LOGIC ---
+    function updateGridCSS() {
+        boardEl.style.gridTemplateColumns = `repeat(${COLS}, 1fr)`;
+        boardEl.style.gridTemplateRows = `repeat(${ROWS}, 1fr)`;
+        const maxBoardWidth = Math.min(window.innerWidth - 30, 800);
+        const calcSize = Math.floor(maxBoardWidth / COLS) - 4; 
+        const finalSize = Math.min(55, Math.max(25, calcSize)); 
+        root.style.setProperty('--cell-size', `${finalSize}px`);
+    }
+
+    function renderBoard() {
+        boardEl.innerHTML = '';
+        let gLeft = 0, bLeft = 0;
+
+        for (let y = 0; y < ROWS; y++) {
+            for (let x = 0; x < COLS; x++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                const content = board[y][x];
+
+                if (content === 'G') {
+                    const d = document.createElement('div'); d.className = 'dish green'; cell.appendChild(d);
+                    gLeft++;
+                } else if (content === 'B') {
+                    const d = document.createElement('div'); d.className = 'dish blue'; cell.appendChild(d);
+                    bLeft++;
+                } else if (content === 'K') {
+                    const k = document.createElement('div'); k.className = 'kangy'; k.innerText = '🦘'; cell.appendChild(k);
+                } 
+                else if (gameState === 'SETUP' && currentMode === 'LEVEL' && currentLevelData && currentLevelData.startHint) {
+                    if (currentLevelData.startHint.x === x && currentLevelData.startHint.y === y) {
+                        const gk = document.createElement('div'); gk.className = 'kangy ghost-kangy'; gk.innerText = '🦘'; cell.appendChild(gk);
+                    }
+                }
+
+                cell.onclick = () => handleCellClick(x, y);
+
+                if (gameState === 'PLAYING') {
+                    if (isMovingDish && selectedDishPos && selectedDishPos.x === x && selectedDishPos.y === y) {
+                        cell.classList.add('selected');
+                    } else if (!isMovingDish && isValidJump(kangyPos.x, kangyPos.y, x, y)) {
+                        cell.classList.add('highlight');
+                    }
+                }
+                boardEl.appendChild(cell);
+            }
+        }
+        
+        if (gameState !== 'EDITOR') {
+            countEl.innerText = `緑: ${gLeft} | 青: ${bLeft}`;
+            if (gameState === 'PLAYING' && gLeft===0 && bLeft===0) {
+                gameState = 'WON';
+                statusEl.innerText = "🏆 勝利！アウトバックがきれいになりました！";
+                statusEl.style.color = "#66bb6a";
+                btnMoveDish.disabled = true;
+                logAction("WIN", -1, -1, -1, -1, "Game Won");
+            } else if (gameState === 'PLAYING' && (gLeft>0 || bLeft>0) && !canAnyMovePossible() && !dishMoveAvailable) {
+                 statusEl.innerText = "行き止まり…「戻る」を試してね ↩️";
+                 statusEl.style.color = "#ef9a9a";
+            }
+        } else {
+            countEl.innerText = `エディターモード (緑:${gLeft} 青:${bLeft})`;
+        }
+    }
+
+    function updateUI() {
+        btnUndo.disabled = (historyStack.length === 0);
+        document.querySelectorAll('select').forEach(s => s.disabled = (gameState === 'PLAYING' || gameState === 'WON'));
+
+        if (gameState === 'EDITOR') {
+            statusEl.style.color = "#ffcc80";
+            statusEl.innerText = "アウトバックを作成";
+            turnInfoEl.innerText = "ブラシを選んでマスをクリック";
+            btnMoveDish.disabled = true;
+        } else if (gameState === 'SETUP') {
+            statusEl.style.color = "#ffcc80";
+            statusEl.innerText = nextTarget ? `⚠️ 不均衡！スタートは ${nextTarget==='G'?'緑':'青'} でなければなりません！` : "カンギーを配置してスタート";
+            turnInfoEl.innerText = currentLevelData && currentLevelData.startHint ? "ヒント：ゴーストカンギーを使ってね 👻" : "空いているマスをクリック";
+            btnMoveDish.disabled = true;
+        } else if (gameState === 'PLAYING') {
+            btnMoveDish.disabled = !dishMoveAvailable;
+            let targetText = nextTarget === 'G' ? "緑（エサ）" : (nextTarget === 'B' ? "青（水）" : "自由");
+            
+            if (isMovingDish) {
+                statusEl.innerText = "お皿を動かす";
+                turnInfoEl.innerText = "隣接する空のマスをクリック";
+                btnMoveDish.innerText = "❌ キャンセル";
+            } else {
+                statusEl.innerHTML = `カンギーの番！ ターゲット: <b>${targetText}</b>`;
+                turnInfoEl.innerText = "遠くへのカタパルトジャンプを忘れずに！";
+                btnMoveDish.innerText = "🖐️ お皿を動かす";
+            }
+        } else if (gameState === 'WON') {
+             turnInfoEl.innerText = "素晴らしい！";
+        }
+    }
+
+    function handleCellClick(x, y) {
+        if (gameState === 'EDITOR') {
+            if (currentBrush === 'K') {
+                for(let r=0; r<ROWS; r++) for(let c=0; c<COLS; c++) if(board[r][c]==='K') board[r][c] = null;
+                board[y][x] = 'K';
+            } else if (currentBrush === 'E') {
+                board[y][x] = null;
+            } else {
+                if (board[y][x] === 'K') return; 
+                board[y][x] = currentBrush;
+            }
+            renderBoard();
+            updateUI();
+        } 
+        else if (gameState === 'SETUP') {
+            if (board[y][x] === null) {
+                saveState(); 
+                board[y][x] = 'K';
+                kangyPos = {x, y};
+                gameState = 'PLAYING';
+                logAction("START", -1, -1, x, y, "Kangy placed");
+                renderBoard();
+                updateUI();
+            }
+        } 
+        else if (gameState === 'PLAYING') {
+            if (isMovingDish) {
+                handleDishMove(x, y);
+            } else {
+                if (isValidJump(kangyPos.x, kangyPos.y, x, y)) {
+                    saveState(); 
+                    executeJump(x, y);
+                }
+            }
+        }
+    }
+
+    // --- MOVE & JUMP LOGIC ---
+    function saveState() {
+        historyStack.push({
+            board: JSON.parse(JSON.stringify(board)),
+            gameState, nextTarget, kangyPos: {...kangyPos},
+            dishMoveAvailable, isMovingDish: false, selectedDishPos: null
+        });
+        updateUI();
+    }
+
+    function undoMove() {
+        if (historyStack.length === 0) return;
+        const s = historyStack.pop();
+        board = s.board; gameState = s.gameState; nextTarget = s.nextTarget;
+        kangyPos = s.kangyPos; dishMoveAvailable = s.dishMoveAvailable;
+        isMovingDish = false; selectedDishPos = null;
+        removeLastLog();
+        renderBoard(); updateUI();
+    }
+
+    function toggleDishMoveMode() {
+        if (!dishMoveAvailable) return;
+        isMovingDish = !isMovingDish;
+        selectedDishPos = null;
+        updateUI(); renderBoard();
+    }
+
+    function handleDishMove(x, y) {
+        if (board[y][x] === 'G' || board[y][x] === 'B') {
+            selectedDishPos = {x, y};
+            renderBoard();
+        } else if (selectedDishPos && board[y][x] === null) {
+            const dx = Math.abs(x - selectedDishPos.x);
+            const dy = Math.abs(y - selectedDishPos.y);
+            if (dx <= 1 && dy <= 1 && (dx+dy > 0)) {
+                saveState(); 
+                
+                const color = board[selectedDishPos.y][selectedDishPos.x];
+                logAction("MOVE_DISH", selectedDishPos.x, selectedDishPos.y, x, y, `Moved ${color}`);
+
+                board[y][x] = board[selectedDishPos.y][selectedDishPos.x];
+                board[selectedDishPos.y][selectedDishPos.x] = null;
+                dishMoveAvailable = false; isMovingDish = false; selectedDishPos = null;
+                renderBoard(); updateUI();
+            }
+        }
+    }
+
+    function isValidJump(fromX, fromY, toX, toY) {
+        if (board[toY][toX] !== null) return false;
+        const dx = toX - fromX; const dy = toY - fromY;
+        if (dx === 0 && dy === 0) return false;
+        if (dx !== 0 && dy !== 0 && Math.abs(dx) !== Math.abs(dy)) return false;
+
+        const stepX = dx === 0 ? 0 : dx / Math.abs(dx);
+        const stepY = dy === 0 ? 0 : dy / Math.abs(dy);
+
+        let curX = fromX + stepX; let curY = fromY + stepY;
+        let empBefore = 0, empAfter = 0, dishes = [], state = 0; 
+
+        while (curX !== toX || curY !== toY) {
+            const c = board[curY][curX];
+            if (state === 0) {
+                if (c === null) empBefore++;
+                else if (c === 'G' || c === 'B') { state = 1; dishes.push(c); }
+                else return false; 
+            } else if (state === 1) {
+                if (c === 'G' || c === 'B') dishes.push(c);
+                else if (c === null) { state = 2; empAfter++; }
+                else return false;
+            } else if (state === 2) {
+                if (c === null) empAfter++;
+                else return false; 
+            }
+            curX += stepX; curY += stepY;
+        }
+
+        if (dishes.length === 0) return false;
+        if (empBefore !== empAfter) return false;
+        if (nextTarget !== null && dishes[0] !== nextTarget) return false;
+        for (let i = 0; i < dishes.length - 1; i++) {
+            if (dishes[i] === dishes[i+1]) return false;
+        }
+        return true;
+    }
+
+    function executeJump(toX, toY) {
+        const dx = toX - kangyPos.x; const dy = toY - kangyPos.y;
+        const stepX = dx === 0 ? 0 : dx / Math.abs(dx);
+        const stepY = dy === 0 ? 0 : dy / Math.abs(dy);
+        let curX = kangyPos.x + stepX; let curY = kangyPos.y + stepY;
+        let lastColor = null;
+        let skippedDishes = [];
+
+        while (curX !== toX || curY !== toY) {
+            const c = board[currentY][currentX];
+            if (c === 'G' || c === 'B') { 
+                lastColor = c; 
+                skippedDishes.push(c);
+                board[currentY][currentX] = null; 
+            }
+            curX += stepX; curY += stepY;
+        }
+
+        logAction("JUMP", kangyPos.x, kangyPos.y, toX, toY, `Skipped: ${skippedDishes.join('+')}`);
+
+        board[kangyPos.y][kangyPos.x] = null;
+        board[toY][toX] = 'K'; kangyPos = {x: toX, y: toY};
+        
+        if (lastColor === 'G') nextTarget = 'B';
+        else if (lastColor === 'B') nextTarget = 'G';
+
+        dishMoveAvailable = true; 
+        renderBoard(); updateUI();
+    }
+
+    function canAnyMovePossible() {
+        for(let y=0; y<ROWS; y++) {
+            for(let x=0; x<COLS; x++) {
+                if(board[y][x] === null && isValidJump(kangyPos.x, kangyPos.y, x, y)) return true;
+            }
+        }
+        return false;
+    }
+
+    function openRules() { 
+        modal.style.display = "block"; 
+    }
+    
+    function closeRules() { 
+        modal.style.display = "none"; 
+        localStorage.setItem('kangy_jp_v1', 'true');
+    }
+    
+    window.onclick = (e) => { 
+        if (e.target == modal) closeRules(); 
+    }
+    
+    if (!localStorage.getItem('kangy_jp_v1')) openRules();
+    
+    // START
+    populateLevelSelect();
+    initGame();
+
+</script>
+</body>
+</html>
