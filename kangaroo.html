@@ -837,11 +837,11 @@
         let skippedDishes = [];
 
         while (curX !== toX || curY !== toY) {
-            const c = board[currentY][currentX];
-            if (c === 'G' || c === 'B') { 
-                lastColor = c; 
+            const c = board[curY][curX];
+            if (c === 'G' || c === 'B') {
+                lastColor = c;
                 skippedDishes.push(c);
-                board[currentY][currentX] = null; 
+                board[curY][curX] = null;
             }
             curX += stepX; curY += stepY;
         }
