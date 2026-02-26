@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parados &mdash; Board Games by Walter Prossnitz</title>
+<style>
+:root {
+    --bg: #263238;
+    --card-bg: #37474f;
+    --card-hover: #455a64;
+    --accent: #ffd700;
+    --text: #eceff1;
+    --text-dim: #90a4ae;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+header {
+    text-align: center;
+    padding: 30px 10px 20px;
+}
+
+header h1 {
+    font-size: 2.8em;
+    color: var(--accent);
+    text-shadow: 0 2px 12px rgba(255, 215, 0, 0.3);
+    letter-spacing: 4px;
+    margin-bottom: 6px;
+}
+
+header p {
+    color: var(--text-dim);
+    font-size: 1.1em;
+}
+
+.games-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+    max-width: 1100px;
+    margin: 30px auto;
+    padding: 0 10px;
+}
+
+.game-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+}
+
+.game-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+.game-card h2 {
+    font-size: 1.4em;
+    color: var(--accent);
+    margin-bottom: 4px;
+}
+
+.game-card .players {
+    font-size: 0.85em;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+}
+
+.game-card .desc {
+    color: #cfd8dc;
+    font-size: 0.95em;
+    line-height: 1.5;
+    flex: 1;
+    margin-bottom: 16px;
+}
+
+.game-card .buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.play-btn {
+    display: inline-block;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.95em;
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+    transition: all 0.15s;
+    box-shadow: 0 3px 0 rgba(0,0,0,0.3);
+}
+
+.play-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 rgba(0,0,0,0.3);
+}
+
+.btn-green { background: #43a047; color: white; }
+.btn-green:hover { background: #388e3c; }
+.btn-orange { background: #ff9800; color: #263238; }
+.btn-orange:hover { background: #f57c00; }
+.btn-blue { background: #1e88e5; color: white; }
+.btn-blue:hover { background: #1565c0; }
+.btn-purple { background: #8e24aa; color: white; }
+.btn-purple:hover { background: #6a1b9a; }
+.btn-red { background: #e53935; color: white; }
+.btn-red:hover { background: #c62828; }
+.btn-small {
+    padding: 7px 14px;
+    font-size: 0.82em;
+}
+
+footer {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 0.85em;
+    margin-top: 40px;
+    padding: 20px 10px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+
+@media (max-width: 500px) {
+    header h1 { font-size: 2em; }
+    .games-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header>
+    <h1>PARADOS</h1>
+    <p>Board Games by Walter Prossnitz</p>
+</header>
+
+<div class="games-grid">
+
+    <div class="game-card">
+        <h2>DUK &mdash; Das Ungeduldige K&auml;nguru</h2>
+        <div class="players">1 Spieler &middot; Puzzle</div>
+        <div class="desc">
+            A kangaroo jumps across a grid of colored dishes, clearing them in the right order.
+            Choose from hundreds of levels, play random puzzles, or build your own in the editor.
+        </div>
+        <div class="buttons">
+            <a href="kangaroo.html" class="play-btn btn-green">Deutsch</a>
+            <a href="kangaroo_en.html" class="play-btn btn-blue btn-small">English</a>
+            <a href="kangaroo_jp.html" class="play-btn btn-orange btn-small">&#x65E5;&#x672C;&#x8A9E;</a>
+            <a href="kangaroo_cn.html" class="play-btn btn-red btn-small">&#x4E2D;&#x6587;</a>
+            <a href="kangaroo_ua.html" class="play-btn btn-purple btn-small">&#x423;&#x43A;&#x440;</a>
+        </div>
+    </div>
+
+    <div class="game-card">
+        <h2>Capovolto</h2>
+        <div class="players">2 Spieler &middot; Strategie</div>
+        <div class="desc">
+            Das Wendespiel! Place numbered discs on a polyomino grid across 6 rounds.
+            Flip lines of 4 discs to change their values &mdash; timing is everything.
+            Your disc value constrains your opponent's next move direction.
+        </div>
+        <div class="buttons">
+            <a href="capovolto.html" class="play-btn btn-green">Spielen</a>
+        </div>
+    </div>
+
+    <div class="game-card">
+        <h2>Divided Loyalties</h2>
+        <div class="players">2 Players &middot; Strategy</div>
+        <div class="desc">
+            Place colored tiles and build bridges on an 11&times;11 grid.
+            Score points by connecting tiles of the same color in rows.
+            Epic Master Edition with advanced scoring.
+        </div>
+        <div class="buttons">
+            <a href="divided_loyalties.html" class="play-btn btn-green">Play</a>
+        </div>
+    </div>
+
+    <div class="game-card">
+        <h2>Democracy in Space</h2>
+        <div class="players">2+ Players &middot; Remote Multiplayer</div>
+        <div class="desc">
+            A strategy game set in space with remote multiplayer via peer-to-peer connections.
+            Build colonies, manage resources, and outvote your opponents.
+        </div>
+        <div class="buttons">
+            <a href="democracy_remote.html" class="play-btn btn-green">Play</a>
+        </div>
+    </div>
+
+    <div class="game-card">
+        <h2>MAKA LAINA</h2>
+        <div class="players">2 Players &middot; Strategy</div>
+        <div class="desc">
+            The Strategic Endspurt! Collect discs on a 12&times;12 grid.
+            Play locally or connect with a remote opponent.
+        </div>
+        <div class="buttons">
+            <a href="makalaina.html" class="play-btn btn-green">Local</a>
+            <a href="makalaina_remote.html" class="play-btn btn-blue">Remote</a>
+        </div>
+    </div>
+
+</div>
+
+<footer>
+    <a href="https://github.com/zdavatz/parados">GitHub</a> &middot;
+    All games run entirely in your browser &mdash; no accounts, no downloads.
+</footer>
+
+</body>
+</html>
