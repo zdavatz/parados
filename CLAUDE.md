@@ -21,6 +21,7 @@ There is no build step, no package manager, and no test framework. To run a game
 - `divided_loyalties.html` — Two-player tile placement and bridge-building on an 11x11 grid.
 - `democracy_remote.html` — Democracy in Space strategy game with remote multiplayer.
 - `makalaina.html` / `makalaina_remote.html` — MAKA LAINA disc collection game on a 12x12 grid.
+- `capovolto.html` — Capovolto: 2-player disc-flipping strategy game on a polyomino grid (German UI). Players place 18 polyominoes, then alternate placing numbered discs across 6 rounds. Core mechanic: flipping 4-disc lines (2 of each color) to change values. Opponent's last disc value determines your direction constraint (even=H/V, odd=diagonal). Scoring by value majority per polyomino.
 
 **Common code patterns across games:**
 - Global state variables with a `gameState` string for state machine flow

@@ -11,3 +11,5 @@ Games by Walter Prossnitz
   - [Play](democracy_remote.html)
 - **MAKA LAINA** — Disc collection game on a 12x12 grid
   - [Local](makalaina.html) | [Remote](makalaina_remote.html)
+- **Capovolto** — 2-player disc-flipping strategy game on a polyomino grid
+  - [Play](capovolto.html)
