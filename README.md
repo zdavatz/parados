@@ -15,3 +15,5 @@ Games by Walter Prossnitz
   - [Local](https://game.ywesee.com/parados/makalaina.html) | [Remote](https://game.ywesee.com/parados/makalaina_remote.html)
 - **Capovolto** — 2-player disc-flipping strategy game on a polyomino grid
   - [Play](https://game.ywesee.com/parados/capovolto.html)
+- **Frankenstein** — "Where's that green elbow??" Memory body-building game for 2-4 players
+  - [Play](https://game.ywesee.com/parados/frankenstein.html)
