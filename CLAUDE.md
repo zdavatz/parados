@@ -14,6 +14,8 @@ There is no build step, no package manager, and no test framework. To run a game
 
 **Single-file pattern:** Each game is one `.html` file containing all markup, styles (in `<style>`), and logic (in `<script>`). There are no shared libraries or external dependencies.
 
+**Landing page:** `index.html` is the main entry point listing all games with play buttons (links open in new tabs).
+
 **Localization by duplication:** Language variants are separate files (e.g., `kangaroo.html` for German, `kangaroo_en.html` for English, `kangaroo_jp.html` for Japanese, `kangaroo_cn.html` for Chinese, `kangaroo_ua.html` for Ukrainian). When modifying game logic, changes must be propagated to all language variants.
 
 **Games:**

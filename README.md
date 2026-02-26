@@ -1,6 +1,8 @@
 # parados
 Games by Walter Prossnitz
 
+**[Play all games](https://game.ywesee.com/parados/)**
+
 ## Games
 
 - **DUK (Das Ungeduldige Känguru)** — Grid-based puzzle with kangaroo jumping over colored dishes
