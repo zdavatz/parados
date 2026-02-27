@@ -729,9 +729,11 @@ h1 {
             <li><strong>Legs:</strong> upper leg &rarr; lower leg &rarr; foot</li>
             <li><strong>Head:</strong> lower head &rarr; upper head</li>
         </ul>
-        <p>You need the adjacent torso part before starting a limb.
-        All torso parts are identical and can fill any empty torso slot.
-        Lower head can attach to any top torso part.</p>
+        <p>Each limb requires its <strong>specific adjacent torso part</strong>:
+        right arm needs upper-left torso, left arm needs upper-right torso,
+        left leg needs lower-left torso, right leg needs lower-right torso.
+        Lower head can attach to any top torso part.
+        All torso cards are identical and can fill any empty torso slot.</p>
 
         <h3>Taking a Turn</h3>
         <p>Flip cards one at a time. If you can use the card, it's placed on your body
@@ -1094,21 +1096,21 @@ function findValidSlot(partType, color, player) {
 
 function prerequisiteMet(slot, player) {
     const rules = {
-        // Arms need adjacent torso
-        r_upper_arm: () => !!(player.body['torso_ul'] || player.body['torso_bl']),
-        l_upper_arm: () => !!(player.body['torso_ur'] || player.body['torso_br']),
+        // Arms need their specific adjacent torso part
+        r_upper_arm: () => !!player.body['torso_ul'],
+        l_upper_arm: () => !!player.body['torso_ur'],
         r_lower_arm: () => !!player.body['r_upper_arm'],
         l_lower_arm: () => !!player.body['l_upper_arm'],
         r_hand: () => !!player.body['r_lower_arm'],
         l_hand: () => !!player.body['l_lower_arm'],
-        // Legs need bottom torso
-        l_upper_leg: () => !!(player.body['torso_bl'] || player.body['torso_br']),
-        r_upper_leg: () => !!(player.body['torso_bl'] || player.body['torso_br']),
+        // Legs need their specific adjacent torso part
+        l_upper_leg: () => !!player.body['torso_bl'],
+        r_upper_leg: () => !!player.body['torso_br'],
         l_lower_leg: () => !!player.body['l_upper_leg'],
         r_lower_leg: () => !!player.body['r_upper_leg'],
         l_foot: () => !!player.body['l_lower_leg'],
         r_foot: () => !!player.body['r_lower_leg'],
-        // Head needs top torso
+        // Head needs any top torso (spans both columns)
         lower_head: () => !!(player.body['torso_ul'] || player.body['torso_ur']),
         upper_head: () => !!player.body['lower_head'],
         // Torso parts always placeable
