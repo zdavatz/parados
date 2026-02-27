@@ -20,7 +20,7 @@
     --orange: #ff9800;
     --purple: #9c27b0;
     --grey: #9e9e9e;
-    --black-torso: #333;
+    --blue: #00acc1;
     --player1: #42a5f5;
     --player2: #ef5350;
     --player3: #66bb6a;
@@ -722,13 +722,15 @@ h1 {
         </ul>
 
         <h3>Building Order</h3>
-        <p>Build from the middle outward:</p>
+        <p>Build from the middle outward. Body parts have <strong>no left/right distinction</strong>
+        &mdash; any arm or leg card can be placed on either side!</p>
         <ul>
             <li><strong>Arms:</strong> upper arm &rarr; lower arm &rarr; hand</li>
             <li><strong>Legs:</strong> upper leg &rarr; lower leg &rarr; foot</li>
             <li><strong>Head:</strong> lower head &rarr; upper head</li>
         </ul>
         <p>You need the adjacent torso part before starting a limb.
+        All torso parts are identical and can fill any empty torso slot.
         Lower head can attach to any top torso part.</p>
 
         <h3>Taking a Turn</h3>
@@ -745,9 +747,9 @@ h1 {
         If you later find the real body part, you may swap it with your joker.</p>
 
         <h3>Color Rule (optional)</h3>
-        <p>Body parts come in 4 colors: green, orange, purple, and grey.
-        The same color may not appear in consecutive positions along arms,
-        legs, or head. This rule can be turned off in the setup.</p>
+        <p>Body parts come in 4 colors: green, orange, purple, and turquoise.
+        Torso parts are grey. The same color may not appear in consecutive positions
+        along arms, legs, or head. This rule can be turned off in the setup.</p>
 
         <button class="close-btn" onclick="closeRules()">Got it!</button>
     </div>
@@ -774,23 +776,36 @@ const ALL_BODY_SLOTS = [
 
 const FINDABLE_PART_TYPES = [
     'upper_head', 'lower_head',
-    'r_upper_arm', 'l_upper_arm',
-    'r_lower_arm', 'l_lower_arm',
-    'r_hand', 'l_hand',
-    'l_upper_leg', 'r_upper_leg',
-    'l_lower_leg', 'r_lower_leg',
-    'l_foot', 'r_foot'
-    // + one torso part (the missing one) per player
+    'upper_arm', 'upper_arm',
+    'lower_arm', 'lower_arm',
+    'hand', 'hand',
+    'upper_leg', 'upper_leg',
+    'lower_leg', 'lower_leg',
+    'foot', 'foot'
+    // + one generic torso card per player
 ];
 
-const PART_COLORS = ['green', 'orange', 'purple', 'grey'];
+// Maps generic card types to possible body grid slots
+const PART_TO_SLOTS = {
+    upper_arm: ['r_upper_arm', 'l_upper_arm'],
+    lower_arm: ['r_lower_arm', 'l_lower_arm'],
+    hand: ['r_hand', 'l_hand'],
+    upper_leg: ['l_upper_leg', 'r_upper_leg'],
+    lower_leg: ['l_lower_leg', 'r_lower_leg'],
+    foot: ['l_foot', 'r_foot'],
+    torso: TORSO_PARTS,
+    upper_head: ['upper_head'],
+    lower_head: ['lower_head']
+};
+
+const PART_COLORS = ['green', 'orange', 'purple', 'blue'];
 
 const COLOR_HEX = {
     green: '#4caf50',
     orange: '#ff9800',
     purple: '#9c27b0',
+    blue: '#00acc1',
     grey: '#9e9e9e',
-    black: '#333333',
     joker: '#ffd700'
 };
 
@@ -800,13 +815,13 @@ const PLAYER_NAMES = ['Player 1', 'Player 2', 'Player 3', 'Player 4'];
 // Slot labels for display
 const SLOT_LABELS = {
     upper_head: 'Upper Head', lower_head: 'Lower Head',
-    torso_ul: 'Torso TL', torso_ur: 'Torso TR', torso_bl: 'Torso BL', torso_br: 'Torso BR',
-    r_upper_arm: 'R. Upper Arm', l_upper_arm: 'L. Upper Arm',
-    r_lower_arm: 'R. Lower Arm', l_lower_arm: 'L. Lower Arm',
-    r_hand: 'R. Hand', l_hand: 'L. Hand',
-    l_upper_leg: 'L. Upper Leg', r_upper_leg: 'R. Upper Leg',
-    l_lower_leg: 'L. Lower Leg', r_lower_leg: 'R. Lower Leg',
-    l_foot: 'L. Foot', r_foot: 'R. Foot'
+    torso_ul: 'Torso', torso_ur: 'Torso', torso_bl: 'Torso', torso_br: 'Torso',
+    r_upper_arm: 'Upper Arm', l_upper_arm: 'Upper Arm',
+    r_lower_arm: 'Lower Arm', l_lower_arm: 'Lower Arm',
+    r_hand: 'Hand', l_hand: 'Hand',
+    l_upper_leg: 'Upper Leg', r_upper_leg: 'Upper Leg',
+    l_lower_leg: 'Lower Leg', r_lower_leg: 'Lower Leg',
+    l_foot: 'Foot', r_foot: 'Foot'
 };
 
 // Which slots jokers can go in
@@ -886,10 +901,10 @@ function startGame(n) {
         const missingTorso = TORSO_PARTS[Math.floor(Math.random() * 4)];
         const body = {};
         for (const slot of ALL_BODY_SLOTS) body[slot] = null;
-        // Pre-place 3 torso parts
+        // Pre-place 3 torso parts (grey)
         for (const t of TORSO_PARTS) {
             if (t !== missingTorso) {
-                body[t] = { partType: t, color: 'black', isJoker: false };
+                body[t] = { partType: 'torso', color: 'grey', isJoker: false };
             }
         }
         players.push({
@@ -924,21 +939,35 @@ function generateDeck() {
     let id = 0;
 
     for (let p = 0; p < numPlayers; p++) {
-        const missingTorso = players[p].missingTorso;
+        // The missing torso card (grey, generic)
+        deck.push({ id: id++, partType: 'torso', color: 'grey', isJoker: false, faceUp: false, removed: false });
 
-        // The missing torso card (black)
-        deck.push({ id: id++, partType: missingTorso, color: 'black', isJoker: false, faceUp: false, removed: false });
+        // Generate body parts with chain-based color assignment for solvability
+        // 2 arm chains (upper_arm → lower_arm → hand)
+        const armChain1 = generateColorChain(3);
+        const armChain2 = generateColorChain(3);
+        // 2 leg chains (upper_leg → lower_leg → foot)
+        const legChain1 = generateColorChain(3);
+        const legChain2 = generateColorChain(3);
+        // 1 head chain (lower_head → upper_head)
+        const headChain = generateColorChain(2);
 
-        // Generate 14 other body parts with colors
-        const partsToGenerate = [...FINDABLE_PART_TYPES]; // 14 parts (no torso)
-        const colorAssigned = {};
+        deck.push({ id: id++, partType: 'upper_arm', color: armChain1[0], isJoker: false, faceUp: false, removed: false });
+        deck.push({ id: id++, partType: 'lower_arm', color: armChain1[1], isJoker: false, faceUp: false, removed: false });
+        deck.push({ id: id++, partType: 'hand', color: armChain1[2], isJoker: false, faceUp: false, removed: false });
+        deck.push({ id: id++, partType: 'upper_arm', color: armChain2[0], isJoker: false, faceUp: false, removed: false });
+        deck.push({ id: id++, partType: 'lower_arm', color: armChain2[1], isJoker: false, faceUp: false, removed: false });
+        deck.push({ id: id++, partType: 'hand', color: armChain2[2], isJoker: false, faceUp: false, removed: false });
 
-        // Assign colors respecting chain constraints
-        for (const part of partsToGenerate) {
-            let color = pickColorForSlot(part, colorAssigned);
-            colorAssigned[part] = color;
-            deck.push({ id: id++, partType: part, color, isJoker: false, faceUp: false, removed: false });
-        }
+        deck.push({ id: id++, partType: 'upper_leg', color: legChain1[0], isJoker: false, faceUp: false, removed: false });
+        deck.push({ id: id++, partType: 'lower_leg', color: legChain1[1], isJoker: false, faceUp: false, removed: false });
+        deck.push({ id: id++, partType: 'foot', color: legChain1[2], isJoker: false, faceUp: false, removed: false });
+        deck.push({ id: id++, partType: 'upper_leg', color: legChain2[0], isJoker: false, faceUp: false, removed: false });
+        deck.push({ id: id++, partType: 'lower_leg', color: legChain2[1], isJoker: false, faceUp: false, removed: false });
+        deck.push({ id: id++, partType: 'foot', color: legChain2[2], isJoker: false, faceUp: false, removed: false });
+
+        deck.push({ id: id++, partType: 'lower_head', color: headChain[0], isJoker: false, faceUp: false, removed: false });
+        deck.push({ id: id++, partType: 'upper_head', color: headChain[1], isJoker: false, faceUp: false, removed: false });
     }
 
     // Add jokers
@@ -949,15 +978,14 @@ function generateDeck() {
     return shuffleArray(deck);
 }
 
-function pickColorForSlot(slot, assigned) {
-    const chain = COLOR_CHAINS[slot];
-    if (!chain) return PART_COLORS[Math.floor(Math.random() * PART_COLORS.length)];
-
-    const excluded = [];
-    if (chain.prev && assigned[chain.prev]) excluded.push(assigned[chain.prev]);
-
-    const available = PART_COLORS.filter(c => !excluded.includes(c));
-    return available[Math.floor(Math.random() * available.length)];
+function generateColorChain(length) {
+    const chain = [];
+    for (let i = 0; i < length; i++) {
+        const excluded = i > 0 ? [chain[i - 1]] : [];
+        const available = PART_COLORS.filter(c => !excluded.includes(c));
+        chain.push(available[Math.floor(Math.random() * available.length)]);
+    }
+    return chain;
 }
 
 function shuffleArray(arr) {
@@ -1004,11 +1032,11 @@ function processFlippedCard(idx) {
         return;
     }
 
-    // Check if current player can place this card
-    const slot = card.partType;
+    // Find a valid slot for this generic card type
     const player = players[currentPlayer];
+    const slot = findValidSlot(card.partType, card.color, player);
 
-    if (canPlaceOnBody(slot, card.color, player)) {
+    if (slot) {
         // Place it!
         placeCard(card, slot, currentPlayer);
         historyStack[historyStack.length - 1].placement = { slot, playerIdx: currentPlayer };
@@ -1051,14 +1079,17 @@ function processFlippedCard(idx) {
     }
 }
 
-function canPlaceOnBody(slot, color, player) {
-    // Slot already filled?
-    if (player.body[slot]) return false;
-    // Check build order
-    if (!prerequisiteMet(slot, player)) return false;
-    // Check color rule
-    if (colorRuleEnabled && !colorRuleValid(slot, color, player)) return false;
-    return true;
+function findValidSlot(partType, color, player) {
+    const possibleSlots = PART_TO_SLOTS[partType];
+    if (!possibleSlots) return null;
+
+    for (const slot of possibleSlots) {
+        if (!player.body[slot] && prerequisiteMet(slot, player) &&
+            (!colorRuleEnabled || colorRuleValid(slot, color, player))) {
+            return slot;
+        }
+    }
+    return null;
 }
 
 function prerequisiteMet(slot, player) {
@@ -1090,15 +1121,15 @@ function prerequisiteMet(slot, player) {
 function colorRuleValid(slot, color, player) {
     const chain = COLOR_CHAINS[slot];
     if (!chain) return true; // torso has no color constraint
-    if (color === 'black' || color === 'joker') return true;
+    if (color === 'grey' || color === 'joker') return true;
 
     if (chain.prev && player.body[chain.prev]) {
         const prevColor = player.body[chain.prev].color;
-        if (prevColor !== 'black' && prevColor !== 'joker' && prevColor === color) return false;
+        if (prevColor !== 'grey' && prevColor !== 'joker' && prevColor === color) return false;
     }
     if (chain.next && player.body[chain.next]) {
         const nextColor = player.body[chain.next].color;
-        if (nextColor !== 'black' && nextColor !== 'joker' && nextColor === color) return false;
+        if (nextColor !== 'grey' && nextColor !== 'joker' && nextColor === color) return false;
     }
     return true;
 }
@@ -1377,7 +1408,7 @@ function renderBodyDisplay() {
             if (filled.isJoker) {
                 html += getJokerSVG();
             } else {
-                html += getBodyPartSVG(filled.partType, filled.color);
+                html += getBodyPartSVG(slot, filled.color);
             }
         }
         html += '</div>';
@@ -1425,22 +1456,30 @@ function getBodyPartSVG(partType, color) {
         </svg>`,
 
         torso_ul: `<svg viewBox="0 0 50 50">
-            <path d="M0 0 Q5 0 10 5 L10 50 L50 50 L50 5 Q50 0 45 0" fill="none" stroke="#333" stroke-width="3"/>
-            <line x1="20" y1="15" x2="25" y2="15" stroke="#555" stroke-width="2"/>
-            <line x1="22" y1="12" x2="22" y2="18" stroke="#555" stroke-width="2"/>
+            <rect x="3" y="3" width="44" height="44" rx="4" fill="none" stroke="${c}" stroke-width="3"/>
+            <line x1="15" y1="20" x2="35" y2="20" stroke="${c}" stroke-width="2" stroke-dasharray="4,3"/>
+            <line x1="15" y1="30" x2="35" y2="30" stroke="${c}" stroke-width="2" stroke-dasharray="4,3"/>
         </svg>`,
         torso_ur: `<svg viewBox="0 0 50 50">
-            <path d="M0 0 Q0 0 5 0 L50 0 Q45 0 40 5 L40 50 L0 50" fill="none" stroke="#333" stroke-width="3"/>
-            <line x1="25" y1="15" x2="30" y2="15" stroke="#555" stroke-width="2"/>
-            <line x1="27" y1="12" x2="27" y2="18" stroke="#555" stroke-width="2"/>
+            <rect x="3" y="3" width="44" height="44" rx="4" fill="none" stroke="${c}" stroke-width="3"/>
+            <line x1="15" y1="20" x2="35" y2="20" stroke="${c}" stroke-width="2" stroke-dasharray="4,3"/>
+            <line x1="15" y1="30" x2="35" y2="30" stroke="${c}" stroke-width="2" stroke-dasharray="4,3"/>
         </svg>`,
         torso_bl: `<svg viewBox="0 0 50 50">
-            <path d="M10 0 L10 40 Q10 50 20 50 L50 50 L50 0" fill="none" stroke="#333" stroke-width="3"/>
-            <line x1="22" y1="25" x2="27" y2="25" stroke="#555" stroke-width="2"/>
+            <rect x="3" y="3" width="44" height="44" rx="4" fill="none" stroke="${c}" stroke-width="3"/>
+            <line x1="15" y1="20" x2="35" y2="20" stroke="${c}" stroke-width="2" stroke-dasharray="4,3"/>
+            <line x1="15" y1="30" x2="35" y2="30" stroke="${c}" stroke-width="2" stroke-dasharray="4,3"/>
         </svg>`,
         torso_br: `<svg viewBox="0 0 50 50">
-            <path d="M0 0 L0 50 L30 50 Q40 50 40 40 L40 0" fill="none" stroke="#333" stroke-width="3"/>
-            <line x1="22" y1="25" x2="27" y2="25" stroke="#555" stroke-width="2"/>
+            <rect x="3" y="3" width="44" height="44" rx="4" fill="none" stroke="${c}" stroke-width="3"/>
+            <line x1="15" y1="20" x2="35" y2="20" stroke="${c}" stroke-width="2" stroke-dasharray="4,3"/>
+            <line x1="15" y1="30" x2="35" y2="30" stroke="${c}" stroke-width="2" stroke-dasharray="4,3"/>
+        </svg>`,
+        // Generic types for card display
+        torso: `<svg viewBox="0 0 50 50">
+            <rect x="3" y="3" width="44" height="44" rx="4" fill="none" stroke="${c}" stroke-width="3"/>
+            <line x1="15" y1="20" x2="35" y2="20" stroke="${c}" stroke-width="2" stroke-dasharray="4,3"/>
+            <line x1="15" y1="30" x2="35" y2="30" stroke="${c}" stroke-width="2" stroke-dasharray="4,3"/>
         </svg>`,
 
         r_upper_arm: `<svg viewBox="0 0 50 50">
@@ -1517,6 +1556,42 @@ function getBodyPartSVG(partType, color) {
         </svg>`,
 
         r_foot: `<svg viewBox="0 0 50 50">
+            <path d="M35 0 L35 25 Q35 40 42 45 Q45 48 40 48 L10 48 Q8 48 10 42 Q15 30 22 25 L22 0" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="35" cy="45" r="2" fill="${c}"/>
+            <circle cx="28" cy="46" r="2" fill="${c}"/>
+            <circle cx="21" cy="46" r="2" fill="${c}"/>
+        </svg>`,
+
+        // Generic types (for card display - no left/right distinction)
+        upper_arm: `<svg viewBox="0 0 50 50">
+            <path d="M50 10 L30 10 Q15 10 15 25 L15 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <path d="M50 25 L35 25 Q25 25 25 35 L25 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <line x1="10" y1="48" x2="32" y2="48" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
+        </svg>`,
+        lower_arm: `<svg viewBox="0 0 50 50">
+            <line x1="10" y1="2" x2="32" y2="2" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
+            <line x1="15" y1="0" x2="15" y2="50" stroke="${c}" stroke-width="${sw}"/>
+            <line x1="25" y1="0" x2="25" y2="50" stroke="${c}" stroke-width="${sw}"/>
+        </svg>`,
+        hand: `<svg viewBox="0 0 50 50">
+            <path d="M15 0 L15 15 Q15 25 10 30 L5 35" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <path d="M20 15 L20 30 L15 37" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <path d="M25 0 L25 15 Q25 25 28 30 L30 35" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <path d="M20 25 Q22 35 25 40" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <path d="M32 15 Q35 25 33 35" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round"/>
+            <path d="M3 37 Q15 50 35 37" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+        </svg>`,
+        upper_leg: `<svg viewBox="0 0 50 50">
+            <path d="M15 0 Q18 20 20 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <path d="M35 0 Q38 20 35 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <line x1="17" y1="48" x2="38" y2="48" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
+        </svg>`,
+        lower_leg: `<svg viewBox="0 0 50 50">
+            <line x1="17" y1="2" x2="38" y2="2" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
+            <path d="M20 0 Q22 25 22 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
+            <path d="M35 0 Q37 25 35 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
+        </svg>`,
+        foot: `<svg viewBox="0 0 50 50">
             <path d="M35 0 L35 25 Q35 40 42 45 Q45 48 40 48 L10 48 Q8 48 10 42 Q15 30 22 25 L22 0" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
             <circle cx="35" cy="45" r="2" fill="${c}"/>
             <circle cx="28" cy="46" r="2" fill="${c}"/>
