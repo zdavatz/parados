@@ -15,5 +15,5 @@ Games by Walter Prossnitz
   - [Local](https://game.ywesee.com/parados/makalaina.html) | [Remote](https://game.ywesee.com/parados/makalaina_remote.html)
 - **Capovolto** — 2-player disc-flipping strategy game on a polyomino grid
   - [Play](https://game.ywesee.com/parados/capovolto.html)
-- **Frankenstein** — "Where's that green elbow??" Memory body-building game for 2-4 players. No left/right — any body part fits either side!
+- **Frankenstein** — "Where's that green elbow??" Memory body-building game for 2-4 players. No left/right — any body part fits either side! Strict torso adjacency: each limb requires its specific adjacent torso part.
   - [Play](https://game.ywesee.com/parados/frankenstein.html)
