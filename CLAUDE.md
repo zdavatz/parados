@@ -19,7 +19,7 @@ There is no build step, no package manager, and no test framework. To run a game
 **Localization by duplication:** Language variants are separate files (e.g., `kangaroo.html` for German, `kangaroo_en.html` for English, `kangaroo_jp.html` for Japanese, `kangaroo_cn.html` for Chinese, `kangaroo_ua.html` for Ukrainian). When modifying game logic, changes must be propagated to all language variants.
 
 **Games:**
-- `kangaroo.html` (+ `_en`, `_jp`, `_cn`, `_ua`) — DUK (Das Ungeduldige Känguru): grid-based puzzle with kangaroo jumping over colored dishes. Supports LEVEL, RANDOM, and EDITOR modes. Has a `LEVEL_DATABASE` array for predefined puzzles.
+- `kangaroo.html` (+ `_en`, `_jp`, `_cn`, `_ua`) — DUK (Das Ungeduldige Känguru): grid-based puzzle where Kangy the kangaroo collects food (green dishes) and water (blue dishes) for her family by jumping over them. Symmetric "catapult" jumps with color alternation. Before every jump, the player may move one dish by one square. Supports LEVEL, RANDOM, and EDITOR modes. Has a `LEVEL_DATABASE` array for predefined puzzles.
 - `divided_loyalties.html` — Two-player tile placement and bridge-building on an 11x11 grid.
 - `democracy_remote.html` — Democracy in Space strategy game with remote multiplayer.
 - `makalaina.html` / `makalaina_remote.html` — MAKA LAINA disc collection game on a 12x12 grid.
