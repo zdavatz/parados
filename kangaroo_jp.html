@@ -247,7 +247,7 @@
             <h2>せっかちなカンガルー (The Impatient Kangaroo)</h2>
             
             <h3>目的 (Aim)</h3>
-            <p>プレイエリア（「アウトバック」）にあるすべてのお皿を、飛び越えることで取り除くこと。</p>
+            <p>カンギーは家族のためにエサと水を集めています！アウトバックのお皿を飛び越えて、すべて集めましょう。</p>
 
             <h3>遊び方 (Gameplay)</h3>
             <ul>
@@ -264,7 +264,7 @@
             <h3>戦術のヒント (Tactical tips)</h3>
             <p>カンギーをどこに配置するかは、最も重要な決断の1つです。もしアウトバック内に、すでにお皿が交互に並んでいるエリアを見つけたら、そこから始めるのが名案です。</p>
             <p>この「無料の」ターン（カンギーが進むために新たにお皿を動かす必要がないターン）を利用して、後で（おそらくずっと後で！）カンギーの助けになるような場所へ、他のお皿を動かしておくことができるからです。</p>
-            <p>全体的なアドバイスとして、できる限り端にあるお皿を「片付け」、コーナー（角）からお皿を遠ざけるように心がけてください。</p>
+            <p>全体的なアドバイスとして、まず端にあるお皿から集め、コーナー（角）からお皿を遠ざけるように心がけてください。</p>
             
             <button class="close-btn" onclick="closeRules()">わかった、始めよう！</button>
         </div>
@@ -575,7 +575,7 @@
                 if(board[y][x]==='K') k++;
             }
         }
-        if (g===0 && b===0) return alert("アウトバックが完全に空です！");
+        if (g===0 && b===0) return alert("アウトバックには集めるものがありません！");
         
         nextTarget = null;
         if (g > b) nextTarget = 'G';
@@ -658,7 +658,7 @@
             countEl.innerText = `緑: ${gLeft} | 青: ${bLeft}`;
             if (gameState === 'PLAYING' && gLeft===0 && bLeft===0) {
                 gameState = 'WON';
-                statusEl.innerText = "🏆 勝利！アウトバックがきれいになりました！";
+                statusEl.innerText = "🏆 勝利！カンギーは家族のためにエサと水をすべて集めました！";
                 statusEl.style.color = "#66bb6a";
                 btnMoveDish.disabled = true;
                 logAction("WIN", -1, -1, -1, -1, "Game Won");
@@ -699,7 +699,7 @@
                 btnMoveDish.innerText = "🖐️ お皿を動かす";
             }
         } else if (gameState === 'WON') {
-             turnInfoEl.innerText = "素晴らしい！";
+             turnInfoEl.innerText = "カンギーの家族は大喜び！";
         }
     }
 

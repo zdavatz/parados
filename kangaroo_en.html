@@ -247,7 +247,7 @@
             <h2>The Impatient Kangaroo</h2>
 
             <h3>The Goal</h3>
-            <p>Clear all dishes from the playing area (the "Outback") by jumping over them.</p>
+            <p>Kangy is collecting food and water for her family! Jump over dishes in the Outback to collect them all.</p>
 
             <h3>How to Play</h3>
             <ul>
@@ -264,7 +264,7 @@
             <h3>Tactical Tips</h3>
             <p>Choosing Kangy's starting position is one of your most important decisions. If you discover an area in the Outback where the dishes are already alternating, it's a good idea to start there.</p>
             <p>Use these "free" moves (moves where you don't need to shift dishes for Kangy's direct path) to position other dishes where Kangy will need them later — perhaps much later!</p>
-            <p>A general tip: Try to "clean up" the dishes at the edges and move everything away from the corners whenever you can.</p>
+            <p>A general tip: Try to collect the dishes at the edges first and move everything away from the corners whenever you can.</p>
 
             <button class="close-btn" onclick="closeRules()">Got it, let's go!</button>
         </div>
@@ -577,7 +577,7 @@
                 if(board[y][x]==='K') k++;
             }
         }
-        if (g===0 && b===0) return alert("The Outback is completely empty!");
+        if (g===0 && b===0) return alert("There's nothing to collect in the Outback!");
 
         nextTarget = null;
         if (g > b) nextTarget = 'G';
@@ -660,7 +660,7 @@
             countEl.innerText = `Green: ${gLeft} | Blue: ${bLeft}`;
             if (gameState === 'PLAYING' && gLeft===0 && bLeft===0) {
                 gameState = 'WON';
-                statusEl.innerText = "🏆 VICTORY! The Outback is clear!";
+                statusEl.innerText = "🏆 VICTORY! Kangy collected all food and water for her family!";
                 statusEl.style.color = "#66bb6a";
                 btnMoveDish.disabled = true;
                 logAction("WIN", -1, -1, -1, -1, "Game Won");
@@ -701,7 +701,7 @@
                 btnMoveDish.innerText = "🖐️ Move Dish";
             }
         } else if (gameState === 'WON') {
-             turnInfoEl.innerText = "Fantastic performance!";
+             turnInfoEl.innerText = "Kangy's family is happy!";
         }
     }
 

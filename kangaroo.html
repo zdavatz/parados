@@ -247,7 +247,7 @@
             <h2>Das Ungeduldige Känguru</h2>
             
             <h3>Das Ziel</h3>
-            <p>Räume alle Schalen aus dem Spielbereich (dem "Outback"), indem du über sie springst.</p>
+            <p>Kangy sammelt Futter und Wasser für ihre Familie! Springe über die Schalen im Outback, um sie alle einzusammeln.</p>
 
             <h3>Spielablauf</h3>
             <ul>
@@ -264,7 +264,7 @@
             <h3>Taktische Tipps</h3>
             <p>Die Wahl von Kangys Startposition ist eine deiner wichtigsten Entscheidungen. Wenn du einen Bereich im Outback entdeckst, in dem die Schalen bereits abwechselnd liegen, ist es eine gute Idee, dort zu starten.</p>
             <p>Nutze diese "freien" Züge (Züge, bei denen du keine Schalen für Kangys direkten Weg verschieben musst), um andere Schalen an Positionen zu bringen, die Kangy später – vielleicht viel später! – helfen werden.</p>
-            <p>Ein genereller Rat: Versuche, die Schalen an den Rändern "aufzuräumen" und bewege alles von den Ecken weg, wann immer du kannst.</p>
+            <p>Ein genereller Rat: Versuche, die Schalen an den Rändern zuerst einzusammeln und bewege alles von den Ecken weg, wann immer du kannst.</p>
             
             <button class="close-btn" onclick="closeRules()">Verstanden, los geht's!</button>
         </div>
@@ -577,7 +577,7 @@
                 if(board[y][x]==='K') k++;
             }
         }
-        if (g===0 && b===0) return alert("Das Outback ist komplett leer!");
+        if (g===0 && b===0) return alert("Es gibt nichts zum Einsammeln im Outback!");
         
         nextTarget = null;
         if (g > b) nextTarget = 'G';
@@ -660,7 +660,7 @@
             countEl.innerText = `Grün: ${gLeft} | Blau: ${bLeft}`;
             if (gameState === 'PLAYING' && gLeft===0 && bLeft===0) {
                 gameState = 'WON';
-                statusEl.innerText = "🏆 SIEG! Das Outback ist leer!";
+                statusEl.innerText = "🏆 SIEG! Kangy hat alles Futter und Wasser für ihre Familie gesammelt!";
                 statusEl.style.color = "#66bb6a";
                 btnMoveDish.disabled = true;
                 logAction("WIN", -1, -1, -1, -1, "Game Won");
@@ -701,7 +701,7 @@
                 btnMoveDish.innerText = "🖐️ Schale verschieben";
             }
         } else if (gameState === 'WON') {
-             turnInfoEl.innerText = "Fantastische Leistung!";
+             turnInfoEl.innerText = "Kangys Familie ist glücklich!";
         }
     }
 

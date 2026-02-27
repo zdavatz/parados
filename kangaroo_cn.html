@@ -247,7 +247,7 @@
             <h2>急躁的袋鼠 (The Impatient Kangaroo)</h2>
             
             <h3>游戏目标 (Aim)</h3>
-            <p>通过跳跃的方式，清除游戏区域（“内陆”）中的所有盘子。</p>
+            <p>Kangy 正在为家人收集食物和水！跳过内陆中的盘子，把它们全部收集起来。</p>
 
             <h3>玩法 (Gameplay)</h3>
             <ul>
@@ -264,7 +264,7 @@
             <h3>战术提示 (Tactical tips)</h3>
             <p>将 Kangy 放在哪里将是你最重要的决定之一。如果你发现内陆的某个区域盘子已经是交替排列的，那么从那里开始利用这些“免费”回合（即不需要为了 Kangy 前进而移动盘子的回合）是个好主意。</p>
             <p>这样你就可以利用这些回合将其他盘子移动到稍后（可能在很久之后！）能帮助到 Kangy 的位置。</p>
-            <p>一个通用的建议——只要有可能，尽量“清理”边缘的盘子，并把所有盘子从角落移开。</p>
+            <p>一个通用的建议——尽量先收集边缘的盘子，并把所有盘子从角落移开。</p>
             
             <button class="close-btn" onclick="closeRules()">明白了，开始吧！</button>
         </div>
@@ -575,7 +575,7 @@
                 if(board[y][x]==='K') k++;
             }
         }
-        if (g===0 && b===0) return alert("内陆是空的！");
+        if (g===0 && b===0) return alert("内陆没有可以收集的东西！");
         
         nextTarget = null;
         if (g > b) nextTarget = 'G';
@@ -658,7 +658,7 @@
             countEl.innerText = `绿: ${gLeft} | 蓝: ${bLeft}`;
             if (gameState === 'PLAYING' && gLeft===0 && bLeft===0) {
                 gameState = 'WON';
-                statusEl.innerText = "🏆 胜利！内陆被清空了！";
+                statusEl.innerText = "🏆 胜利！Kangy 为家人收集了所有的食物和水！";
                 statusEl.style.color = "#66bb6a";
                 btnMoveDish.disabled = true;
                 logAction("WIN", -1, -1, -1, -1, "Game Won");
@@ -699,7 +699,7 @@
                 btnMoveDish.innerText = "🖐️ 移动盘子";
             }
         } else if (gameState === 'WON') {
-             turnInfoEl.innerText = "干得漂亮！";
+             turnInfoEl.innerText = "Kangy 的家人很开心！";
         }
     }
 
