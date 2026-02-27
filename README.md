@@ -5,7 +5,7 @@ Games by Walter Prossnitz
 
 ## Games
 
-- **DUK (Das Ungeduldige Känguru)** — Grid-based puzzle with kangaroo jumping over colored dishes
+- **DUK (Das Ungeduldige Känguru)** — Kangy collects food and water for her family! Grid-based puzzle with catapult jumps over colored dishes
   - [German](https://game.ywesee.com/parados/kangaroo.html) | [English](https://game.ywesee.com/parados/kangaroo_en.html) | [Japanese](https://game.ywesee.com/parados/kangaroo_jp.html) | [Chinese](https://game.ywesee.com/parados/kangaroo_cn.html) | [Ukrainian](https://game.ywesee.com/parados/kangaroo_ua.html)
 - **Divided Loyalties** — Two-player tile placement and bridge-building on an 11x11 grid
   - [Play](https://game.ywesee.com/parados/divided_loyalties.html)
