@@ -24,7 +24,7 @@ There is no build step, no package manager, and no test framework. To run a game
 - `democracy_remote.html` — Democracy in Space strategy game with remote multiplayer.
 - `makalaina.html` / `makalaina_remote.html` — MAKA LAINA disc collection game on a 12x12 grid.
 - `capovolto.html` — Capovolto: 2-player disc-flipping strategy game on a polyomino grid (German UI). Players place 18 polyominoes, then alternate placing numbered discs across 6 rounds. Core mechanic: flipping 4-disc lines (2 of each color) to change values. Opponent's last disc value determines your direction constraint (even=H/V, odd=diagonal). Scoring by value majority per polyomino.
-- `frankenstein.html` — Frankenstein: "Where's that green elbow??" Memory body-building game for 2-4 players. Players flip face-down cards to find body parts and build a complete Frankenstein body from the middle outward. 64 cards total (32/48/64 for 2/3/4 players). Features build-order constraints, toggleable color rule, joker cards, and CSS-drawn SVG body part art.
+- `frankenstein.html` — Frankenstein: "Where's that green elbow??" Memory body-building game for 2-4 players. Players flip face-down cards to find body parts and build a complete Frankenstein body from the middle outward. 64 cards total (32/48/64 for 2/3/4 players). No left/right distinction — any arm/leg/hand/foot card fits either side. All 4 torso parts are identical and interchangeable. Body part colors: green, orange, purple, turquoise; torso is grey. Features build-order constraints, toggleable color rule, joker cards, and CSS-drawn SVG body part art.
 
 **Common code patterns across games:**
 - Global state variables with a `gameState` string for state machine flow
