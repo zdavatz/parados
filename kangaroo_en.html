@@ -135,6 +135,7 @@
         .kangy {
             font-size: calc(var(--cell-size) * 0.75); z-index: 10; filter: drop-shadow(0 3px 3px rgba(0,0,0,0.5));
             pointer-events: none; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: inline-block;
         }
         .ghost-kangy { opacity: 0.4; filter: grayscale(50%); animation: float 2s infinite ease-in-out; }
         @keyframes float { 0% {transform: translateY(0px);} 50% {transform: translateY(-5px);} 100% {transform: translateY(0px);} }
@@ -365,6 +366,8 @@
     let isMovingDish = false;
     let selectedDishPos = null;
     let historyStack = [];
+    let kangyWobbleInterval = null;
+    let kangyWobbleIndex = 0;
     let currentBrush = 'G'; // For Editor: G, B, K, E (Empty)
     let currentLevelData = null; // Stores active level for reset
 
@@ -671,6 +674,7 @@
         } else {
             countEl.innerText = `Builder Mode (G:${gLeft} B:${bLeft})`;
         }
+        updateKangyFacing();
     }
 
     function updateUI() {
@@ -865,6 +869,59 @@
             }
         }
         return false;
+    }
+
+    // --- Kangy rotation toward jump directions ---
+    const DIRECTION_TRANSFORMS = {
+        'left':       'rotate(0deg)',
+        'up-left':    'rotate(45deg)',
+        'up':         'rotate(90deg)',
+        'up-right':   'scaleX(-1) rotate(45deg)',
+        'right':      'scaleX(-1)',
+        'down-right': 'scaleX(-1) rotate(-45deg)',
+        'down':       'rotate(-90deg)',
+        'down-left':  'rotate(-45deg)'
+    };
+    const DIRECTION_ANGLE_ORDER = ['up','up-right','right','down-right','down','down-left','left','up-left'];
+
+    function getDirectionKey(dx, dy) {
+        const map = {'-1,0':'left','-1,-1':'up-left','0,-1':'up','1,-1':'up-right',
+                     '1,0':'right','1,1':'down-right','0,1':'down','-1,1':'down-left'};
+        return map[`${dx},${dy}`];
+    }
+
+    function getValidJumpDirections() {
+        const dirs = new Set();
+        for (let y = 0; y < ROWS; y++) {
+            for (let x = 0; x < COLS; x++) {
+                if (board[y][x] === null && isValidJump(kangyPos.x, kangyPos.y, x, y)) {
+                    const dx = x - kangyPos.x, dy = y - kangyPos.y;
+                    const sx = dx === 0 ? 0 : dx / Math.abs(dx);
+                    const sy = dy === 0 ? 0 : dy / Math.abs(dy);
+                    dirs.add(getDirectionKey(sx, sy));
+                }
+            }
+        }
+        return [...dirs].sort((a, b) => DIRECTION_ANGLE_ORDER.indexOf(a) - DIRECTION_ANGLE_ORDER.indexOf(b));
+    }
+
+    function applyKangyTransform(t) {
+        const el = document.querySelector('.kangy:not(.ghost-kangy)');
+        if (el) el.style.transform = t;
+    }
+
+    function updateKangyFacing() {
+        if (kangyWobbleInterval) { clearInterval(kangyWobbleInterval); kangyWobbleInterval = null; }
+        if (gameState !== 'PLAYING' || isMovingDish) { applyKangyTransform('rotate(0deg)'); return; }
+        const dirs = getValidJumpDirections();
+        if (dirs.length === 0) { applyKangyTransform('rotate(0deg)'); return; }
+        if (dirs.length === 1) { applyKangyTransform(DIRECTION_TRANSFORMS[dirs[0]]); return; }
+        kangyWobbleIndex = 0;
+        applyKangyTransform(DIRECTION_TRANSFORMS[dirs[0]]);
+        kangyWobbleInterval = setInterval(() => {
+            kangyWobbleIndex = (kangyWobbleIndex + 1) % dirs.length;
+            applyKangyTransform(DIRECTION_TRANSFORMS[dirs[kangyWobbleIndex]]);
+        }, 800);
     }
 
     function openRules() {
