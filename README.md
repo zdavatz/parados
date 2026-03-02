@@ -1,19 +1,22 @@
 # parados
+
+**think ahead!**
+
 Games by Walter Prossnitz
 
 **[Play all games](https://game.ywesee.com/parados/)**
 
 ## Games
 
-- **DUK (Das Ungeduldige Känguru)** — Kangy collects food and water for her family! Grid-based puzzle with catapult jumps over colored dishes. Kangy rotates to face available jump directions and wobbles between multiple options
+- **DUK — The Impatient Kangaroo** — The plan: to create a 21st century successor to the super-hit solo puzzle game Rushhour. Many players think that hopping through the outback collecting goodies is more fun than trying to shove your way through traffic? Another advantage — thanks to the program, there's all kinds of different ways to play:-)
   - [German](https://game.ywesee.com/parados/kangaroo.html) | [English](https://game.ywesee.com/parados/kangaroo_en.html) | [Japanese](https://game.ywesee.com/parados/kangaroo_jp.html) | [Chinese](https://game.ywesee.com/parados/kangaroo_cn.html) | [Ukrainian](https://game.ywesee.com/parados/kangaroo_ua.html)
-- **Divided Loyalties** — Two-player tile placement and bridge-building on an 11x11 grid
-  - [Play](https://game.ywesee.com/parados/divided_loyalties.html)
-- **Democracy in Space** — Strategy game with remote multiplayer
-  - [Play](https://game.ywesee.com/parados/democracy_remote.html)
-- **MAKA LAINA** — Disc collection game on a 12x12 grid
+- **MAKA LAINA** — It's the first turn and the battle is on! No time to get warmed up in MakaLaina:-) You need to be planning from the get go, evolving your long term strategy — but staying flexible. The constant influx of new discs means that even a small shift can have consequences...
   - [Local](https://game.ywesee.com/parados/makalaina.html) | [Remote](https://game.ywesee.com/parados/makalaina_remote.html)
-- **Capovolto** — 2-player disc-flipping strategy game on a polyomino grid
-  - [Play](https://game.ywesee.com/parados/capovolto.html)
-- **Frankenstein** — "Where's that green elbow??" Memory body-building game for 2-4 players. No left/right — any body part fits either side! Strict torso adjacency: each limb requires its specific adjacent torso part.
+- **Democracy in Space** — Based on the concept of the US Electoral College (parliamentary systems also have it). Area majority culled to its essence. A gentle opening suddenly transforms into a nail biting race to the finish! The tie breaker condition needs to be kept in mind, but you won't know for a while if you'll need it this time....
+  - [Play](https://game.ywesee.com/parados/democracy_remote.html)
+- **Frankenstein — Where's that green elbow?** — This is even shorter and sweeter than Rainbow. For 1–4 players, it's a "frankly memorable" game (you'll get the pun when you play it). Like most of its colleagues here at Think Ahead, it is so much easier to play online. Age recommendation — 7 years and up. Don't be surprised if the youngest player wins:-))
   - [Play](https://game.ywesee.com/parados/frankenstein.html)
+- **Divided Loyalties** — Many turns are offensive AND defensive and each one may have long term consequences! It's connect 4, but with 6 colours. Your colour is always loyal to you, your opponent's never is... and the other 4? Sometimes they are, and sometimes they aren't. Tiles can even be loyal in one direction, AND disloyal in another! Not for the faint of heart....
+  - [Play](https://game.ywesee.com/parados/divided_loyalties.html)
+- **Capovolto** — The classic game of Othello — on steroids! Add in area control on a random board, numbered discs and a flipping mechanism that is light years ahead of the original, inviting all kinds of devious strategies, and designed to make your brain go all sorts of places it hasn't been before:-)
+  - [Play](https://game.ywesee.com/parados/capovolto.html)

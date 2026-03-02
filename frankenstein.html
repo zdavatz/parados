@@ -141,6 +141,7 @@ h1 {
 
 #playerTurnInfo { color: var(--accent); font-size: 1.05em; }
 #mistakeInfo { color: #e0e0e0; }
+#mistakeTrackInfo { color: #ef9a9a; font-size: 0.9em; }
 #cardsLeft { color: var(--text-dim); }
 
 .main-area {
@@ -530,7 +531,7 @@ h1 {
     margin-bottom: 10px;
 }
 
-.victory-box p {
+.victory-box p, #victoryMsg {
     color: var(--text);
     font-size: 1.1em;
     margin-bottom: 20px;
@@ -620,6 +621,27 @@ h1 {
 
 .close-btn:hover { background: #4e342e; }
 
+.body-tab.finished { opacity: 0.7; border-bottom: 2px solid var(--green); }
+
+.completion-notice {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, #1a2027, #37474f);
+    border: 2px solid var(--golden);
+    border-radius: 12px;
+    padding: 20px 30px;
+    color: var(--golden);
+    font-size: 1.3em;
+    font-weight: 700;
+    z-index: 3500;
+    opacity: 0;
+    transition: opacity 0.3s;
+    text-align: center;
+}
+.completion-notice.show { opacity: 1; }
+
 /* ─── Responsive ─── */
 @media (max-width: 800px) {
     .main-area { flex-direction: column; align-items: center; }
@@ -644,6 +666,7 @@ h1 {
 <div id="setupScreen">
     <h2>How many players?</h2>
     <div class="player-select">
+        <button onclick="startGame(1)">1 Player (Solo)</button>
         <button onclick="startGame(2)">2 Players</button>
         <button onclick="startGame(3)">3 Players</button>
         <button onclick="startGame(4)">4 Players</button>
@@ -652,13 +675,18 @@ h1 {
         <input type="checkbox" id="colorRuleToggle" checked>
         <label for="colorRuleToggle">Color rule: no consecutive same color in limbs</label>
     </div>
+    <div class="setup-option">
+        <input type="checkbox" id="trackMistakesToggle" checked>
+        <label for="trackMistakesToggle">Track mistakes (cards you should have remembered)</label>
+    </div>
 </div>
 
 <!-- ─── Game Screen ─── -->
 <div id="gameScreen">
     <div id="statusBar">
         <span id="playerTurnInfo">Player 1's Turn</span>
-        <span id="mistakeInfo">Mistakes: 0 / 2</span>
+        <span id="mistakeInfo">Misses: 0 / 2</span>
+        <span id="mistakeTrackInfo"></span>
         <span id="cardsLeft">Cards: 32</span>
     </div>
 
@@ -695,7 +723,7 @@ h1 {
 <div id="victoryOverlay">
     <div class="victory-box">
         <h2 id="victoryTitle">Player 1 wins!</h2>
-        <p id="victoryMsg">Frankie is complete!</p>
+        <div id="victoryMsg">Frankie is complete!</div>
         <button onclick="backToSetup()">New Game</button>
     </div>
 </div>
@@ -706,11 +734,11 @@ h1 {
         <span class="close" onclick="closeRules()">&times;</span>
         <h2>Frankenstein &mdash; Rules</h2>
         <p><strong>Where's that green elbow??</strong><br>
-        A Memory Frankenstein game for 2 &ndash; 4 players, ages 5 &ndash; 99.</p>
+        A Memory Frankenstein game for 1 &ndash; 4 players, ages 5 &ndash; 99.</p>
 
         <h3>Goal</h3>
-        <p>Build a complete Frankenstein body from face-down cards. The first player to
-        complete their Frankie wins!</p>
+        <p>Build a complete Frankenstein body from face-down cards. The game continues until
+        all players complete their Frankie. The first to finish wins!</p>
 
         <h3>Setup</h3>
         <p>Each player starts with 3 of 4 torso parts already in place. The 4th torso part
@@ -737,16 +765,27 @@ h1 {
 
         <h3>Taking a Turn</h3>
         <p>Flip cards one at a time. If you can use the card, it's placed on your body
-        and you continue flipping. If you can't use it, that's a <strong>mistake</strong>
+        and you continue flipping. If you can't use it, that's a <strong>miss</strong>
         &mdash; the card flips back face down.</p>
-        <p>After your <strong>2nd mistake</strong>, your turn ends. The key is
+        <p>After your <strong>2nd miss</strong>, your turn ends. The key is
         remembering where cards are that you can't use yet!</p>
 
         <h3>Jokers</h3>
         <p>There are as many joker cards as there are players. A joker can substitute for
         any torso, arm, or leg part (not hands, feet, or head). Each player may have at
-        most one joker. Finding a 2nd joker passes it to the next player (not a mistake).
+        most one joker. Finding a 2nd joker passes it to the next player (not a miss).
         If you later find the real body part, you may swap it with your joker.</p>
+
+        <h3>Solo Mode</h3>
+        <p>In solo mode you control both Frankies, alternating turns just like a 2-player
+        game. The goal is to complete both Frankies with as few misses as possible.
+        Keep track of which Frankie needs which parts &mdash; it's a real brain trainer!</p>
+
+        <h3>Misses &amp; Mistakes</h3>
+        <p>A <strong>miss</strong> is any card you flip that you can't use. After 2 misses,
+        your turn ends. A <strong>mistake</strong> is a special kind of miss: flipping a
+        card that was already turned over before and you still can't use it &mdash;
+        you should have remembered! Mistake tracking can be turned on/off in the setup.</p>
 
         <h3>Color Rule (optional)</h3>
         <p>Body parts come in 4 colors: green, orange, purple, and turquoise.
@@ -854,6 +893,8 @@ const COLOR_CHAINS = {
 // ─── Game State ───
 let numPlayers = 2;
 let colorRuleEnabled = true;
+let trackMistakes = true;
+let isSoloMode = false;
 let gameState = 'SETUP'; // SETUP | PLAYING | GAME_OVER
 let currentPlayer = 0;
 let mistakeCount = 0;
@@ -864,6 +905,8 @@ let activeBodyTab = 0;
 let isAnimating = false;
 let gridCols = 8;
 let gridRows = 4;
+let seenCards = new Set();
+let finishedCount = 0;
 
 // CSV logging
 let sessionLog = [];
@@ -881,6 +924,7 @@ const bodyTabsEl = document.getElementById('bodyTabs');
 const bodyDisplayEl = document.getElementById('bodyDisplay');
 const statusPlayerEl = document.getElementById('playerTurnInfo');
 const statusMistakeEl = document.getElementById('mistakeInfo');
+const statusMistakeTrackEl = document.getElementById('mistakeTrackInfo');
 const statusCardsEl = document.getElementById('cardsLeft');
 const btnUndo = document.getElementById('btnUndo');
 const jokerModal = document.getElementById('jokerModal');
@@ -890,8 +934,10 @@ const rulesModal = document.getElementById('rulesModal');
 
 // ─── Initialization ───
 function startGame(n) {
-    numPlayers = n;
+    isSoloMode = (n === 1);
+    numPlayers = isSoloMode ? 2 : n;
     colorRuleEnabled = document.getElementById('colorRuleToggle').checked;
+    trackMistakes = document.getElementById('trackMistakesToggle').checked;
     currentGameId = Date.now().toString(36);
 
     gridRows = n === 2 ? 4 : n === 3 ? 6 : 8;
@@ -914,7 +960,11 @@ function startGame(n) {
             missingTorso,
             jokerUsed: false,
             jokerSlot: null,
-            cardsPlaced: 0
+            cardsPlaced: 0,
+            totalMisses: 0,
+            mistakeTrackCount: 0,
+            finished: false,
+            finishOrder: 0
         });
     }
 
@@ -926,6 +976,8 @@ function startGame(n) {
     sessionLog = [];
     turnCounter = 0;
     activeBodyTab = 0;
+    seenCards = new Set();
+    finishedCount = 0;
     gameState = 'PLAYING';
 
     setupScreen.style.display = 'none';
@@ -1010,7 +1062,12 @@ function flipCard(idx) {
         cardIdx: idx,
         playerBefore: currentPlayer,
         mistakesBefore: mistakeCount,
-        placement: null // filled if placed
+        placement: null, // filled if placed
+        seenCardsBefore: new Set(seenCards),
+        mistakeTrackBefore: players[currentPlayer].mistakeTrackCount,
+        totalMissesBefore: players[currentPlayer].totalMisses,
+        finishedBefore: players[currentPlayer].finished,
+        finishedCountBefore: finishedCount
     });
 
     card.faceUp = true;
@@ -1044,15 +1101,28 @@ function processFlippedCard(idx) {
         historyStack[historyStack.length - 1].placement = { slot, playerIdx: currentPlayer };
         logAction('PLACE', card);
 
-        if (checkWin(currentPlayer)) {
-            endGame(currentPlayer);
-            return;
+        if (checkWin(currentPlayer) && !players[currentPlayer].finished) {
+            players[currentPlayer].finished = true;
+            finishedCount++;
+            players[currentPlayer].finishOrder = finishedCount;
+            if (finishedCount >= numPlayers) {
+                endGame();
+                return;
+            }
+            showCompletionNotice(currentPlayer);
         }
         renderAll();
     } else {
-        // Mistake
+        // Miss
         mistakeCount++;
-        logAction('MISTAKE', card);
+        players[currentPlayer].totalMisses++;
+        logAction('MISS', card);
+
+        // Check if this was a "should have known" mistake
+        if (trackMistakes && seenCards.has(idx)) {
+            players[currentPlayer].mistakeTrackCount++;
+            logAction('MISTAKE_TRACKED', card);
+        }
 
         // Flash the card
         const cardEl = cardGridEl.children[idx];
@@ -1070,10 +1140,11 @@ function processFlippedCard(idx) {
                 renderAll();
             }, 1200);
         } else {
-            // First mistake - flip back after a delay
+            // First miss - flip back after a delay
             isAnimating = true;
             setTimeout(() => {
                 card.faceUp = false;
+                seenCards.add(idx);
                 isAnimating = false;
                 renderAll();
             }, 1200);
@@ -1160,9 +1231,14 @@ function handleJoker(card, idx) {
         );
 
         if (validSlots.length === 0) {
-            // Can't place joker - it's a mistake
+            // Can't place joker - it's a miss
             mistakeCount++;
-            logAction('MISTAKE', card);
+            players[currentPlayer].totalMisses++;
+            logAction('MISS', card);
+            if (trackMistakes && seenCards.has(idx)) {
+                players[currentPlayer].mistakeTrackCount++;
+                logAction('MISTAKE_TRACKED', card);
+            }
             renderStatus();
             if (mistakeCount >= 2) {
                 isAnimating = true;
@@ -1176,6 +1252,7 @@ function handleJoker(card, idx) {
                 isAnimating = true;
                 setTimeout(() => {
                     card.faceUp = false;
+                    seenCards.add(idx);
                     isAnimating = false;
                     renderAll();
                 }, 1200);
@@ -1247,9 +1324,15 @@ function placeJokerInSlot(slot) {
 
     pendingJokerCard = null;
 
-    if (checkWin(currentPlayer)) {
-        endGame(currentPlayer);
-        return;
+    if (checkWin(currentPlayer) && !players[currentPlayer].finished) {
+        players[currentPlayer].finished = true;
+        finishedCount++;
+        players[currentPlayer].finishOrder = finishedCount;
+        if (finishedCount >= numPlayers) {
+            endGame();
+            return;
+        }
+        showCompletionNotice(currentPlayer);
     }
     renderAll();
 }
@@ -1258,15 +1341,19 @@ function placeJokerInSlot(slot) {
 function nextPlayer() {
     mistakeCount = 0;
     logAction('TURN_END', null);
-    currentPlayer = (currentPlayer + 1) % numPlayers;
+    do {
+        currentPlayer = (currentPlayer + 1) % numPlayers;
+    } while (players[currentPlayer].finished && finishedCount < numPlayers);
     activeBodyTab = currentPlayer;
     turnCounter++;
 }
 
 function flipBackAllUnplaced() {
-    for (const card of cardGrid) {
+    for (let i = 0; i < cardGrid.length; i++) {
+        const card = cardGrid[i];
         if (card.faceUp && !card.removed) {
             card.faceUp = false;
+            seenCards.add(i);
         }
     }
 }
@@ -1280,13 +1367,51 @@ function checkWin(playerIdx) {
     return true;
 }
 
-function endGame(winnerIdx) {
+function endGame() {
     gameState = 'GAME_OVER';
-    logAction('WIN', null);
-    document.getElementById('victoryTitle').textContent = PLAYER_NAMES[winnerIdx] + ' wins!';
-    document.getElementById('victoryMsg').textContent = 'Frankie is complete! (' + players[winnerIdx].cardsPlaced + ' cards placed)';
+    logAction('GAME_OVER', null);
+
+    if (isSoloMode) {
+        const totalMisses = players[0].totalMisses + players[1].totalMisses;
+        const totalMistakes = players[0].mistakeTrackCount + players[1].mistakeTrackCount;
+        document.getElementById('victoryTitle').textContent = 'Both Frankies Complete!';
+        let msg = `Total misses: ${totalMisses}`;
+        if (trackMistakes) msg += ` | Mistakes: ${totalMistakes}`;
+        document.getElementById('victoryMsg').innerHTML = msg;
+    } else {
+        const sorted = players.map((p, i) => ({ idx: i, ...p }))
+            .sort((a, b) => a.finishOrder - b.finishOrder);
+        document.getElementById('victoryTitle').textContent = getPlayerName(sorted[0].idx) + ' wins!';
+
+        let html = '<table style="margin:10px auto;text-align:left;color:var(--text);border-collapse:collapse">';
+        html += '<tr><th style="padding:4px 10px">#</th><th style="padding:4px 10px">Player</th><th style="padding:4px 10px">Misses</th>';
+        if (trackMistakes) html += '<th style="padding:4px 10px">Mistakes</th>';
+        html += '</tr>';
+        for (const p of sorted) {
+            html += `<tr><td style="padding:4px 10px">${p.finishOrder}</td>`;
+            html += `<td style="padding:4px 10px;color:${PLAYER_COLORS[p.idx]}">${getPlayerName(p.idx)}</td>`;
+            html += `<td style="padding:4px 10px">${p.totalMisses}</td>`;
+            if (trackMistakes) html += `<td style="padding:4px 10px">${p.mistakeTrackCount}</td>`;
+            html += '</tr>';
+        }
+        html += '</table>';
+        document.getElementById('victoryMsg').innerHTML = html;
+    }
     victoryOverlay.classList.add('show');
     renderAll();
+}
+
+function showCompletionNotice(playerIdx) {
+    const name = getPlayerName(playerIdx);
+    const notice = document.createElement('div');
+    notice.className = 'completion-notice';
+    notice.textContent = name + "'s Frankie is complete!";
+    document.body.appendChild(notice);
+    setTimeout(() => notice.classList.add('show'), 10);
+    setTimeout(() => {
+        notice.classList.remove('show');
+        setTimeout(() => notice.remove(), 500);
+    }, 2000);
 }
 
 // ─── Undo ───
@@ -1312,6 +1437,13 @@ function undoLastFlip() {
     currentPlayer = entry.playerBefore;
     mistakeCount = entry.mistakesBefore;
     activeBodyTab = currentPlayer;
+    if (entry.seenCardsBefore) seenCards = entry.seenCardsBefore;
+    if (entry.mistakeTrackBefore !== undefined) players[currentPlayer].mistakeTrackCount = entry.mistakeTrackBefore;
+    if (entry.totalMissesBefore !== undefined) players[currentPlayer].totalMisses = entry.totalMissesBefore;
+    if (entry.finishedBefore !== undefined) {
+        players[currentPlayer].finished = entry.finishedBefore;
+        finishedCount = entry.finishedCountBefore;
+    }
 
     // Remove last log entry
     if (sessionLog.length > 0) sessionLog.pop();
@@ -1373,11 +1505,11 @@ function renderBodyTabs() {
         tab.className = 'body-tab';
         if (i === activeBodyTab) tab.classList.add('active');
         if (i === currentPlayer && gameState === 'PLAYING') tab.classList.add('current-turn');
-        tab.textContent = PLAYER_NAMES[i];
+        if (players[i].finished) tab.classList.add('finished');
+        tab.textContent = (players[i].finished ? '\u2713 ' : '') + getPlayerName(i);
         tab.style.borderColor = PLAYER_COLORS[i];
         if (i === activeBodyTab) {
             tab.style.background = PLAYER_COLORS[i];
-            tab.style.setProperty('--tab-color', PLAYER_COLORS[i]);
         }
         tab.onclick = () => { activeBodyTab = i; renderBodyDisplay(); renderBodyTabs(); };
         bodyTabsEl.appendChild(tab);
@@ -1420,10 +1552,22 @@ function renderBodyDisplay() {
     bodyDisplayEl.innerHTML = html;
 }
 
+function getPlayerName(idx) {
+    if (isSoloMode) return 'Frankie ' + (idx + 1);
+    return PLAYER_NAMES[idx];
+}
+
 function renderStatus() {
     const pColor = PLAYER_COLORS[currentPlayer];
-    statusPlayerEl.innerHTML = `<span style="color:${pColor}">${PLAYER_NAMES[currentPlayer]}'s Turn</span>`;
-    statusMistakeEl.textContent = `Mistakes: ${mistakeCount} / 2`;
+    statusPlayerEl.innerHTML = `<span style="color:${pColor}">${getPlayerName(currentPlayer)}'s Turn</span>`;
+    statusMistakeEl.textContent = `Misses: ${mistakeCount} / 2`;
+    if (trackMistakes) {
+        const playerMistakes = players[currentPlayer].mistakeTrackCount;
+        statusMistakeTrackEl.textContent = `Mistakes: ${playerMistakes}`;
+        statusMistakeTrackEl.style.display = '';
+    } else {
+        statusMistakeTrackEl.style.display = 'none';
+    }
     const remaining = cardGrid.filter(c => !c.removed).length;
     statusCardsEl.textContent = `Cards: ${remaining}`;
 }
@@ -1647,6 +1791,7 @@ function confirmReset() {
 
 function backToSetup() {
     gameState = 'SETUP';
+    isSoloMode = false;
     gameScreen.style.display = 'none';
     setupScreen.style.display = 'block';
     victoryOverlay.classList.remove('show');
