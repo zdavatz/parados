@@ -502,7 +502,7 @@
             <li>Each turn, pick one row or column (3 stones) from the grid.</li>
             <li>Before placing, you must announce either the <b>colors</b> or the <b>numbers</b> of the 3 stones (Gray = 0).</li>
             <li>Then place the 3 stones one at a time in any order into the towers.</li>
-            <li>Colored stones go into the tower matching their color. Gray jokers may go in any tower.</li>
+            <li>Any colored stone may be placed in <b>any</b> tower — as a primary or secondary color. Both players fight over all 6 towers! Gray jokers may also go in any tower.</li>
         </ul>
 
         <h3>Grid &amp; Rounds</h3>
@@ -1234,9 +1234,7 @@ function handleTowerClick(towerColor) {
 function canPlaceInTower(stone, towerColor) {
     const tower = towers[towerColor];
 
-    // Colored stone must match tower color
-    if (stone.color !== 'gray' && stone.color !== towerColor) return false;
-
+    // Any colored stone can go in any tower (primary or secondary color)
     if (stone.color === 'gray') {
         // Gray cannot be first
         if (tower.stones.length === 0) return false;
@@ -1260,7 +1258,6 @@ function canReplaceGray(stone, towerColor) {
     const tower = towers[towerColor];
     if (tower.stones.length === 0) return false;
     if (stone.color === 'gray') return false;
-    if (stone.color !== towerColor) return false;
 
     const topStone = tower.stones[tower.stones.length - 1];
     if (topStone.color !== 'gray') return false;
@@ -1438,7 +1435,11 @@ function renderTowers() {
     let html = '';
     COLORS.forEach(c => {
         const t = towers[c];
-        const droppable = (gameState === 'PLAY_STONES' && selectedHandIdx !== null) ? ' droppable' : '';
+        let droppable = '';
+        if (gameState === 'PLAY_STONES' && selectedHandIdx !== null) {
+            const stone = players[currentPlayer].hand[selectedHandIdx];
+            if (canPlaceInTower(stone, c) || canReplaceGray(stone, c)) droppable = ' droppable';
+        }
         html += `<div class="tower tower-${c}${droppable}" onclick="handleTowerClick('${c}')">`;
         t.stones.forEach(s => {
             html += `<div class="stone stone-${s.color} small">${s.color === 'gray' ? 'J' : s.effectiveValue}</div>`;
