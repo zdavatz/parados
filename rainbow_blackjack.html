@@ -189,7 +189,7 @@
         .stone-orange { background: var(--stone-orange); color: #333; text-shadow: none; }
         .stone-purple { background: var(--stone-purple); }
         .stone-gray { background: var(--stone-gray); color: #333; text-shadow: none; }
-        .stone-facedown { background: #546e7a; color: transparent; border-color: rgba(255,255,255,0.1); cursor: default; }
+        .stone-facedown { background: #546e7a; color: rgba(255,255,255,0.4); border-color: rgba(255,255,255,0.1); cursor: default; }
 
         /* ── Grid ── */
         .grid-area {
@@ -493,8 +493,8 @@
         <h3>Spielvorbereitung</h3>
         <ul>
             <li>3 zufaellige Steine jedes Spielers werden verdeckt aus dem Spiel entfernt.</li>
-            <li>Die ersten 9 Steine werden verdeckt in einem 3&times;3-Raster angeordnet.</li>
-            <li>Man darf die eigenen Steine anschauen, aber nicht umordnen.</li>
+            <li>Die ersten 9 Steine werden in einem 3&times;3-Raster angeordnet — sie bleiben fuer den Gegner verdeckt!</li>
+            <li>Man darf die eigenen Steine anschauen und sich die Positionen merken, aber nicht umordnen.</li>
         </ul>
 
         <h3>Spielablauf</h3>
@@ -1019,7 +1019,7 @@ function renderPickRow() {
             const isInPickableRow = pickable.some(o => (o.type === 'row' && o.index === r) || (o.type === 'col' && o.index === c));
             const hlClass = isInPickableRow ? ' highlight-row' : '';
             if (s) {
-                html += `<div class="grid-cell occupied${hlClass}"><div class="stone stone-${s.color} small">${s.color === 'gray' ? 'J' : s.number}</div></div>`;
+                html += `<div class="grid-cell occupied${hlClass}"><div class="stone stone-facedown small">?</div></div>`;
             } else {
                 html += `<div class="grid-cell${hlClass}"></div>`;
             }
