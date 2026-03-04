@@ -499,9 +499,9 @@
 
         <h3>Spielablauf</h3>
         <ul>
-            <li>Pro Zug nimmt man eine Reihe oder Spalte (3 Steine) aus dem Raster.</li>
-            <li>Vor dem Legen muss man entweder die <b>Farben</b> oder die <b>Zahlen</b> der 3 Steine ansagen (Grau = 0).</li>
-            <li>Dann werden die 3 Steine einzeln in beliebiger Reihenfolge in die Tuerme gelegt.</li>
+            <li>Jede <b>Runde</b> besteht aus 3 Zuegen.</li>
+            <li>Am Anfang der Runde nimmt jeder Spieler eine Reihe oder Spalte (3 Steine) aus seinem Raster und sagt entweder die <b>Farben</b> oder die <b>Zahlen</b> an (Grau = 0).</li>
+            <li>Dann legen die Spieler <b>abwechselnd je 1 Stein</b> in einen Turm (3 Zuege pro Runde).</li>
             <li>Jeder farbige Stein darf in seinen <b>eigenen</b> Farbturm oder in die <b>zwei benachbarten</b> Tuerme auf dem Farbkreis gelegt werden. Graue Joker duerfen in jeden Turm.</li>
         </ul>
 
@@ -528,7 +528,7 @@
         </ul>
 
         <h3>Zugreihenfolge</h3>
-        <p>Runde 1: Sp.1 beginnt, Runde 2: Sp.2, Runde 3: Sp.1, Runde 4: Sp.1, Runde 5: Sp.2, Runde 6: Sp.1. So hat jeder Spieler genau 2 Doppelzuege.</p>
+        <p>Runde 1: Sp.1 beginnt, Runde 2: Sp.2, Runde 3: Sp.1, Runde 4: Sp.1, Runde 5: Sp.2, Runde 6: Sp.1. Der Rundenbeginner waehlt zuerst seine Reihe/Spalte und legt in jedem Zug als Erster einen Stein.</p>
 
         <h3>Graue Joker</h3>
         <ul>
@@ -575,12 +575,13 @@ let towers = {};
 let currentPlayer = 0;
 let currentRound = 1;
 let gridNumber = 1;          // 1 or 2
-let turnInRound = 0;         // 0 or 1
-let pickedOrientation = null; // 'row' or 'col' — locked after first pick per grid
-let pickedIndices = [];       // which row/col indices have been picked this grid
+let roundStarter = 0;        // who starts the current round
+let pickedOrientations = [null, null]; // per-player: 'row' or 'col'
+let pickedIndicesPerPlayer = [[], []]; // per-player: which row/col indices picked this grid
 let selectedHandIdx = null;
 let stonesPlayedThisTurn = 0;
-let announcementText = '';
+let announcements = ['', ''];  // per-player announcement text
+let playSubTurn = 0;           // 0-5: alternating single-stone plays within a round
 let historyStack = [];
 let sessionLog = [];
 let currentGameId = '';
@@ -609,10 +610,11 @@ function initGame() {
     historyStack = [];
     currentRound = 1;
     gridNumber = 1;
-    turnInRound = 0;
-    pickedOrientation = null;
-    pickedIndices = [];
-    announcementText = '';
+    roundStarter = 0;
+    pickedOrientations = [null, null];
+    pickedIndicesPerPlayer = [[], []];
+    announcements = ['', ''];
+    playSubTurn = 0;
 
     // Create players
     players = [
@@ -920,8 +922,8 @@ function startRound() {
     // Between grid 1 and grid 2 (after round 3)
     if (currentRound === 4 && gridNumber === 1) {
         gridNumber = 2;
-        pickedOrientation = null;
-        pickedIndices = [];
+        pickedOrientations = [null, null];
+        pickedIndicesPerPlayer = [[], []];
         // Players set up second grid
         players.forEach(p => {
             p.gridPool = p.gridPool2.slice();
@@ -931,22 +933,38 @@ function startRound() {
         return;
     }
 
-    turnInRound = 0;
-    const starterIdx = ROUND_STARTERS[currentRound - 1];
-    currentPlayer = starterIdx;
+    roundStarter = ROUND_STARTERS[currentRound - 1];
+    currentPlayer = roundStarter;
+    announcements = ['', ''];
 
-    startTurn();
+    startPickPhase();
 }
 
-function startTurn() {
+function startPickPhase() {
     gameState = 'PICK_ROW';
-    stonesPlayedThisTurn = 0;
     selectedHandIdx = null;
-    announcementText = '';
     historyStack = [];
 
-    showPass(currentPlayer, 'Du bist dran — tippe um fortzufahren', () => {
+    showPass(currentPlayer, 'Waehle deine Reihe/Spalte — tippe um fortzufahren', () => {
         renderPickRow();
+    });
+}
+
+function startPlayPhase() {
+    playSubTurn = 0;
+    currentPlayer = roundStarter;
+    startSingleStoneTurn();
+}
+
+function startSingleStoneTurn() {
+    gameState = 'PLAY_STONES';
+    stonesPlayedThisTurn = 0;
+    selectedHandIdx = null;
+    historyStack = [];
+
+    const stoneNum = Math.floor(playSubTurn / 2) + 1;
+    showPass(currentPlayer, `Lege Stein ${stoneNum}/3 — tippe um fortzufahren`, () => {
+        renderPlayStones();
     });
 }
 
@@ -971,7 +989,7 @@ function renderPickRow() {
     }
 
     html += '<div class="pick-instructions">';
-    if (pickedIndices.length === 0) {
+    if (pickedIndicesPerPlayer[currentPlayer].length === 0) {
         if (gridNumber === 2) {
             html += 'Waehle eine der 4 Aussenreihen (oben, unten, links, rechts)';
         } else {
@@ -1032,9 +1050,11 @@ function renderPickRow() {
 
 function getPickableOptions() {
     const p = players[currentPlayer];
+    const myPicked = pickedIndicesPerPlayer[currentPlayer];
+    const myOrientation = pickedOrientations[currentPlayer];
     const options = [];
 
-    if (pickedIndices.length === 0) {
+    if (myPicked.length === 0) {
         // First pick
         if (gridNumber === 2) {
             // Outer edges only: rows 0, 2 and cols 0, 2
@@ -1051,13 +1071,13 @@ function getPickableOptions() {
         }
     } else {
         // Must be same orientation, adjacent to last pick
-        const lastIdx = pickedIndices[pickedIndices.length - 1];
+        const lastIdx = myPicked[myPicked.length - 1];
         const adjIndices = [lastIdx - 1, lastIdx + 1].filter(i => i >= 0 && i < 3);
 
         for (const adj of adjIndices) {
-            if (pickedIndices.includes(adj)) continue;
-            if (hasStones(p, pickedOrientation, adj)) {
-                options.push({ type: pickedOrientation, index: adj });
+            if (myPicked.includes(adj)) continue;
+            if (hasStones(p, myOrientation, adj)) {
+                options.push({ type: myOrientation, index: adj });
             }
         }
     }
@@ -1075,10 +1095,10 @@ function hasStones(player, type, index) {
 function handlePickRow(type, index) {
     const p = players[currentPlayer];
 
-    if (pickedIndices.length === 0) {
-        pickedOrientation = type;
+    if (pickedIndicesPerPlayer[currentPlayer].length === 0) {
+        pickedOrientations[currentPlayer] = type;
     }
-    pickedIndices.push(index);
+    pickedIndicesPerPlayer[currentPlayer].push(index);
 
     // Extract stones
     const hand = [];
@@ -1145,13 +1165,17 @@ function doAnnounce(choice) {
         text = 'Zahlen: ' + numList.join(', ');
     }
 
-    announcementText = text;
+    announcements[currentPlayer] = text;
     logAction('ANNOUNCE', { player: currentPlayer + 1, choice, text });
 
-    gameState = 'PLAY_STONES';
-    stonesPlayedThisTurn = 0;
-    selectedHandIdx = null;
-    renderPlayStones();
+    if (currentPlayer === roundStarter) {
+        // First player done picking → other player picks
+        currentPlayer = 1 - roundStarter;
+        startPickPhase();
+    } else {
+        // Both picked and announced → start alternating play
+        startPlayPhase();
+    }
 }
 
 // ══════════════════════════════
@@ -1159,17 +1183,24 @@ function doAnnounce(choice) {
 // ══════════════════════════════
 
 function renderPlayStones() {
-    updateStatus(`Steine legen (${stonesPlayedThisTurn}/3)`);
+    const stoneNum = Math.floor(playSubTurn / 2) + 1;
+    updateStatus(`Stein legen (${stoneNum}/3)`);
     renderTowers();
 
     const p = players[currentPlayer];
     let html = '<div style="display: flex; flex-direction: column; align-items: center; gap: 8px;" class="animate-in">';
 
-    // Announcement display
-    html += `<div class="announcement-display">${announcementText}</div>`;
+    // Both announcements display
+    html += '<div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">';
+    for (let i = 0; i < 2; i++) {
+        if (announcements[i]) {
+            html += `<div class="announcement-display" style="font-size: 0.85em;">${players[i].name}: ${announcements[i]}</div>`;
+        }
+    }
+    html += '</div>';
 
     // Hand
-    html += `<p style="font-size: 0.9em; color: var(--text-dim);">${p.name}: Waehle einen Stein, dann klicke auf einen Turm</p>`;
+    html += `<p style="font-size: 0.9em; color: var(--text-dim);">${p.name}: Waehle 1 Stein, dann klicke auf einen Turm</p>`;
     html += '<div class="hand-area">';
     p.hand.forEach((s, i) => {
         const sel = selectedHandIdx === i ? ' selected' : '';
@@ -1247,11 +1278,8 @@ function handleTowerClick(towerColor) {
         newTotal: towers[towerColor].total
     });
 
-    if (stonesPlayedThisTurn >= 3 || p.hand.length === 0) {
-        endTurn();
-    } else {
-        renderPlayStones();
-    }
+    // Each sub-turn plays exactly 1 stone
+    endStonePlacement();
 }
 
 function canPlaceInTower(stone, towerColor) {
@@ -1323,11 +1351,8 @@ function doReplaceGray(stone, towerColor) {
         newTotal: tower.total
     });
 
-    if (stonesPlayedThisTurn >= 3 || p.hand.length === 0) {
-        endTurn();
-    } else {
-        renderPlayStones();
-    }
+    // Each sub-turn plays exactly 1 stone
+    endStonePlacement();
 }
 
 // ══════════════════════════════
@@ -1357,30 +1382,30 @@ function undoMove() {
 // TURN MANAGEMENT
 // ══════════════════════════════
 
-function endTurn() {
+function endStonePlacement() {
     historyStack = [];
     document.getElementById('btnUndo').style.display = 'none';
 
-    logAction('TURN_END', { player: currentPlayer + 1, round: currentRound });
+    logAction('TURN_END', { player: currentPlayer + 1, round: currentRound, subTurn: playSubTurn });
 
-    turnInRound++;
-    if (turnInRound >= 2) {
-        // Round complete
+    playSubTurn++;
+
+    if (playSubTurn >= 6) {
+        // Round complete (3 sub-turns × 2 players)
         logAction('ROUND_END', { round: currentRound });
         currentRound++;
 
         // Reset for next round's picks (within same grid)
         if (currentRound === 4 || currentRound > 6) {
-            // Grid transition handled in startRound, or game end
-            pickedOrientation = null;
-            pickedIndices = [];
+            pickedOrientations = [null, null];
+            pickedIndicesPerPlayer = [[], []];
         }
 
         startRound();
     } else {
-        // Second player's turn in this round
+        // Switch to other player for next stone
         currentPlayer = 1 - currentPlayer;
-        startTurn();
+        startSingleStoneTurn();
     }
 }
 
