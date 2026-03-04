@@ -502,8 +502,23 @@
             <li>Pro Zug nimmt man eine Reihe oder Spalte (3 Steine) aus dem Raster.</li>
             <li>Vor dem Legen muss man entweder die <b>Farben</b> oder die <b>Zahlen</b> der 3 Steine ansagen (Grau = 0).</li>
             <li>Dann werden die 3 Steine einzeln in beliebiger Reihenfolge in die Tuerme gelegt.</li>
-            <li>Jeder farbige Stein darf in <b>jeden</b> Turm gelegt werden — als Haupt- oder Nebenfarbe. So kaempfen beide Spieler in allen 6 Tuermen! Graue Joker duerfen ebenfalls in jeden Turm.</li>
+            <li>Jeder farbige Stein darf in seinen <b>eigenen</b> Farbturm oder in die <b>zwei benachbarten</b> Tuerme auf dem Farbkreis gelegt werden. Graue Joker duerfen in jeden Turm.</li>
         </ul>
+
+        <h3>Farbkreis &amp; Nachbarschaft</h3>
+        <p>Die 6 Farben bilden einen Kreis: <b>Rot — Orange — Gelb — Gruen — Blau — Lila</b> (und zurueck zu Rot).<br>
+        Jeder Stein darf in seinen eigenen Farbturm <b>oder</b> in die beiden Nachbar-Tuerme gelegt werden:</p>
+        <ul>
+            <li>🔴 <b>Rot</b> → Lila-, Rot- oder Orange-Turm</li>
+            <li>🟠 <b>Orange</b> → Rot-, Orange- oder Gelb-Turm</li>
+            <li>🟡 <b>Gelb</b> → Orange-, Gelb- oder Gruen-Turm</li>
+            <li>🟢 <b>Gruen</b> → Gelb-, Gruen- oder Blau-Turm</li>
+            <li>🔵 <b>Blau</b> → Gruen-, Blau- oder Lila-Turm</li>
+            <li>🟣 <b>Lila</b> → Blau-, Lila- oder Rot-Turm</li>
+        </ul>
+        <p><b>Beispiel Spieler 1</b> (Primaerfarben): Rote Steine koennen in die Tuerme Lila, Rot und Orange gelegt werden. Blaue Steine in Gruen, Blau und Lila. Gelbe Steine in Orange, Gelb und Gruen.<br>
+        <b>Beispiel Spieler 2</b> (Sekundaerfarben): Orange Steine koennen in die Tuerme Rot, Orange und Gelb gelegt werden. Gruene Steine in Gelb, Gruen und Blau. Lila Steine in Blau, Lila und Rot.</p>
+        <p>So kaempfen beide Spieler um die Tuerme — jeder Turm kann von mehreren Farben beider Spieler bespielt werden!</p>
 
         <h3>Raster &amp; Runden</h3>
         <ul>
@@ -539,6 +554,14 @@
 const COLORS = ['red', 'blue', 'yellow', 'green', 'orange', 'purple'];
 const PRIMARY_COLORS = ['red', 'blue', 'yellow'];
 const SECONDARY_COLORS = ['green', 'orange', 'purple'];
+// Color wheel order for adjacency: each color can go in its own tower + 2 neighbors
+const COLOR_WHEEL = ['red', 'orange', 'yellow', 'green', 'blue', 'purple'];
+const ADJACENT_TOWERS = {};
+COLOR_WHEEL.forEach((c, i) => {
+    const prev = COLOR_WHEEL[(i - 1 + 6) % 6];
+    const next = COLOR_WHEEL[(i + 1) % 6];
+    ADJACENT_TOWERS[c] = [prev, c, next];
+});
 const COLOR_NAMES = {
     red: 'Rot', blue: 'Blau', yellow: 'Gelb',
     green: 'Gruen', orange: 'Orange', purple: 'Lila', gray: 'Grau'
@@ -1234,12 +1257,14 @@ function handleTowerClick(towerColor) {
 function canPlaceInTower(stone, towerColor) {
     const tower = towers[towerColor];
 
-    // Any colored stone can go in any tower (primary or secondary color)
     if (stone.color === 'gray') {
         // Gray cannot be first
         if (tower.stones.length === 0) return false;
         // No consecutive grays
         if (tower.stones[tower.stones.length - 1].color === 'gray') return false;
+    } else {
+        // Colored stone: can only go in own tower or two adjacent towers on color wheel
+        if (!ADJACENT_TOWERS[stone.color].includes(towerColor)) return false;
     }
 
     return true;
@@ -1258,6 +1283,8 @@ function canReplaceGray(stone, towerColor) {
     const tower = towers[towerColor];
     if (tower.stones.length === 0) return false;
     if (stone.color === 'gray') return false;
+    // Colored stone must be adjacent on color wheel
+    if (!ADJACENT_TOWERS[stone.color].includes(towerColor)) return false;
 
     const topStone = tower.stones[tower.stones.length - 1];
     if (topStone.color !== 'gray') return false;

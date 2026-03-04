@@ -502,8 +502,23 @@
             <li>Each turn, pick one row or column (3 stones) from the grid.</li>
             <li>Before placing, you must announce either the <b>colors</b> or the <b>numbers</b> of the 3 stones (Gray = 0).</li>
             <li>Then place the 3 stones one at a time in any order into the towers.</li>
-            <li>Any colored stone may be placed in <b>any</b> tower — as a primary or secondary color. Both players fight over all 6 towers! Gray jokers may also go in any tower.</li>
+            <li>Each colored stone may be placed in its <b>own</b> color tower or the <b>two adjacent</b> towers on the color wheel. Gray jokers may go in any tower.</li>
         </ul>
+
+        <h3>Color Wheel &amp; Adjacency</h3>
+        <p>The 6 colors form a wheel: <b>Red — Orange — Yellow — Green — Blue — Purple</b> (and back to Red).<br>
+        Each stone may be placed in its own color tower <b>or</b> the two neighboring towers:</p>
+        <ul>
+            <li>🔴 <b>Red</b> → Purple, Red, or Orange tower</li>
+            <li>🟠 <b>Orange</b> → Red, Orange, or Yellow tower</li>
+            <li>🟡 <b>Yellow</b> → Orange, Yellow, or Green tower</li>
+            <li>🟢 <b>Green</b> → Yellow, Green, or Blue tower</li>
+            <li>🔵 <b>Blue</b> → Green, Blue, or Purple tower</li>
+            <li>🟣 <b>Purple</b> → Blue, Purple, or Red tower</li>
+        </ul>
+        <p><b>Player 1 example</b> (primary colors): Red stones can go in the Purple, Red, and Orange towers. Blue stones in Green, Blue, and Purple. Yellow stones in Orange, Yellow, and Green.<br>
+        <b>Player 2 example</b> (secondary colors): Orange stones can go in the Red, Orange, and Yellow towers. Green stones in Yellow, Green, and Blue. Purple stones in Blue, Purple, and Red.</p>
+        <p>This means both players compete for the towers — each tower can receive multiple colors from both players!</p>
 
         <h3>Grid &amp; Rounds</h3>
         <ul>
@@ -539,6 +554,14 @@
 const COLORS = ['red', 'blue', 'yellow', 'green', 'orange', 'purple'];
 const PRIMARY_COLORS = ['red', 'blue', 'yellow'];
 const SECONDARY_COLORS = ['green', 'orange', 'purple'];
+// Color wheel order for adjacency: each color can go in its own tower + 2 neighbors
+const COLOR_WHEEL = ['red', 'orange', 'yellow', 'green', 'blue', 'purple'];
+const ADJACENT_TOWERS = {};
+COLOR_WHEEL.forEach((c, i) => {
+    const prev = COLOR_WHEEL[(i - 1 + 6) % 6];
+    const next = COLOR_WHEEL[(i + 1) % 6];
+    ADJACENT_TOWERS[c] = [prev, c, next];
+});
 const COLOR_NAMES = {
     red: 'Red', blue: 'Blue', yellow: 'Yellow',
     green: 'Green', orange: 'Orange', purple: 'Purple', gray: 'Gray'
@@ -1234,12 +1257,14 @@ function handleTowerClick(towerColor) {
 function canPlaceInTower(stone, towerColor) {
     const tower = towers[towerColor];
 
-    // Any colored stone can go in any tower (primary or secondary color)
     if (stone.color === 'gray') {
         // Gray cannot be first
         if (tower.stones.length === 0) return false;
         // No consecutive grays
         if (tower.stones[tower.stones.length - 1].color === 'gray') return false;
+    } else {
+        // Colored stone: can only go in own tower or two adjacent towers on color wheel
+        if (!ADJACENT_TOWERS[stone.color].includes(towerColor)) return false;
     }
 
     return true;
@@ -1258,6 +1283,8 @@ function canReplaceGray(stone, towerColor) {
     const tower = towers[towerColor];
     if (tower.stones.length === 0) return false;
     if (stone.color === 'gray') return false;
+    // Colored stone must be adjacent on color wheel
+    if (!ADJACENT_TOWERS[stone.color].includes(towerColor)) return false;
 
     const topStone = tower.stones[tower.stones.length - 1];
     if (topStone.color !== 'gray') return false;
