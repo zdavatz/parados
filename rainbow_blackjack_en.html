@@ -152,6 +152,18 @@
             color: var(--accent);
             font-size: 0.95em;
         }
+        .tower-owner-dot {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        .tower-owner-dot.p0 { background: var(--stone-red); }
+        .tower-owner-dot.p1 { background: var(--stone-green); }
+        .tower-21 { box-shadow: 0 0 10px 2px rgba(255,215,0,0.5); }
         .tower-red { border-color: var(--stone-red); }
         .tower-blue { border-color: var(--stone-blue); }
         .tower-yellow { border-color: var(--stone-yellow); }
@@ -539,7 +551,11 @@
         </ul>
 
         <h3>Scoring</h3>
-        <p>6 towers = 6 possible points. The player who placed the last stone in a tower gets the point. The player with more points wins.</p>
+        <p>Each tower shows a colored dot (red = Player 1, green = Player 2) indicating who placed the last stone.</p>
+        <ul>
+            <li><b>Instant win:</b> The first player to own 3 towers that each reach exactly 21 wins immediately!</li>
+            <li>If no one reaches 3 towers at 21, the player who owns more towers at the end wins.</li>
+        </ul>
 
         <button class="close-btn" onclick="closeRules()">Got it!</button>
     </div>
@@ -1258,11 +1274,33 @@ function undoMove() {
 // TURN MANAGEMENT
 // ══════════════════════════════
 
+function checkInstantWin() {
+    for (let p = 0; p < 2; p++) {
+        let count21 = 0;
+        COLORS.forEach(c => {
+            const t = towers[c];
+            if (t.stones.length > 0 && t.total === 21 && t.stones[t.stones.length - 1].placedBy === p) {
+                count21++;
+            }
+        });
+        if (count21 >= 3) return p;
+    }
+    return -1;
+}
+
 function endStonePlacement() {
     historyStack = [];
     document.getElementById('btnUndo').style.display = 'none';
 
     logAction('TURN_END', { player: currentPlayer + 1, round: currentRound, subTurn: playSubTurn });
+
+    // Check instant win: 3 towers at 21
+    const instantWinner = checkInstantWin();
+    if (instantWinner >= 0) {
+        logAction('INSTANT_WIN', { player: instantWinner + 1 });
+        showScoring();
+        return;
+    }
 
     playSubTurn++;
 
@@ -1294,15 +1332,21 @@ function showScoring() {
     showScreen('scoring');
 
     let p1Score = 0, p2Score = 0;
+    let p1at21 = 0, p2at21 = 0;
     let html = '<div class="towers-container" style="margin: 16px 0;">';
 
     // Mini tower display
     COLORS.forEach(c => {
         const t = towers[c];
-        html += `<div class="tower tower-${c}" style="min-height: 160px;">`;
+        const is21 = t.total === 21 ? ' tower-21' : '';
+        html += `<div class="tower tower-${c}${is21}" style="min-height: 160px;">`;
         t.stones.forEach(s => {
             html += `<div class="stone stone-${s.color} tiny">${s.color === 'gray' ? 'J' : s.effectiveValue}</div>`;
         });
+        if (t.stones.length > 0) {
+            const owner = t.stones[t.stones.length - 1].placedBy;
+            html += `<div class="tower-owner-dot p${owner}"></div>`;
+        }
         html += `<div class="tower-total">${t.total}</div>`;
         html += `<div class="tower-label" style="color: var(--stone-${c});">${COLOR_NAMES[c]}</div>`;
         html += '</div>';
@@ -1310,7 +1354,7 @@ function showScoring() {
     html += '</div>';
 
     // Scoring table
-    html += '<table class="scoring-table"><tr><th>Tower</th><th>Total</th><th>Last Stone</th><th>Point</th></tr>';
+    html += '<table class="scoring-table"><tr><th>Tower</th><th>Total</th><th>Last Stone</th><th>Owner</th></tr>';
     COLORS.forEach(c => {
         const t = towers[c];
         let pointText, pointClass;
@@ -1321,9 +1365,9 @@ function showScoring() {
         } else {
             const winner = t.stones[t.stones.length - 1].placedBy;
             t.winner = winner;
-            if (winner === 0) p1Score++;
-            else p2Score++;
-            pointText = players[winner].name;
+            if (winner === 0) { p1Score++; if (t.total === 21) p1at21++; }
+            else { p2Score++; if (t.total === 21) p2at21++; }
+            pointText = players[winner].name + (t.total === 21 ? ' (21!)' : '');
             pointClass = 'winner-cell';
         }
 
@@ -1341,13 +1385,15 @@ function showScoring() {
     players[1].score = p2Score;
 
     let resultText;
-    if (p1Score > p2Score) resultText = `${players[0].name} wins ${p1Score}:${p2Score}!`;
+    if (p1at21 >= 3) resultText = `${players[0].name} wins with ${p1at21} towers at 21!`;
+    else if (p2at21 >= 3) resultText = `${players[1].name} wins with ${p2at21} towers at 21!`;
+    else if (p1Score > p2Score) resultText = `${players[0].name} wins ${p1Score}:${p2Score}!`;
     else if (p2Score > p1Score) resultText = `${players[1].name} wins ${p2Score}:${p1Score}!`;
     else resultText = `Tie ${p1Score}:${p2Score}!`;
 
     html += `<div class="final-result">${resultText}</div>`;
 
-    logAction('GAME_OVER', { p1Score, p2Score, result: resultText });
+    logAction('GAME_OVER', { p1Score, p2Score, p1at21, p2at21, result: resultText });
 
     document.getElementById('scoringContent').innerHTML = html;
 }
@@ -1365,10 +1411,15 @@ function renderTowers() {
             const stone = players[currentPlayer].hand[selectedHandIdx];
             if (canPlaceInTower(stone, c) || canReplaceGray(stone, c)) droppable = ' droppable';
         }
-        html += `<div class="tower tower-${c}${droppable}" onclick="handleTowerClick('${c}')">`;
+        const is21 = t.total === 21 ? ' tower-21' : '';
+        html += `<div class="tower tower-${c}${droppable}${is21}" onclick="handleTowerClick('${c}')">`;
         t.stones.forEach(s => {
             html += `<div class="stone stone-${s.color} small">${s.color === 'gray' ? 'J' : s.effectiveValue}</div>`;
         });
+        if (t.stones.length > 0) {
+            const owner = t.stones[t.stones.length - 1].placedBy;
+            html += `<div class="tower-owner-dot p${owner}"></div>`;
+        }
         html += `<div class="tower-total">${t.total || ''}</div>`;
         html += `<div class="tower-label" style="color: var(--stone-${c});">${COLOR_NAMES[c]}</div>`;
         html += '</div>';
