@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rainbow Blackjack — Parados</title>
+    <title>Rainbow Blackjack Remote — Parados</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
     <style>
         :root {
             --bg: #263238;
@@ -56,7 +57,41 @@
             margin-bottom: 12px;
         }
 
-        /* ── Screens ── */
+        /* -- Connect Screen -- */
+        #connectScreen {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #connectScreen.hidden { display: none; }
+
+        .connect-box {
+            background: var(--panel-bg);
+            border-radius: 16px;
+            padding: 40px 36px;
+            width: 420px;
+            max-width: 90vw;
+            text-align: center;
+        }
+        .connect-box h2 { margin-bottom: 6px; }
+        .connect-box .subtitle { margin-bottom: 20px; }
+        .field-group { margin-bottom: 14px; text-align: left; }
+        .field-group label { display: block; font-size: 0.85em; color: var(--text-dim); margin-bottom: 4px; }
+        .field-group input {
+            width: 100%; padding: 10px 14px; border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 8px; background: rgba(255,255,255,0.08); color: var(--text);
+            font-size: 1em; outline: none;
+        }
+        .field-group input:focus { border-color: var(--accent); }
+        #connect-status { margin-top: 12px; font-size: 0.9em; min-height: 20px; }
+        #connect-status.error { color: #e53935; }
+        #connect-status.success { color: #43a047; }
+
+        /* -- Screens -- */
         .screen {
             display: none;
             flex-direction: column;
@@ -66,17 +101,6 @@
             padding: 12px 16px;
         }
         .screen.active { display: flex; }
-
-        /* ── Setup Screen ── */
-        #setupScreen .intro {
-            background: var(--panel-bg);
-            border-radius: 12px;
-            padding: 20px 24px;
-            margin: 16px 0;
-            max-width: 520px;
-            text-align: center;
-            line-height: 1.6;
-        }
 
         .btn {
             padding: 10px 24px;
@@ -90,13 +114,14 @@
         }
         .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 12px rgba(0,0,0,0.5); }
         .btn:active { transform: translateY(1px); box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
         .btn-gold { background: var(--accent); color: #333; }
         .btn-dim { background: var(--panel-hover); color: var(--text); }
         .btn-danger { background: #c62828; color: white; }
         .btn-small { padding: 6px 14px; font-size: 0.85em; }
 
-        /* ── Status Bar ── */
+        /* -- Status Bar -- */
         #statusBar {
             background: var(--panel-bg);
             border-radius: 10px;
@@ -114,7 +139,7 @@
         .status-label { color: var(--text-dim); }
         .status-value { color: var(--accent); font-weight: 600; }
 
-        /* ── Towers ── */
+        /* -- Towers -- */
         .towers-container {
             display: flex;
             gap: 6px;
@@ -159,7 +184,7 @@
         .tower-orange { border-color: var(--stone-orange); }
         .tower-purple { border-color: var(--stone-purple); }
 
-        /* ── Stones ── */
+        /* -- Stones -- */
         .stone {
             width: 44px;
             height: 44px;
@@ -191,7 +216,7 @@
         .stone-gray { background: var(--stone-gray); color: #333; text-shadow: none; }
         .stone-facedown { background: #546e7a; color: rgba(255,255,255,0.4); border-color: rgba(255,255,255,0.1); cursor: default; }
 
-        /* ── Grid ── */
+        /* -- Grid -- */
         .grid-area {
             display: flex;
             flex-direction: column;
@@ -230,7 +255,7 @@
             margin: 8px 0;
         }
 
-        /* ── Hand ── */
+        /* -- Hand -- */
         .hand-area {
             display: flex;
             gap: 10px;
@@ -239,7 +264,7 @@
             align-items: center;
         }
 
-        /* ── Announcement ── */
+        /* -- Announcement -- */
         .announce-area {
             background: var(--panel-bg);
             border-radius: 12px;
@@ -263,8 +288,8 @@
             font-weight: 600;
         }
 
-        /* ── Pass Device Overlay ── */
-        #passOverlay {
+        /* -- Wait Overlay -- */
+        #waitOverlay {
             display: none;
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -273,19 +298,18 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
         }
-        #passOverlay.active { display: flex; }
-        #passOverlay h2 {
+        #waitOverlay.active { display: flex; }
+        #waitOverlay h2 {
             font-size: 1.6em;
             margin-bottom: 16px;
         }
-        #passOverlay p {
+        #waitOverlay p {
             color: var(--text-dim);
             font-size: 1.1em;
         }
 
-        /* ── Rules Modal ── */
+        /* -- Rules Modal -- */
         #rulesModal {
             display: none;
             position: fixed;
@@ -331,7 +355,7 @@
             cursor: pointer;
         }
 
-        /* ── Scoring Screen ── */
+        /* -- Scoring Screen -- */
         .scoring-table {
             border-collapse: collapse;
             margin: 12px 0;
@@ -357,7 +381,7 @@
             color: var(--accent);
         }
 
-        /* ── Bottom Buttons ── */
+        /* -- Bottom Buttons -- */
         .bottom-bar {
             display: flex;
             gap: 8px;
@@ -366,7 +390,7 @@
             justify-content: center;
         }
 
-        /* ── Row/Col Picker ── */
+        /* -- Row/Col Picker -- */
         .pick-instructions {
             background: var(--panel-bg);
             border-radius: 10px;
@@ -383,13 +407,70 @@
             justify-content: center;
         }
 
-        /* ── Responsive ── */
+        /* -- Chat -- */
+        #chatArea {
+            position: fixed;
+            bottom: 0;
+            right: 0;
+            width: 280px;
+            max-height: 300px;
+            background: var(--panel-bg);
+            border-top-left-radius: 12px;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+        }
+        #chatMessages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+            font-size: 0.85em;
+            max-height: 220px;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-msg { margin: 2px 0; }
+        .chat-msg.system { color: var(--text-dim); font-style: italic; }
+        .chat-sender { font-weight: 600; }
+        .chat-sender.p1 { color: var(--stone-red); }
+        .chat-sender.p2 { color: var(--stone-green); }
+        #chatInput {
+            display: flex;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        #chatInput input {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            background: rgba(255,255,255,0.06);
+            color: var(--text);
+            font-size: 0.85em;
+            outline: none;
+        }
+        #chatInput button {
+            padding: 8px 12px;
+            border: none;
+            background: var(--accent);
+            color: #333;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* -- Your Turn pulse -- */
+        @keyframes pulse-glow {
+            0%, 100% { text-shadow: 0 0 8px rgba(255,215,0,0.3); }
+            50% { text-shadow: 0 0 20px rgba(255,215,0,0.6); }
+        }
+        .your-turn { animation: pulse-glow 1.5s ease-in-out infinite; }
+
+        /* -- Responsive -- */
         @media (max-width: 800px) {
             :root { --tower-width: 58px; }
             .stone { width: 38px; height: 38px; font-size: 0.95em; }
             .stone.small { width: 32px; height: 32px; font-size: 0.8em; }
             .grid-3x3 { grid-template-columns: repeat(3, 48px); grid-template-rows: repeat(3, 48px); }
             .grid-cell { width: 48px; height: 48px; }
+            #chatArea { width: 220px; }
         }
 
         @media (max-width: 500px) {
@@ -401,9 +482,10 @@
             .grid-cell { width: 42px; height: 42px; }
             #statusBar { font-size: 0.8em; gap: 8px; padding: 6px 12px; }
             .towers-container { gap: 3px; }
+            #chatArea { width: 180px; }
         }
 
-        /* ── Animations ── */
+        /* -- Animations -- */
         @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .animate-in { animation: slideUp 0.3s ease-out; }
@@ -411,149 +493,151 @@
 </head>
 <body>
 
-<!-- ════════ SETUP SCREEN ════════ -->
-<div id="setupScreen" class="screen active">
-    <h1>RAINBOW BLACKJACK</h1>
-    <p class="subtitle">Colorful 21 — a game by Walter Prossnitz</p>
-    <div class="intro">
-        <p>Two players build 6 colored towers, trying to get as close to 21 as possible &mdash; like Blackjack, but with colored stones!</p>
-        <p style="margin-top: 10px; color: var(--text-dim); font-size: 0.9em;">
-            Player 1 gets the primary colors (Red, Blue, Yellow),<br>
-            Player 2 gets the secondary colors (Green, Orange, Purple).<br>
-            Each player also has 3 gray joker stones.
-        </p>
+<!-- ======== CONNECT SCREEN ======== -->
+<div id="connectScreen">
+    <div class="connect-box">
+        <h2>RAINBOW BLACKJACK</h2>
+        <p class="subtitle">Remote — Farbiges 21</p>
+        <div class="field-group">
+            <label>Dein Name</label>
+            <input type="text" id="player-name" placeholder="Name eingeben" maxlength="20">
+        </div>
+        <div class="field-group">
+            <label>Raum-ID (beide Spieler geben dieselbe ID ein)</label>
+            <input type="text" id="room-id" placeholder="z.B. meinraum42">
+        </div>
+        <button class="btn btn-gold" id="connect-btn" onclick="startConnection()" style="margin-top: 8px;">Verbinden</button>
+        <button class="btn btn-dim btn-small" onclick="openRules()" style="margin-top: 12px;">? Regeln</button>
+        <div id="connect-status"></div>
     </div>
-    <button class="btn btn-gold" onclick="initGame()" style="font-size: 1.1em; margin-top: 8px;">
-        Start Game
-    </button>
-    <button class="btn btn-dim btn-small" onclick="openRules()" style="margin-top: 12px;">
-        ? Rules
-    </button>
 </div>
 
-<!-- ════════ GAME SCREEN ════════ -->
+<!-- ======== GAME SCREEN ======== -->
 <div id="gameScreen" class="screen">
     <h1>RAINBOW BLACKJACK</h1>
     <div id="statusBar">
-        <span><span class="status-label">Round </span><span class="status-value" id="sRound">1</span><span class="status-label"> / 6</span></span>
-        <span><span class="status-label">Player: </span><span class="status-value" id="sPlayer">1</span></span>
+        <span><span class="status-label">Runde </span><span class="status-value" id="sRound">1</span><span class="status-label"> / 6</span></span>
+        <span><span class="status-label">Du: </span><span class="status-value" id="sMyRole">—</span></span>
         <span><span class="status-label">Phase: </span><span class="status-value" id="sPhase">—</span></span>
-        <span><span class="status-label">Score: </span><span class="status-value" id="sScore">0 – 0</span></span>
+        <span><span class="status-label">Punkte: </span><span class="status-value" id="sScore">0 – 0</span></span>
     </div>
 
     <!-- Towers -->
     <div class="towers-container" id="towersArea"></div>
 
-    <!-- Dynamic content area (grid, hand, announcements, etc.) -->
+    <!-- Dynamic content area -->
     <div id="dynamicArea" style="display: flex; flex-direction: column; align-items: center; width: 100%;"></div>
 
     <!-- Bottom buttons -->
     <div class="bottom-bar">
-        <button class="btn btn-dim btn-small" id="btnUndo" onclick="undoMove()" style="display:none;">&#8617; Undo</button>
-        <button class="btn btn-dim btn-small" onclick="openRules()">? Rules</button>
-        <button class="btn btn-dim btn-small" onclick="confirmReset()">New Game</button>
+        <button class="btn btn-dim btn-small" id="btnUndo" onclick="undoMove()" style="display:none;">&#8617; Rueckgaengig</button>
+        <button class="btn btn-dim btn-small" onclick="openRules()">? Regeln</button>
         <button class="btn btn-dim btn-small" onclick="downloadCSV()">CSV Export</button>
     </div>
 </div>
 
-<!-- ════════ SCORING SCREEN ════════ -->
+<!-- ======== SCORING SCREEN ======== -->
 <div id="scoringScreen" class="screen">
     <h1>RAINBOW BLACKJACK</h1>
-    <h2 style="margin-top: 12px;">Final Result</h2>
+    <h2 style="margin-top: 12px;">Endergebnis</h2>
     <div id="scoringContent"></div>
     <div style="margin-top: 16px; display: flex; gap: 10px;">
-        <button class="btn btn-gold" onclick="showSetup()">Play Again</button>
         <button class="btn btn-dim btn-small" onclick="downloadCSV()">CSV Export</button>
     </div>
 </div>
 
-<!-- ════════ PASS DEVICE OVERLAY ════════ -->
-<div id="passOverlay" onclick="dismissPass()">
-    <h2 id="passTitle">Pass the device</h2>
-    <p id="passMsg">Tap to continue</p>
+<!-- ======== WAIT OVERLAY ======== -->
+<div id="waitOverlay">
+    <h2 id="waitTitle">Warten...</h2>
+    <p id="waitMsg">Der Gegner ist am Zug</p>
 </div>
 
-<!-- ════════ RULES MODAL ════════ -->
+<!-- ======== RULES MODAL ======== -->
 <div id="rulesModal">
     <div class="rules-content">
         <span class="rules-close" onclick="closeRules()">&times;</span>
-        <h2>Rainbow Blackjack — Rules</h2>
+        <h2>Rainbow Blackjack — Regeln</h2>
 
-        <h3>Overview</h3>
-        <p>Two players build 6 colored towers together. Goal: Get as close to 21 as possible in each tower. The player who placed the last stone in a tower wins the point for that tower.</p>
+        <h3>Ueberblick</h3>
+        <p>Zwei Spieler bauen gemeinsam an 6 farbigen Tuermen. Ziel: In jedem Turm moeglichst nahe an die Summe 21 kommen. Wer den letzten Stein in einen Turm legt, gewinnt den Punkt fuer diesen Turm.</p>
 
-        <h3>Components</h3>
+        <h3>Material</h3>
         <ul>
-            <li>36 colored stones: numbers 1–6 in Red, Blue, Yellow, Green, Orange, Purple</li>
-            <li>6 gray joker stones (3 per player)</li>
-            <li>Player 1: Primary colors (Red, Blue, Yellow) + 3 jokers = 21 stones</li>
-            <li>Player 2: Secondary colors (Green, Orange, Purple) + 3 jokers = 21 stones</li>
+            <li>36 farbige Steine: je 1–6 in Rot, Blau, Gelb, Gruen, Orange, Lila</li>
+            <li>6 graue Joker-Steine (3 pro Spieler)</li>
+            <li>Spieler 1: Primaerfarben (Rot, Blau, Gelb) + 3 Joker = 21 Steine</li>
+            <li>Spieler 2: Sekundaerfarben (Gruen, Orange, Lila) + 3 Joker = 21 Steine</li>
         </ul>
 
-        <h3>Setup</h3>
+        <h3>Spielvorbereitung</h3>
         <ul>
-            <li>The program will remove 3 random stones from each player. These will not be a part of the game.</li>
-            <li>Your first 9 stones will be arranged in a 3&times;3 grid by the program — they stay hidden from your opponent!</li>
-            <li>You may look at your own stones and memorize their positions.</li>
+            <li>Das Programm entfernt 3 zufaellige Steine pro Spieler. Diese sind nicht Teil des Spiels.</li>
+            <li>Die ersten 9 Steine werden vom Programm zufaellig in einem 3&times;3-Raster angeordnet — sie bleiben fuer den Gegner verdeckt!</li>
+            <li>Man darf die eigenen Steine anschauen und sich die Positionen merken.</li>
         </ul>
 
-        <h3>Color Wheel &amp; Adjacency</h3>
-        <p>The 6 colors form a wheel: <b>Red — Orange — Yellow — Green — Blue — Purple</b> (and back to Red).<br>
-        Each stone may be placed in its own color tower <b>or</b> the two neighboring towers:</p>
+        <h3>Farbkreis &amp; Nachbarschaft</h3>
+        <p>Die 6 Farben bilden einen Kreis: <b>Rot — Orange — Gelb — Gruen — Blau — Lila</b> (und zurueck zu Rot).<br>
+        Jeder Stein darf in seinen eigenen Farbturm <b>oder</b> in die beiden Nachbar-Tuerme gelegt werden:</p>
         <ul>
-            <li>🔴 <b>Red</b> → Purple, Red, or Orange tower</li>
-            <li>🟠 <b>Orange</b> → Red, Orange, or Yellow tower</li>
-            <li>🟡 <b>Yellow</b> → Orange, Yellow, or Green tower</li>
-            <li>🟢 <b>Green</b> → Yellow, Green, or Blue tower</li>
-            <li>🔵 <b>Blue</b> → Green, Blue, or Purple tower</li>
-            <li>🟣 <b>Purple</b> → Blue, Purple, or Red tower</li>
-        </ul>
-        <p><b>Player 1 example</b> (primary colors): Red stones can go in the Purple, Red, and Orange towers. Blue stones in Green, Blue, and Purple. Yellow stones in Orange, Yellow, and Green.<br>
-        <b>Player 2 example</b> (secondary colors): Orange stones can go in the Red, Orange, and Yellow towers. Green stones in Yellow, Green, and Blue. Purple stones in Blue, Purple, and Red.</p>
-        <p>This means both players compete for the towers — each tower can receive multiple colors from both players!</p>
-
-        <h3>Gameplay</h3>
-        <ul>
-            <li>Each <b>round</b> consists of 3 turns.</li>
-            <li>At the start of each round, each player picks a row in any direction (3 stones) from their grid and announces either the <b>colors</b> or the <b>numbers</b> (Gray = 0).</li>
-            <li>Then players <b>alternate placing 1 stone</b> into a tower (3 turns per round).</li>
-            <li>Each colored stone may be placed in its <b>own</b> color tower or the <b>two adjacent</b> towers on the color wheel. Gray jokers may go in any tower.</li>
+            <li>🔴 <b>Rot</b> → Lila-, Rot- oder Orange-Turm</li>
+            <li>🟠 <b>Orange</b> → Rot-, Orange- oder Gelb-Turm</li>
+            <li>🟡 <b>Gelb</b> → Orange-, Gelb- oder Gruen-Turm</li>
+            <li>🟢 <b>Gruen</b> → Gelb-, Gruen- oder Blau-Turm</li>
+            <li>🔵 <b>Blau</b> → Gruen-, Blau- oder Lila-Turm</li>
+            <li>🟣 <b>Lila</b> → Blau-, Lila- oder Rot-Turm</li>
         </ul>
 
-        <h3>Grid &amp; Rounds</h3>
+        <h3>Spielablauf</h3>
         <ul>
-            <li><b>Rounds 1–3:</b> Stones from the first 3&times;3 grid. Pick 3 stones from your grid in a row (any direction). In the 2nd round, choose one of the 2 remaining rows.</li>
-            <li><b>Rounds 4–6:</b> Remaining 9 stones arranged by the program in a new 3&times;3 grid. Same rules apply.</li>
-            <li>The direction you choose for your first row stays for the rest of that grid.</li>
+            <li>Jede <b>Runde</b> besteht aus 3 Zuegen.</li>
+            <li>Am Anfang der Runde nimmt jeder Spieler eine Reihe in beliebiger Richtung (3 Steine) aus seinem Raster und sagt entweder die <b>Farben</b> oder die <b>Zahlen</b> an (Grau = 0).</li>
+            <li>Dann legen die Spieler <b>abwechselnd je 1 Stein</b> in einen Turm (3 Zuege pro Runde).</li>
+            <li>Jeder farbige Stein darf in seinen <b>eigenen</b> Farbturm oder in die <b>zwei benachbarten</b> Tuerme auf dem Farbkreis gelegt werden. Graue Joker duerfen in jeden Turm.</li>
         </ul>
 
-        <h3>Turn Order</h3>
-        <p>Round 1: P1 starts, Round 2: P2, Round 3: P1, Round 4: P1, Round 5: P2, Round 6: P1. The round starter picks their row first and places the first stone in each turn.</p>
-
-        <h3>Gray Jokers</h3>
+        <h3>Raster &amp; Runden</h3>
         <ul>
-            <li>A joker takes the value of the previously placed stone in that tower.</li>
-            <li>A joker <b>cannot</b> be the first stone in a tower.</li>
-            <li>Two jokers <b>cannot</b> be placed consecutively.</li>
-            <li><b>Replacing a joker:</b> If a joker is on top and you have a colored stone that gets closer to 21, but with the joker it would exceed 21, you may remove the joker and place your stone.</li>
+            <li><b>Runde 1–3:</b> Steine aus dem ersten 3&times;3-Raster. Erste Reihe in beliebiger Richtung frei waehlbar, danach eine der anderen zwei.</li>
+            <li><b>Runde 4–6:</b> Verbleibende 9 Steine werden vom Programm in einem neuen 3&times;3-Raster angeordnet. Erste Reihe in beliebiger Richtung frei waehlbar, danach eine der anderen zwei.</li>
+            <li>Die einmal gewaehlte Richtung gilt fuer alle weiteren Runden im selben Raster.</li>
         </ul>
 
-        <h3>Scoring</h3>
-        <p>6 towers = 6 possible points. The player who placed the last stone in a tower gets the point. The player with more points wins.</p>
+        <h3>Zugreihenfolge</h3>
+        <p>Runde 1: Sp.1 beginnt, Runde 2: Sp.2, Runde 3: Sp.1, Runde 4: Sp.1, Runde 5: Sp.2, Runde 6: Sp.1. Der Rundenbeginner waehlt zuerst seine Reihe und legt in jedem Zug als Erster einen Stein.</p>
 
-        <button class="close-btn" onclick="closeRules()">Got it!</button>
+        <h3>Graue Joker</h3>
+        <ul>
+            <li>Ein Joker uebernimmt den Wert des zuletzt gelegten Steins im Turm.</li>
+            <li>Ein Joker darf <b>nicht</b> als erster Stein in einen Turm gelegt werden.</li>
+            <li>Zwei Joker duerfen <b>nicht</b> direkt aufeinander folgen.</li>
+            <li><b>Joker ersetzen:</b> Liegt ein Joker oben und man hat einen farbigen Stein, der naeher an 21 kommt, aber mit dem Joker die 21 ueberschreiten wuerde, darf man den Joker entfernen und den eigenen Stein legen.</li>
+        </ul>
+
+        <h3>Wertung</h3>
+        <p>6 Tuerme = 6 moegliche Punkte. Wer den letzten Stein in einen Turm gelegt hat, bekommt den Punkt. Gewinner ist, wer mehr Punkte hat.</p>
+
+        <button class="close-btn" onclick="closeRules()">Verstanden!</button>
+    </div>
+</div>
+
+<!-- ======== CHAT ======== -->
+<div id="chatArea">
+    <div id="chatMessages"></div>
+    <div id="chatInput">
+        <input type="text" id="chatText" placeholder="Nachricht..." onkeydown="if(event.key==='Enter')sendChat()">
+        <button onclick="sendChat()">Senden</button>
     </div>
 </div>
 
 <script>
-// ══════════════════════════════════════════
-// RAINBOW BLACKJACK — Game Logic
-// ══════════════════════════════════════════
+// ======================================
+// RAINBOW BLACKJACK REMOTE — Game Logic
+// ======================================
 
 const COLORS = ['red', 'blue', 'yellow', 'green', 'orange', 'purple'];
 const PRIMARY_COLORS = ['red', 'blue', 'yellow'];
 const SECONDARY_COLORS = ['green', 'orange', 'purple'];
-// Color wheel order for adjacency: each color can go in its own tower + 2 neighbors
 const COLOR_WHEEL = ['red', 'orange', 'yellow', 'green', 'blue', 'purple'];
 const ADJACENT_TOWERS = {};
 COLOR_WHEEL.forEach((c, i) => {
@@ -562,46 +646,203 @@ COLOR_WHEEL.forEach((c, i) => {
     ADJACENT_TOWERS[c] = [prev, c, next];
 });
 const COLOR_NAMES = {
-    red: 'Red', blue: 'Blue', yellow: 'Yellow',
-    green: 'Green', orange: 'Orange', purple: 'Purple', gray: 'Gray'
+    red: 'Rot', blue: 'Blau', yellow: 'Gelb',
+    green: 'Gruen', orange: 'Orange', purple: 'Lila', gray: 'Grau'
 };
-const ROUND_STARTERS = [0, 1, 0, 0, 1, 0]; // who starts each round (0-indexed player)
+const ROUND_STARTERS = [0, 1, 0, 0, 1, 0];
 
-// ── State ──
-let gameState = 'SETUP';
+// -- Network State --
+let peer = null;
+let conn = null;
+let myRole = null;    // 'host' or 'join'
+let myPlayer = null;  // 0 or 1 (0-indexed)
+let myName = '';
+let opponentName = '';
+
+// -- Game State --
+let gameState = 'CONNECT';
 let players = [];
 let towers = {};
 let currentPlayer = 0;
 let currentRound = 1;
-let gridNumber = 1;          // 1 or 2
-let roundStarter = 0;        // who starts the current round
-let pickedOrientations = [null, null]; // per-player: 'row' or 'col'
-let pickedIndicesPerPlayer = [[], []]; // per-player: which row/col indices picked this grid
+let gridNumber = 1;
+let roundStarter = 0;
+let pickedOrientations = [null, null];
+let pickedIndicesPerPlayer = [[], []];
 let selectedHandIdx = null;
 let stonesPlayedThisTurn = 0;
-let announcements = ['', ''];  // per-player announcement text
-let playSubTurn = 0;           // 0-5: alternating single-stone plays within a round
+let announcements = ['', ''];
+let playSubTurn = 0;
 let historyStack = [];
 let sessionLog = [];
 let currentGameId = '';
-let passCallback = null;
 let gridArrangePlayerIdx = 0;
 let selectedPoolIdx = null;
 
-// ── DOM refs ──
-const setupScreen = document.getElementById('setupScreen');
+// -- DOM refs --
+const connectScreen = document.getElementById('connectScreen');
 const gameScreen = document.getElementById('gameScreen');
 const scoringScreen = document.getElementById('scoringScreen');
 const towersArea = document.getElementById('towersArea');
 const dynamicArea = document.getElementById('dynamicArea');
-const passOverlay = document.getElementById('passOverlay');
-const passTitle = document.getElementById('passTitle');
-const passMsg = document.getElementById('passMsg');
+const waitOverlay = document.getElementById('waitOverlay');
+const waitTitle = document.getElementById('waitTitle');
+const waitMsg = document.getElementById('waitMsg');
 const rulesModal = document.getElementById('rulesModal');
 
-// ══════════════════════════════
+// ======================================
+// NETWORK — PeerJS
+// ======================================
+
+function setConnStatus(msg, cls) {
+    const el = document.getElementById('connect-status');
+    el.textContent = msg;
+    el.className = cls || '';
+}
+
+function startConnection() {
+    const name = document.getElementById('player-name').value.trim();
+    const room = document.getElementById('room-id').value.trim();
+
+    if (!name) { setConnStatus('Bitte Namen eingeben.', 'error'); return; }
+    if (!room) { setConnStatus('Bitte Raum-ID eingeben.', 'error'); return; }
+
+    myName = name;
+    document.getElementById('connect-btn').disabled = true;
+    setConnStatus('Verbinde...');
+
+    const hostId = `rainbow-bj-${room}-host`;
+
+    peer = new Peer(hostId);
+
+    peer.on('open', () => {
+        myRole = 'host';
+        myPlayer = 0;
+        setConnStatus('Warte auf zweiten Spieler in Raum "' + room + '"...');
+        peer.on('connection', (c) => {
+            conn = c;
+            setupConn();
+        });
+    });
+
+    peer.on('error', (err) => {
+        if (err.type === 'unavailable-id') {
+            peer.destroy();
+            peer = new Peer();
+            peer.on('open', () => {
+                myRole = 'join';
+                myPlayer = 1;
+                setConnStatus('Trete Raum "' + room + '" bei...');
+                conn = peer.connect(hostId, { reliable: true });
+                setupConn();
+            });
+            peer.on('error', (err2) => {
+                setConnStatus('Fehler: ' + err2.message, 'error');
+                document.getElementById('connect-btn').disabled = false;
+            });
+        } else {
+            setConnStatus('Fehler: ' + err.message, 'error');
+            document.getElementById('connect-btn').disabled = false;
+        }
+    });
+}
+
+function setupConn() {
+    conn.on('open', () => {
+        setConnStatus('Verbunden!', 'success');
+        conn.send({ type: 'hello', name: myName, player: myPlayer });
+        setTimeout(() => {
+            connectScreen.classList.add('hidden');
+            gameScreen.classList.add('active');
+            addSystemMsg('Verbunden! Du bist Spieler ' + (myPlayer + 1) + '.');
+            if (myRole === 'host') {
+                initGame();
+            }
+        }, 400);
+    });
+
+    conn.on('data', (data) => {
+        handleNetMessage(data);
+    });
+
+    conn.on('close', () => {
+        addSystemMsg('Gegner hat die Verbindung getrennt.');
+    });
+}
+
+function sendNet(msg) {
+    if (conn && conn.open) conn.send(msg);
+}
+
+function handleNetMessage(data) {
+    switch (data.type) {
+        case 'hello':
+            opponentName = data.name;
+            addSystemMsg(opponentName + ' ist beigetreten als Spieler ' + (data.player + 1) + '.');
+            break;
+        case 'chat':
+            addChatMsg(data.player, data.name, data.text);
+            break;
+        case 'game_init':
+            applyGameInit(data);
+            break;
+        case 'grid_arranged':
+            applyGridArranged(data);
+            break;
+        case 'grid_look_done':
+            applyGridLookDone(data);
+            break;
+        case 'pick_row':
+            applyPickRow(data);
+            break;
+        case 'announce':
+            applyAnnounce(data);
+            break;
+        case 'place_stone':
+            applyPlaceStone(data);
+            break;
+        case 'grid2_arranged':
+            applyGrid2Arranged(data);
+            break;
+    }
+}
+
+// ======================================
+// CHAT
+// ======================================
+
+function addSystemMsg(text) {
+    const div = document.createElement('div');
+    div.className = 'chat-msg system';
+    div.textContent = text;
+    document.getElementById('chatMessages').appendChild(div);
+    document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+}
+
+function addChatMsg(player, name, text) {
+    const div = document.createElement('div');
+    div.className = 'chat-msg';
+    const span = document.createElement('span');
+    span.className = 'chat-sender p' + (player + 1);
+    span.textContent = name + ': ';
+    div.appendChild(span);
+    div.appendChild(document.createTextNode(text));
+    document.getElementById('chatMessages').appendChild(div);
+    document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+}
+
+function sendChat() {
+    const input = document.getElementById('chatText');
+    const text = input.value.trim();
+    if (!text) return;
+    addChatMsg(myPlayer, myName, text);
+    sendNet({ type: 'chat', player: myPlayer, name: myName, text });
+    input.value = '';
+}
+
+// ======================================
 // INIT & DEAL
-// ══════════════════════════════
+// ======================================
 
 function initGame() {
     currentGameId = Date.now().toString(36);
@@ -615,10 +856,10 @@ function initGame() {
     announcements = ['', ''];
     playSubTurn = 0;
 
-    // Create players
+    // Create players — host generates all stones
     players = [
-        makePlayer(0, 'Player 1', PRIMARY_COLORS),
-        makePlayer(1, 'Player 2', SECONDARY_COLORS)
+        makePlayer(0, myPlayer === 0 ? myName : opponentName, PRIMARY_COLORS),
+        makePlayer(1, myPlayer === 1 ? myName : opponentName, SECONDARY_COLORS)
     ];
 
     // Create towers
@@ -640,14 +881,66 @@ function initGame() {
     players.forEach(p => {
         p.gridPool1 = p.allStones.slice(0, 9);
         p.gridPool2 = p.allStones.slice(9, 18);
-        p.gridPool = p.gridPool1.slice(); // current pool
+        p.gridPool = p.gridPool1.slice();
         p.grid = [[null,null,null],[null,null,null],[null,null,null]];
         p.hand = [];
     });
 
     logAction('GAME_START', {});
-    showScreen('game');
+
+    // Send joiner their stone data
+    sendNet({
+        type: 'game_init',
+        // Send joiner (player 2) their own stones
+        joinerStones: serializeStoneArrays(players[1]),
+        // Player names
+        p1Name: players[0].name,
+        p2Name: players[1].name
+    });
+
+    // Host starts arranging their grid
     startGridArrange(0);
+}
+
+function serializeStoneArrays(player) {
+    return {
+        gridPool1: player.gridPool1.map(s => ({ color: s.color, number: s.number })),
+        gridPool2: player.gridPool2.map(s => ({ color: s.color, number: s.number })),
+        removed: player.removed.map(s => ({ color: s.color, number: s.number }))
+    };
+}
+
+function applyGameInit(data) {
+    // Joiner receives game initialization
+    currentGameId = Date.now().toString(36);
+    sessionLog = [];
+    historyStack = [];
+    currentRound = 1;
+    gridNumber = 1;
+    roundStarter = 0;
+    pickedOrientations = [null, null];
+    pickedIndicesPerPlayer = [[], []];
+    announcements = ['', ''];
+    playSubTurn = 0;
+
+    players = [
+        { id: 0, name: data.p1Name, colorSet: PRIMARY_COLORS, allStones: [], removed: [],
+          gridPool1: [], gridPool2: [], gridPool: [], grid: [[null,null,null],[null,null,null],[null,null,null]], hand: [], score: 0 },
+        { id: 1, name: data.p2Name, colorSet: SECONDARY_COLORS, allStones: [], removed: [],
+          gridPool1: [], gridPool2: [], gridPool: [], grid: [[null,null,null],[null,null,null],[null,null,null]], hand: [], score: 0 }
+    ];
+
+    // Apply joiner's stones
+    players[1].gridPool1 = data.joinerStones.gridPool1;
+    players[1].gridPool2 = data.joinerStones.gridPool2;
+    players[1].gridPool = players[1].gridPool1.slice();
+    players[1].removed = data.joinerStones.removed;
+
+    towers = {};
+    COLORS.forEach(c => { towers[c] = { stones: [], total: 0, winner: null }; });
+
+    // Joiner waits while host arranges grid
+    showWait('Spieler 1 ordnet sein Raster an...');
 }
 
 function makePlayer(id, name, colorSet) {
@@ -657,10 +950,7 @@ function makePlayer(id, name, colorSet) {
             stones.push({ color: c, number: n });
         }
     });
-    // Add 3 gray jokers
     for (let i = 0; i < 3; i++) stones.push({ color: 'gray', number: 0 });
-
-    // Shuffle
     shuffleArray(stones);
 
     return {
@@ -684,53 +974,38 @@ function shuffleArray(arr) {
     return arr;
 }
 
-// ══════════════════════════════
+// ======================================
 // SCREEN MANAGEMENT
-// ══════════════════════════════
+// ======================================
 
 function showScreen(name) {
-    setupScreen.classList.remove('active');
     gameScreen.classList.remove('active');
     scoringScreen.classList.remove('active');
-    if (name === 'setup') setupScreen.classList.add('active');
-    else if (name === 'game') gameScreen.classList.add('active');
+    if (name === 'game') gameScreen.classList.add('active');
     else if (name === 'scoring') scoringScreen.classList.add('active');
 }
 
-function showSetup() {
-    gameState = 'SETUP';
-    showScreen('setup');
+function showWait(message) {
+    waitTitle.textContent = 'Warten...';
+    waitMsg.textContent = message || 'Der Gegner ist am Zug';
+    waitOverlay.classList.add('active');
 }
 
-// ══════════════════════════════
-// PASS DEVICE
-// ══════════════════════════════
-
-function showPass(playerIdx, message, callback) {
-    passTitle.textContent = `${players[playerIdx].name}'s turn`;
-    passMsg.textContent = message || 'Tap to continue';
-    passCallback = callback;
-    passOverlay.classList.add('active');
+function hideWait() {
+    waitOverlay.classList.remove('active');
 }
 
-function dismissPass() {
-    passOverlay.classList.remove('active');
-    if (passCallback) {
-        const cb = passCallback;
-        passCallback = null;
-        cb();
-    }
+function isMyTurn() {
+    return currentPlayer === myPlayer;
 }
 
-// ══════════════════════════════
+// ======================================
 // GRID ARRANGEMENT
-// ══════════════════════════════
+// ======================================
 
 function startGridArrange(playerIdx) {
-    gridArrangePlayerIdx = playerIdx;
-    const p = players[playerIdx];
-
-    // Auto-arrange: shuffle pool into 3x3 grid
+    // Auto-arrange: shuffle pool into 3x3 grid for my player only
+    const p = players[myPlayer];
     p.grid = [[null,null,null],[null,null,null],[null,null,null]];
     const stones = p.gridPool.filter(s => s !== null);
     shuffleArray(stones);
@@ -741,39 +1016,38 @@ function startGridArrange(playerIdx) {
     p.gridPool = p.gridPool.map(() => null);
 
     gameState = 'GRID_ARRANGE';
-    currentPlayer = playerIdx;
-    logAction('GRID_ARRANGE', { player: playerIdx + 1, grid: gridNumber });
+    logAction('GRID_ARRANGE', { player: myPlayer + 1, grid: gridNumber });
 
-    if (playerIdx === 0) {
-        // Auto-arrange player 2 as well, then start grid look
-        startGridArrange(1);
-    } else {
-        // Both arranged — start grid look phase
-        startGridLook(0);
-    }
-}
-
-// ══════════════════════════════
-// GRID LOOK (view your grid)
-// ══════════════════════════════
-
-function startGridLook(playerIdx) {
-    gameState = 'GRID_LOOK';
-    currentPlayer = playerIdx;
-
-    showPass(playerIdx, 'View your grid — tap to continue', () => {
-        renderGridLook(playerIdx);
+    // Notify opponent that arrangement is done
+    sendNet({
+        type: 'grid_arranged',
+        player: myPlayer,
+        gridNumber: gridNumber
     });
+
+    // Go straight to grid look
+    renderGridLook(myPlayer);
 }
+
+function applyGridArranged(data) {
+    // Opponent finished auto-arranging — nothing to do, wait for grid look
+}
+
+// ======================================
+// GRID LOOK
+// ======================================
 
 function renderGridLook(playerIdx) {
-    updateStatus('View grid');
+    gameState = 'GRID_LOOK';
+    currentPlayer = playerIdx;
+    hideWait();
+    updateStatus('Raster anschauen');
     renderTowers();
 
-    const p = players[playerIdx];
+    const p = players[myPlayer];
     let html = '<div class="grid-area animate-in">';
-    html += `<h2>${p.name}: Your grid (Grid ${gridNumber})</h2>`;
-    html += '<p class="subtitle">Memorize the positions — you cannot change them anymore!</p>';
+    html += `<h2>${p.name}: Dein Raster (Raster ${gridNumber})</h2>`;
+    html += '<p class="subtitle">Merke dir die Positionen — du kannst sie nicht mehr aendern!</p>';
 
     html += '<div class="grid-3x3">';
     for (let r = 0; r < 3; r++) {
@@ -788,23 +1062,38 @@ function renderGridLook(playerIdx) {
     }
     html += '</div>';
 
-    html += `<button class="btn btn-gold btn-small" onclick="confirmGridLook(${playerIdx})" style="margin-top: 10px;">Ready</button>`;
+    html += `<button class="btn btn-gold btn-small" onclick="confirmGridLook()" style="margin-top: 10px;">Bereit</button>`;
     html += '</div>';
     dynamicArea.innerHTML = html;
 }
 
-function confirmGridLook(playerIdx) {
-    if (playerIdx === 0) {
-        startGridLook(1);
-    } else {
-        // Both have looked — start rounds
+function confirmGridLook() {
+    sendNet({ type: 'grid_look_done', player: myPlayer, gridNumber: gridNumber });
+
+    // Wait for opponent to also finish looking
+    showWait('Warte auf den Gegner...');
+    gridLookDone[myPlayer] = true;
+
+    if (gridLookDone[0] && gridLookDone[1]) {
+        hideWait();
         startRound();
     }
 }
 
-// ══════════════════════════════
+let gridLookDone = [false, false];
+
+function applyGridLookDone(data) {
+    gridLookDone[data.player] = true;
+
+    if (gridLookDone[0] && gridLookDone[1]) {
+        hideWait();
+        startRound();
+    }
+}
+
+// ======================================
 // ROUND MANAGEMENT
-// ══════════════════════════════
+// ======================================
 
 function startRound() {
     if (currentRound > 6) {
@@ -817,11 +1106,10 @@ function startRound() {
         gridNumber = 2;
         pickedOrientations = [null, null];
         pickedIndicesPerPlayer = [[], []];
-        // Auto-arrange second grid for both players
-        players.forEach(p => {
-            p.gridPool = p.gridPool2.slice();
-        });
-        startGridArrange(0);
+        gridLookDone = [false, false];
+        // Auto-arrange second grid
+        players[myPlayer].gridPool = players[myPlayer].gridPool2.slice();
+        startGridArrange(myPlayer);
         return;
     }
 
@@ -837,9 +1125,12 @@ function startPickPhase() {
     selectedHandIdx = null;
     historyStack = [];
 
-    showPass(currentPlayer, 'Choose your row — tap to continue', () => {
+    if (isMyTurn()) {
+        hideWait();
         renderPickRow();
-    });
+    } else {
+        showWait(players[currentPlayer].name + ' waehlt eine Reihe...');
+    }
 }
 
 function startPlayPhase() {
@@ -854,44 +1145,43 @@ function startSingleStoneTurn() {
     selectedHandIdx = null;
     historyStack = [];
 
-    const stoneNum = Math.floor(playSubTurn / 2) + 1;
-    showPass(currentPlayer, `Place stone ${stoneNum}/3 — tap to continue`, () => {
+    if (isMyTurn()) {
+        hideWait();
         renderPlayStones();
-    });
+    } else {
+        const stoneNum = Math.floor(playSubTurn / 2) + 1;
+        showWait(players[currentPlayer].name + ` legt Stein ${stoneNum}/3...`);
+    }
 }
 
-// ══════════════════════════════
+// ======================================
 // PICK ROW / COLUMN
-// ══════════════════════════════
+// ======================================
 
 function renderPickRow() {
-    updateStatus('Pick row');
+    updateStatus('Reihe waehlen');
     renderTowers();
 
-    const p = players[currentPlayer];
+    const p = players[myPlayer];
     let html = '<div class="grid-area animate-in">';
-    html += `<h2>${p.name}: Choose a row</h2>`;
+    html += `<h2>${p.name}: Waehle eine Reihe</h2>`;
 
     const pickable = getPickableOptions();
 
     if (pickable.length === 1) {
-        // Auto-pick the only option
         handlePickRow(pickable[0].type, pickable[0].index);
         return;
     }
 
     html += '<div class="pick-instructions">';
-    if (pickedIndicesPerPlayer[currentPlayer].length === 0) {
-        html += 'Choose a row in any direction';
+    if (pickedIndicesPerPlayer[myPlayer].length === 0) {
+        html += 'Waehle eine Reihe in beliebiger Richtung';
     } else {
-        html += 'Choose one of the other two rows';
+        html += 'Waehle eine der anderen zwei Reihen';
     }
     html += '</div>';
 
-    // Show grid with highlights
     html += '<div style="position: relative; display: inline-block;">';
-
-    // Row buttons on the left
     html += '<div style="display: flex; gap: 6px; align-items: flex-start;">';
     html += '<div style="display: flex; flex-direction: column; gap: 6px; justify-content: flex-start;">';
     for (let r = 0; r < 3; r++) {
@@ -904,9 +1194,7 @@ function renderPickRow() {
     }
     html += '</div>';
 
-    // Grid
     html += '<div>';
-    // Column buttons on top
     html += '<div style="display: flex; gap: 6px; margin-bottom: 6px; margin-left: 0;">';
     for (let c = 0; c < 3; c++) {
         const isPickable = pickable.some(o => o.type === 'col' && o.index === c);
@@ -925,6 +1213,7 @@ function renderPickRow() {
             const isInPickableRow = pickable.some(o => (o.type === 'row' && o.index === r) || (o.type === 'col' && o.index === c));
             const hlClass = isInPickableRow ? ' highlight-row' : '';
             if (s) {
+                // Show own stones face-up
                 html += `<div class="grid-cell occupied${hlClass}"><div class="stone stone-${s.color} small">${s.color === 'gray' ? 'J' : s.number}</div></div>`;
             } else {
                 html += `<div class="grid-cell${hlClass}"></div>`;
@@ -937,13 +1226,12 @@ function renderPickRow() {
 }
 
 function getPickableOptions() {
-    const p = players[currentPlayer];
-    const myPicked = pickedIndicesPerPlayer[currentPlayer];
-    const myOrientation = pickedOrientations[currentPlayer];
+    const p = players[myPlayer];
+    const myPicked = pickedIndicesPerPlayer[myPlayer];
+    const myOrientation = pickedOrientations[myPlayer];
     const options = [];
 
     if (myPicked.length === 0) {
-        // First pick: any row or column (same for both grids)
         for (let i = 0; i < 3; i++) {
             if (hasStones(p, 'row', i)) options.push({ type: 'row', index: i });
             if (hasStones(p, 'col', i)) options.push({ type: 'col', index: i });
@@ -969,14 +1257,13 @@ function hasStones(player, type, index) {
 }
 
 function handlePickRow(type, index) {
-    const p = players[currentPlayer];
+    const p = players[myPlayer];
 
-    if (pickedIndicesPerPlayer[currentPlayer].length === 0) {
-        pickedOrientations[currentPlayer] = type;
+    if (pickedIndicesPerPlayer[myPlayer].length === 0) {
+        pickedOrientations[myPlayer] = type;
     }
-    pickedIndicesPerPlayer[currentPlayer].push(index);
+    pickedIndicesPerPlayer[myPlayer].push(index);
 
-    // Extract stones
     const hand = [];
     if (type === 'row') {
         for (let c = 0; c < 3; c++) {
@@ -995,27 +1282,46 @@ function handlePickRow(type, index) {
     }
 
     p.hand = hand;
-    logAction('PICK_ROW', { player: currentPlayer + 1, type, index, stones: hand.map(s => s.color + ':' + s.number) });
+    logAction('PICK_ROW', { player: myPlayer + 1, type, index, stones: hand.map(s => s.color + ':' + s.number) });
+
+    // Send pick info to opponent (just type and index, not stone contents)
+    sendNet({
+        type: 'pick_row',
+        player: myPlayer,
+        pickType: type,
+        pickIndex: index
+    });
 
     // Go to announce phase
     gameState = 'ANNOUNCE';
     renderAnnounce();
 }
 
-// ══════════════════════════════
+function applyPickRow(data) {
+    // Opponent picked a row/column
+    const opPlayer = data.player;
+    if (pickedIndicesPerPlayer[opPlayer].length === 0) {
+        pickedOrientations[opPlayer] = data.pickType;
+    }
+    pickedIndicesPerPlayer[opPlayer].push(data.pickIndex);
+
+    // We don't know their actual stones, but track the pick
+    // The opponent will announce next
+}
+
+// ======================================
 // ANNOUNCE
-// ══════════════════════════════
+// ======================================
 
 function renderAnnounce() {
-    updateStatus('Announce');
+    updateStatus('Ansage');
     renderTowers();
 
-    const p = players[currentPlayer];
+    const p = players[myPlayer];
     let html = '<div class="announce-area animate-in">';
-    html += `<h2>${p.name}: Announce</h2>`;
-    html += '<p>Tell your opponent either the <b>colors</b> or the <b>numbers</b> of your 3 stones.</p>';
+    html += `<h2>${p.name}: Ansage</h2>`;
+    html += '<p>Sage deinem Gegner entweder die <b>Farben</b> oder die <b>Zahlen</b> deiner 3 Steine an.</p>';
 
-    // Show hand (face up to current player)
     html += '<div class="hand-area" style="margin: 12px 0;">';
     p.hand.forEach(s => {
         html += `<div class="stone stone-${s.color}">${s.color === 'gray' ? 'J' : s.number}</div>`;
@@ -1023,50 +1329,73 @@ function renderAnnounce() {
     html += '</div>';
 
     html += '<div class="announce-btns">';
-    html += '<button class="btn btn-gold" onclick="doAnnounce(\'colors\')">Announce colors</button>';
-    html += '<button class="btn btn-gold" onclick="doAnnounce(\'numbers\')">Announce numbers</button>';
+    html += '<button class="btn btn-gold" onclick="doAnnounce(\'colors\')">Farben ansagen</button>';
+    html += '<button class="btn btn-gold" onclick="doAnnounce(\'numbers\')">Zahlen ansagen</button>';
     html += '</div></div>';
     dynamicArea.innerHTML = html;
 }
 
 function doAnnounce(choice) {
-    const p = players[currentPlayer];
+    const p = players[myPlayer];
     let text;
 
     if (choice === 'colors') {
         const colorList = p.hand.map(s => COLOR_NAMES[s.color]);
-        text = 'Colors: ' + colorList.join(', ');
+        text = 'Farben: ' + colorList.join(', ');
     } else {
         const numList = p.hand.map(s => s.color === 'gray' ? '0' : s.number);
-        text = 'Numbers: ' + numList.join(', ');
+        text = 'Zahlen: ' + numList.join(', ');
     }
 
-    announcements[currentPlayer] = text;
-    logAction('ANNOUNCE', { player: currentPlayer + 1, choice, text });
+    announcements[myPlayer] = text;
+    logAction('ANNOUNCE', { player: myPlayer + 1, choice, text });
 
-    if (currentPlayer === roundStarter) {
-        // First player done picking → other player picks
+    sendNet({
+        type: 'announce',
+        player: myPlayer,
+        text: text
+    });
+
+    if (myPlayer === roundStarter) {
+        // I was the round starter who picked first.
+        // Now the other player picks.
         currentPlayer = 1 - roundStarter;
-        startPickPhase();
+        showWait(players[currentPlayer].name + ' waehlt eine Reihe...');
     } else {
-        // Both picked and announced → start alternating play
+        // Both picked and announced — start alternating play
         startPlayPhase();
     }
 }
 
-// ══════════════════════════════
+function applyAnnounce(data) {
+    announcements[data.player] = data.text;
+
+    if (data.player === roundStarter) {
+        // Round starter announced, now it's my turn to pick (I'm the non-starter)
+        currentPlayer = 1 - roundStarter;
+        if (currentPlayer === myPlayer) {
+            hideWait();
+            startPickPhase();
+        }
+    } else {
+        // Both have announced — start play phase
+        startPlayPhase();
+    }
+}
+
+// ======================================
 // PLAY STONES
-// ══════════════════════════════
+// ======================================
 
 function renderPlayStones() {
     const stoneNum = Math.floor(playSubTurn / 2) + 1;
-    updateStatus(`Place stone (${stoneNum}/3)`);
+    updateStatus(`Stein legen (${stoneNum}/3)`);
     renderTowers();
 
-    const p = players[currentPlayer];
+    const p = players[myPlayer];
     let html = '<div style="display: flex; flex-direction: column; align-items: center; gap: 8px;" class="animate-in">';
 
-    // Both announcements display
+    // Both announcements
     html += '<div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">';
     for (let i = 0; i < 2; i++) {
         if (announcements[i]) {
@@ -1076,7 +1405,7 @@ function renderPlayStones() {
     html += '</div>';
 
     // Hand
-    html += `<p style="font-size: 0.9em; color: var(--text-dim);">${p.name}: Select 1 stone, then click a tower</p>`;
+    html += `<p style="font-size: 0.9em; color: var(--text-dim);">${p.name}: Waehle 1 Stein, dann klicke auf einen Turm</p>`;
     html += '<div class="hand-area">';
     p.hand.forEach((s, i) => {
         const sel = selectedHandIdx === i ? ' selected' : '';
@@ -1090,8 +1419,8 @@ function renderPlayStones() {
         if (stone.color !== 'gray') {
             const replaceable = COLORS.filter(c => canReplaceGray(stone, c));
             if (replaceable.length > 0) {
-                html += '<p style="font-size: 0.85em; color: var(--accent);">Hint: You can replace the joker on top of ' +
-                    replaceable.map(c => COLOR_NAMES[c]).join(', ') + '!</p>';
+                html += '<p style="font-size: 0.85em; color: var(--accent);">Tipp: Du kannst den Joker oben auf ' +
+                    replaceable.map(c => COLOR_NAMES[c]).join(', ') + ' ersetzen!</p>';
             }
         }
     }
@@ -1108,53 +1437,90 @@ function renderPlayStones() {
 }
 
 function selectHandStone(idx) {
-    if (gameState !== 'PLAY_STONES') return;
+    if (gameState !== 'PLAY_STONES' || !isMyTurn()) return;
     selectedHandIdx = (selectedHandIdx === idx) ? null : idx;
     renderPlayStones();
 }
 
 function handleTowerClick(towerColor) {
-    if (gameState !== 'PLAY_STONES' || selectedHandIdx === null) return;
+    if (gameState !== 'PLAY_STONES' || selectedHandIdx === null || !isMyTurn()) return;
 
-    const p = players[currentPlayer];
+    const p = players[myPlayer];
     const stone = p.hand[selectedHandIdx];
+    const stoneIdx = selectedHandIdx;
 
-    // Check if this is a gray replacement scenario
+    // Check if this is a gray replacement
     if (canReplaceGray(stone, towerColor)) {
-        // Save history before replacement
         pushHistory();
         doReplaceGray(stone, towerColor);
+
+        // Send to opponent
+        sendNet({
+            type: 'place_stone',
+            player: myPlayer,
+            stoneColor: stone.color,
+            stoneNumber: stone.number,
+            tower: towerColor,
+            isReplace: true
+        });
         return;
     }
 
-    if (!canPlaceInTower(stone, towerColor)) {
-        return; // Invalid placement, ignore
-    }
+    if (!canPlaceInTower(stone, towerColor)) return;
 
-    // Save history
     pushHistory();
 
-    // Calculate effective value
     const effValue = getEffectiveValue(stone, towerColor);
-    const placedStone = { ...stone, effectiveValue: effValue, placedBy: currentPlayer };
+    const placedStone = { ...stone, effectiveValue: effValue, placedBy: myPlayer };
 
     towers[towerColor].stones.push(placedStone);
     towers[towerColor].total += effValue;
 
-    // Remove from hand
     p.hand.splice(selectedHandIdx, 1);
     selectedHandIdx = null;
     stonesPlayedThisTurn++;
 
     logAction('PLACE_STONE', {
-        player: currentPlayer + 1,
+        player: myPlayer + 1,
         stone: stone.color + ':' + stone.number,
         tower: towerColor,
         effValue,
         newTotal: towers[towerColor].total
     });
 
-    // Each sub-turn plays exactly 1 stone
+    // Send to opponent
+    sendNet({
+        type: 'place_stone',
+        player: myPlayer,
+        stoneColor: stone.color,
+        stoneNumber: stone.number,
+        tower: towerColor,
+        isReplace: false
+    });
+
+    endStonePlacement();
+}
+
+function applyPlaceStone(data) {
+    const stone = { color: data.stoneColor, number: data.stoneNumber };
+    const towerColor = data.tower;
+
+    if (data.isReplace) {
+        // Gray replacement
+        const tower = towers[towerColor];
+        const removedGray = tower.stones.pop();
+        tower.total -= removedGray.effectiveValue;
+
+        const placedStone = { ...stone, effectiveValue: stone.number, placedBy: data.player };
+        tower.stones.push(placedStone);
+        tower.total += stone.number;
+    } else {
+        const effValue = getEffectiveValue(stone, towerColor);
+        const placedStone = { ...stone, effectiveValue: effValue, placedBy: data.player };
+        towers[towerColor].stones.push(placedStone);
+        towers[towerColor].total += effValue;
+    }
+
     endStonePlacement();
 }
 
@@ -1162,15 +1528,11 @@ function canPlaceInTower(stone, towerColor) {
     const tower = towers[towerColor];
 
     if (stone.color === 'gray') {
-        // Gray cannot be first
         if (tower.stones.length === 0) return false;
-        // No consecutive grays
         if (tower.stones[tower.stones.length - 1].color === 'gray') return false;
     } else {
-        // Colored stone: can only go in own tower or two adjacent towers on color wheel
         if (!ADJACENT_TOWERS[stone.color].includes(towerColor)) return false;
     }
-
     return true;
 }
 
@@ -1187,19 +1549,15 @@ function canReplaceGray(stone, towerColor) {
     const tower = towers[towerColor];
     if (tower.stones.length === 0) return false;
     if (stone.color === 'gray') return false;
-    // Colored stone must be adjacent on color wheel
     if (!ADJACENT_TOWERS[stone.color].includes(towerColor)) return false;
 
     const topStone = tower.stones[tower.stones.length - 1];
     if (topStone.color !== 'gray') return false;
 
-    // Current total without the gray on top
     const totalWithoutGray = tower.total - topStone.effectiveValue;
     const newTotalReplaced = totalWithoutGray + stone.number;
-    // Total if we just add stone on top of gray (not valid since stone matches tower color, but conceptually)
     const totalWithGrayAndStone = tower.total + stone.number;
 
-    // Replace allowed if: new total is closer to 21, but keeping gray would exceed 21
     return (Math.abs(21 - newTotalReplaced) < Math.abs(21 - tower.total))
         && (totalWithGrayAndStone > 21);
 }
@@ -1209,36 +1567,34 @@ function doReplaceGray(stone, towerColor) {
     const removedGray = tower.stones.pop();
     tower.total -= removedGray.effectiveValue;
 
-    const placedStone = { ...stone, effectiveValue: stone.number, placedBy: currentPlayer };
+    const placedStone = { ...stone, effectiveValue: stone.number, placedBy: myPlayer };
     tower.stones.push(placedStone);
     tower.total += stone.number;
 
-    // Remove from hand
-    const p = players[currentPlayer];
+    const p = players[myPlayer];
     const idx = p.hand.indexOf(stone);
     p.hand.splice(idx, 1);
     selectedHandIdx = null;
     stonesPlayedThisTurn++;
 
     logAction('REPLACE_GRAY', {
-        player: currentPlayer + 1,
+        player: myPlayer + 1,
         stone: stone.color + ':' + stone.number,
         tower: towerColor,
         newTotal: tower.total
     });
 
-    // Each sub-turn plays exactly 1 stone
     endStonePlacement();
 }
 
-// ══════════════════════════════
+// ======================================
 // HISTORY / UNDO
-// ══════════════════════════════
+// ======================================
 
 function pushHistory() {
     historyStack.push({
         towers: JSON.parse(JSON.stringify(towers)),
-        hand: players[currentPlayer].hand.map(s => ({ ...s })),
+        hand: players[myPlayer].hand.map(s => ({ ...s })),
         stonesPlayedThisTurn,
         selectedHandIdx
     });
@@ -1246,17 +1602,13 @@ function pushHistory() {
 
 function undoMove() {
     if (historyStack.length === 0) return;
-    const snap = historyStack.pop();
-    towers = snap.towers;
-    players[currentPlayer].hand = snap.hand;
-    stonesPlayedThisTurn = snap.stonesPlayedThisTurn;
-    selectedHandIdx = null;
-    renderPlayStones();
+    // Only allow undo if it's still our turn and we haven't sent the move yet
+    // Since we send immediately, undo is not meaningful in remote — disable it
 }
 
-// ══════════════════════════════
+// ======================================
 // TURN MANAGEMENT
-// ══════════════════════════════
+// ======================================
 
 function endStonePlacement() {
     historyStack = [];
@@ -1267,11 +1619,9 @@ function endStonePlacement() {
     playSubTurn++;
 
     if (playSubTurn >= 6) {
-        // Round complete (3 sub-turns × 2 players)
         logAction('ROUND_END', { round: currentRound });
         currentRound++;
 
-        // Reset for next round's picks (within same grid)
         if (currentRound === 4 || currentRound > 6) {
             pickedOrientations = [null, null];
             pickedIndicesPerPlayer = [[], []];
@@ -1279,24 +1629,31 @@ function endStonePlacement() {
 
         startRound();
     } else {
-        // Switch to other player for next stone
         currentPlayer = 1 - currentPlayer;
         startSingleStoneTurn();
     }
 }
 
-// ══════════════════════════════
+// ======================================
+// GRID 2 ARRANGEMENT
+// ======================================
+
+function applyGrid2Arranged(data) {
+    // Not needed — each player arranges independently
+}
+
+// ======================================
 // SCORING
-// ══════════════════════════════
+// ======================================
 
 function showScoring() {
     gameState = 'SCORING';
     showScreen('scoring');
+    hideWait();
 
     let p1Score = 0, p2Score = 0;
     let html = '<div class="towers-container" style="margin: 16px 0;">';
 
-    // Mini tower display
     COLORS.forEach(c => {
         const t = towers[c];
         html += `<div class="tower tower-${c}" style="min-height: 160px;">`;
@@ -1309,8 +1666,7 @@ function showScoring() {
     });
     html += '</div>';
 
-    // Scoring table
-    html += '<table class="scoring-table"><tr><th>Tower</th><th>Total</th><th>Last Stone</th><th>Point</th></tr>';
+    html += '<table class="scoring-table"><tr><th>Turm</th><th>Summe</th><th>Letzter Stein</th><th>Punkt</th></tr>';
     COLORS.forEach(c => {
         const t = towers[c];
         let pointText, pointClass;
@@ -1336,14 +1692,13 @@ function showScoring() {
     });
     html += '</table>';
 
-    // Final result
     players[0].score = p1Score;
     players[1].score = p2Score;
 
     let resultText;
-    if (p1Score > p2Score) resultText = `${players[0].name} wins ${p1Score}:${p2Score}!`;
-    else if (p2Score > p1Score) resultText = `${players[1].name} wins ${p2Score}:${p1Score}!`;
-    else resultText = `Tie ${p1Score}:${p2Score}!`;
+    if (p1Score > p2Score) resultText = `${players[0].name} gewinnt ${p1Score}:${p2Score}!`;
+    else if (p2Score > p1Score) resultText = `${players[1].name} gewinnt ${p2Score}:${p1Score}!`;
+    else resultText = `Unentschieden ${p1Score}:${p2Score}!`;
 
     html += `<div class="final-result">${resultText}</div>`;
 
@@ -1352,17 +1707,17 @@ function showScoring() {
     document.getElementById('scoringContent').innerHTML = html;
 }
 
-// ══════════════════════════════
+// ======================================
 // RENDER TOWERS
-// ══════════════════════════════
+// ======================================
 
 function renderTowers() {
     let html = '';
     COLORS.forEach(c => {
         const t = towers[c];
         let droppable = '';
-        if (gameState === 'PLAY_STONES' && selectedHandIdx !== null) {
-            const stone = players[currentPlayer].hand[selectedHandIdx];
+        if (gameState === 'PLAY_STONES' && selectedHandIdx !== null && isMyTurn()) {
+            const stone = players[myPlayer].hand[selectedHandIdx];
             if (canPlaceInTower(stone, c) || canReplaceGray(stone, c)) droppable = ' droppable';
         }
         html += `<div class="tower tower-${c}${droppable}" onclick="handleTowerClick('${c}')">`;
@@ -1376,13 +1731,13 @@ function renderTowers() {
     towersArea.innerHTML = html;
 }
 
-// ══════════════════════════════
+// ======================================
 // STATUS BAR
-// ══════════════════════════════
+// ======================================
 
 function updateStatus(phase) {
     document.getElementById('sRound').textContent = Math.min(currentRound, 6);
-    document.getElementById('sPlayer').textContent = players[currentPlayer] ? players[currentPlayer].name : '—';
+    document.getElementById('sMyRole').textContent = players[myPlayer] ? players[myPlayer].name + ' (Sp.' + (myPlayer + 1) + ')' : '—';
     document.getElementById('sPhase').textContent = phase || '—';
 
     const s1 = players[0] ? players[0].score : 0;
@@ -1390,15 +1745,15 @@ function updateStatus(phase) {
     document.getElementById('sScore').textContent = `${s1} – ${s2}`;
 }
 
-// ══════════════════════════════
+// ======================================
 // CSV EXPORT
-// ══════════════════════════════
+// ======================================
 
 function logAction(action, data) {
     sessionLog.push({
         gameId: currentGameId,
         round: currentRound,
-        player: typeof data.player !== 'undefined' ? data.player : (currentPlayer + 1),
+        player: typeof data.player !== 'undefined' ? data.player : (myPlayer + 1),
         action,
         detail: JSON.stringify(data || {}),
         timestamp: new Date().toISOString()
@@ -1406,7 +1761,7 @@ function logAction(action, data) {
 }
 
 function downloadCSV() {
-    if (sessionLog.length === 0) { alert('No data available.'); return; }
+    if (sessionLog.length === 0) { alert('Keine Daten vorhanden.'); return; }
     let csv = 'Game_ID,Round,Player,Action,Detail,Timestamp\n';
     for (const r of sessionLog) {
         csv += `${r.gameId},${r.round},${r.player},${r.action},"${r.detail.replace(/"/g, '""')}",${r.timestamp}\n`;
@@ -1415,16 +1770,16 @@ function downloadCSV() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `rainbow_blackjack_${currentGameId}.csv`;
+    a.download = `rainbow_blackjack_remote_${currentGameId}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 }
 
-// ══════════════════════════════
+// ======================================
 // RULES MODAL
-// ══════════════════════════════
+// ======================================
 
 function openRules() {
     rulesModal.style.display = 'block';
@@ -1432,30 +1787,17 @@ function openRules() {
 
 function closeRules() {
     rulesModal.style.display = 'none';
-    localStorage.setItem('rainbow_blackjack_rules_v1', 'true');
 }
 
-// ══════════════════════════════
-// RESET
-// ══════════════════════════════
-
-function confirmReset() {
-    if (confirm('Really start a new game?')) {
-        showSetup();
-    }
-}
-
-// ══════════════════════════════
+// ======================================
 // ON LOAD
-// ══════════════════════════════
+// ======================================
 
 window.addEventListener('DOMContentLoaded', () => {
-    if (!localStorage.getItem('rainbow_blackjack_rules_v1')) {
-        openRules();
-    }
+    // Focus name input
+    document.getElementById('player-name').focus();
 });
 
-// Keyboard shortcut: Ctrl+Z for undo
 document.addEventListener('keydown', e => {
     if (e.ctrlKey && e.key === 'z') {
         e.preventDefault();
