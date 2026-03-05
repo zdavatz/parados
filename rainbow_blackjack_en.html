@@ -497,14 +497,6 @@
             <li>You may look at your own stones and memorize their positions, but cannot rearrange them.</li>
         </ul>
 
-        <h3>Gameplay</h3>
-        <ul>
-            <li>Each <b>round</b> consists of 3 turns.</li>
-            <li>At the start of each round, each player picks a row or column (3 stones) from their grid and announces either the <b>colors</b> or the <b>numbers</b> (Gray = 0).</li>
-            <li>Then players <b>alternate placing 1 stone</b> into a tower (3 turns per round).</li>
-            <li>Each colored stone may be placed in its <b>own</b> color tower or the <b>two adjacent</b> towers on the color wheel. Gray jokers may go in any tower.</li>
-        </ul>
-
         <h3>Color Wheel &amp; Adjacency</h3>
         <p>The 6 colors form a wheel: <b>Red — Orange — Yellow — Green — Blue — Purple</b> (and back to Red).<br>
         Each stone may be placed in its own color tower <b>or</b> the two neighboring towers:</p>
@@ -520,10 +512,18 @@
         <b>Player 2 example</b> (secondary colors): Orange stones can go in the Red, Orange, and Yellow towers. Green stones in Yellow, Green, and Blue. Purple stones in Blue, Purple, and Red.</p>
         <p>This means both players compete for the towers — each tower can receive multiple colors from both players!</p>
 
+        <h3>Gameplay</h3>
+        <ul>
+            <li>Each <b>round</b> consists of 3 turns.</li>
+            <li>At the start of each round, each player picks a row or column (3 stones) from their grid and announces either the <b>colors</b> or the <b>numbers</b> (Gray = 0).</li>
+            <li>Then players <b>alternate placing 1 stone</b> into a tower (3 turns per round).</li>
+            <li>Each colored stone may be placed in its <b>own</b> color tower or the <b>two adjacent</b> towers on the color wheel. Gray jokers may go in any tower.</li>
+        </ul>
+
         <h3>Grid &amp; Rounds</h3>
         <ul>
             <li><b>Rounds 1–3:</b> Stones from the first 3&times;3 grid. First row freely choosable, then always the adjacent one.</li>
-            <li><b>Rounds 4–6:</b> Remaining 9 stones arranged in a new 3&times;3 grid. First pick from the 4 outer edges (top, bottom, left, right), then adjacent.</li>
+            <li><b>Rounds 4–6:</b> Remaining 9 stones arranged in a new 3&times;3 grid. First row freely choosable, then always the adjacent one.</li>
             <li>Once you pick a row, you must stay with rows; once a column, stay with columns.</li>
         </ul>
 
@@ -990,11 +990,7 @@ function renderPickRow() {
 
     html += '<div class="pick-instructions">';
     if (pickedIndicesPerPlayer[currentPlayer].length === 0) {
-        if (gridNumber === 2) {
-            html += 'Choose one of the 4 outer edges (top, bottom, left, right)';
-        } else {
-            html += 'Choose any row or column';
-        }
+        html += 'Choose any row or column';
     } else {
         html += 'Choose the adjacent row/column';
     }
@@ -1055,19 +1051,10 @@ function getPickableOptions() {
     const options = [];
 
     if (myPicked.length === 0) {
-        // First pick
-        if (gridNumber === 2) {
-            // Outer edges only: rows 0, 2 and cols 0, 2
-            if (hasStones(p, 'row', 0)) options.push({ type: 'row', index: 0 });
-            if (hasStones(p, 'row', 2)) options.push({ type: 'row', index: 2 });
-            if (hasStones(p, 'col', 0)) options.push({ type: 'col', index: 0 });
-            if (hasStones(p, 'col', 2)) options.push({ type: 'col', index: 2 });
-        } else {
-            // Any row or column
-            for (let i = 0; i < 3; i++) {
-                if (hasStones(p, 'row', i)) options.push({ type: 'row', index: i });
-                if (hasStones(p, 'col', i)) options.push({ type: 'col', index: i });
-            }
+        // First pick: any row or column (same for both grids)
+        for (let i = 0; i < 3; i++) {
+            if (hasStones(p, 'row', i)) options.push({ type: 'row', index: i });
+            if (hasStones(p, 'col', i)) options.push({ type: 'col', index: i });
         }
     } else {
         // Must be same orientation, adjacent to last pick
