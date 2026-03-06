@@ -608,6 +608,30 @@
     }
 
     // --- RANDOM GENERATOR ---
+    function isColorBalanced(b, rows, cols) {
+        let midX = cols / 2, midY = rows / 2;
+        let leftG = 0, leftB = 0, rightG = 0, rightB = 0;
+        let topG = 0, topB = 0, bottomG = 0, bottomB = 0;
+        for (let y = 0; y < rows; y++) {
+            for (let x = 0; x < cols; x++) {
+                let c = b[y][x];
+                if (c !== 'G' && c !== 'B') continue;
+                if (x < midX) { if (c === 'G') leftG++; else leftB++; }
+                else          { if (c === 'G') rightG++; else rightB++; }
+                if (y < midY) { if (c === 'G') topG++; else topB++; }
+                else          { if (c === 'G') bottomG++; else bottomB++; }
+            }
+        }
+        let totalG = leftG + rightG, totalB = leftB + rightB;
+        if (totalG < 2 || totalB < 2) return true;
+        let minRatio = 0.3;
+        if (leftG  < totalG * minRatio || rightG  < totalG * minRatio) return false;
+        if (leftB  < totalB * minRatio || rightB  < totalB * minRatio) return false;
+        if (topG   < totalG * minRatio || bottomG < totalG * minRatio) return false;
+        if (topB   < totalB * minRatio || bottomB < totalB * minRatio) return false;
+        return true;
+    }
+
     function generateRandomBoard() {
         const diff = document.getElementById('difficulty').value;
         let innerSize, totalDishes;
@@ -622,17 +646,24 @@
         let deck = [];
         for(let i=0; i<greenCount; i++) deck.push('G');
         for(let i=0; i<blueCount; i++) deck.push('B');
-        deck.sort(() => Math.random() - 0.5);
 
         let coords = [];
         for(let y = pad; y < ROWS - pad; y++) {
             for(let x = pad; x < COLS - pad; x++) { coords.push({x, y}); }
         }
-        coords.sort(() => Math.random() - 0.5);
 
-        for(let i=0; i<deck.length && i<coords.length; i++) {
-            board[coords[i].y][coords[i].x] = deck[i];
-        }
+        let attempts = 0;
+        do {
+            deck.sort(() => Math.random() - 0.5);
+            coords.sort(() => Math.random() - 0.5);
+            for(let y = 0; y < ROWS; y++)
+                for(let x = 0; x < COLS; x++)
+                    if(board[y][x] === 'G' || board[y][x] === 'B') board[y][x] = null;
+            for(let i=0; i<deck.length && i<coords.length; i++) {
+                board[coords[i].y][coords[i].x] = deck[i];
+            }
+            attempts++;
+        } while (attempts < 100 && !isColorBalanced(board, ROWS, COLS));
     }
 
     // --- EDITOR MODE ---
