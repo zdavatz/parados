@@ -1000,8 +1000,16 @@
         if (dirs.length === 0) { applyKangyTransform('rotate(0deg)'); return; }
         if (dirs.length === 1) { applyKangyTransform(DIRECTION_TRANSFORMS[dirs[0]]); return; }
         kangyWobbleIndex = 0;
+        let wobbleCount = 0;
+        const maxWobbles = dirs.length * 3;
         applyKangyTransform(DIRECTION_TRANSFORMS[dirs[0]]);
         kangyWobbleInterval = setInterval(() => {
+            wobbleCount++;
+            if (wobbleCount >= maxWobbles) {
+                clearInterval(kangyWobbleInterval);
+                kangyWobbleInterval = null;
+                return;
+            }
             kangyWobbleIndex = (kangyWobbleIndex + 1) % dirs.length;
             applyKangyTransform(DIRECTION_TRANSFORMS[dirs[kangyWobbleIndex]]);
         }, 800);
