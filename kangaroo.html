@@ -113,6 +113,9 @@
         .btn-move { background-color: #8e24aa; color: white; flex-grow: 1; justify-content: center; max-width: 200px;}
         .btn-undo { background-color: #fbc02d; color: #37474f; min-width: 90px; justify-content: center;}
         .btn-start { background-color: #43a047; color: white; }
+        .variant-toggle { display: inline-flex; gap: 2px; }
+        .btn-variant { padding: 6px 10px; border: 2px solid #888; border-radius: 8px; background: #555; color: #ccc; cursor: pointer; font-size: 0.85em; font-weight: bold; }
+        .btn-variant.active { background: #ff9800; color: #fff; border-color: #ff9800; }
 
         /* BOARD */
         .board {
@@ -190,6 +193,10 @@
             <div id="panel-LEVEL" class="config-panel active">
                 <select id="levelSelect" onchange="confirmReset()">
                     </select>
+                <span class="variant-toggle">
+                    <button id="btnVariantA" class="btn-variant active" onclick="switchVariant('A')">Start A</button>
+                    <button id="btnVariantB" class="btn-variant" onclick="switchVariant('B')">Start B</button>
+                </span>
                 <button class="btn-start" onclick="confirmReset()">Level Starten</button>
             </div>
 
@@ -294,7 +301,8 @@
                 "..........",
                 ".........."
             ],
-            startHint: {x: 4, y: 8} // x (Spalte), y (Zeile) -> nullbasiert
+            startHint: {x: 4, y: 8}, // x (Spalte), y (Zeile) -> nullbasiert
+            startHintB: {x: 6, y: 6}
         },
         {
             id: 'tut2',
@@ -313,7 +321,8 @@
                 "..........",
                 ".........."
             ],
-            startHint: {x: 4, y: 7}
+            startHint: {x: 4, y: 7},
+            startHintB: {x: 6, y: 5}
         },
         {
             id: 'tut3',
@@ -332,7 +341,8 @@
                 "..........",
                 ".........."
             ],
-            startHint: {x: 4, y: 7} // Man muss G nach links schieben um zu springen!
+            startHint: {x: 4, y: 7}, // Man muss G nach links schieben um zu springen!
+            startHintB: {x: 2, y: 5}
         },
         {
             id: 'mid1',
@@ -351,7 +361,8 @@
                 ".....G....",
                 ".........."
             ],
-            startHint: {x: 1, y: 1}
+            startHint: {x: 1, y: 1},
+            startHintB: {x: 8, y: 8}
         },
         {
             id: 'mid2',
@@ -370,7 +381,8 @@
                 "....B.....",
                 ".........."
             ],
-            startHint: {x: 5, y: 8}
+            startHint: {x: 5, y: 8},
+            startHintB: {x: 1, y: 1}
         },
         {
             id: 'mid3',
@@ -389,7 +401,8 @@
                 "..........",
                 ".........."
             ],
-            startHint: {x: 8, y: 8}
+            startHint: {x: 8, y: 8},
+            startHintB: {x: 1, y: 1}
         },
         {
             id: 'adv1',
@@ -408,12 +421,14 @@
                 "..........",
                 ".........."
             ],
-            startHint: {x: 4, y: 4}
+            startHint: {x: 4, y: 4},
+            startHintB: {x: 0, y: 0}
         }
     ];
 
     // Globals
     let currentMode = 'LEVEL'; // LEVEL, RANDOM, EDITOR
+    let selectedVariant = 'A'; // A or B start position
     let COLS = 10, ROWS = 10;
     let board = []; 
     let gameState = 'SETUP'; // SETUP, PLAYING, WON, EDITOR
@@ -493,6 +508,11 @@
         document.body.removeChild(link);
     }
 
+    function getActiveStartHint(lvl) {
+        if (!lvl) return null;
+        return selectedVariant === 'B' && lvl.startHintB ? lvl.startHintB : lvl.startHint;
+    }
+
     // --- INITIALIZATION ---
     function populateLevelSelect() {
         const select = document.getElementById('levelSelect');
@@ -530,6 +550,13 @@
         } else {
             initGame();
         }
+    }
+
+    function switchVariant(v) {
+        selectedVariant = v;
+        document.getElementById('btnVariantA').classList.toggle('active', v === 'A');
+        document.getElementById('btnVariantB').classList.toggle('active', v === 'B');
+        confirmReset();
     }
 
     function confirmReset() {
@@ -697,8 +724,9 @@
                 } else if (content === 'K') {
                     const k = document.createElement('div'); k.className = 'kangy'; k.innerText = '🦘'; cell.appendChild(k);
                 } 
-                else if (gameState === 'SETUP' && currentMode === 'LEVEL' && currentLevelData && currentLevelData.startHint) {
-                    if (currentLevelData.startHint.x === x && currentLevelData.startHint.y === y) {
+                else if (gameState === 'SETUP' && currentMode === 'LEVEL' && currentLevelData) {
+                    const hint = getActiveStartHint(currentLevelData);
+                    if (hint && hint.x === x && hint.y === y) {
                         const gk = document.createElement('div'); gk.className = 'kangy ghost-kangy'; gk.innerText = '🦘'; cell.appendChild(gk);
                     }
                 }
@@ -746,7 +774,7 @@
         } else if (gameState === 'SETUP') {
             statusEl.style.color = "#ffcc80";
             statusEl.innerText = nextTarget ? `⚠️ Ungleichgewicht! Start muss ${nextTarget==='G'?'GRÜN':'BLAU'} sein!` : "Platziere Kangy zum Starten";
-            turnInfoEl.innerText = currentLevelData && currentLevelData.startHint ? "Tipp: Nutze den Geister-Kangy 👻" : "Klick auf ein freies Feld";
+            turnInfoEl.innerText = currentLevelData && getActiveStartHint(currentLevelData) ? "Tipp: Nutze den Geister-Kangy 👻" : "Klick auf ein freies Feld";
             btnMoveDish.disabled = true;
         } else if (gameState === 'PLAYING') {
             btnMoveDish.disabled = !dishMoveAvailable;
