@@ -672,10 +672,6 @@ h1 {
         <button onclick="startGame(4)">4 Players</button>
     </div>
     <div class="setup-option">
-        <input type="checkbox" id="colorRuleToggle" checked>
-        <label for="colorRuleToggle">Color rule: no consecutive same color in limbs</label>
-    </div>
-    <div class="setup-option">
         <input type="checkbox" id="trackMistakesToggle" checked>
         <label for="trackMistakesToggle">Track mistakes (cards you should have remembered)</label>
     </div>
@@ -787,11 +783,6 @@ h1 {
         card that was already turned over before and you still can't use it &mdash;
         you should have remembered! Mistake tracking can be turned on/off in the setup.</p>
 
-        <h3>Color Rule (optional)</h3>
-        <p>Body parts come in 4 colors: green, orange, purple, and turquoise.
-        Torso parts are grey. The same color may not appear in consecutive positions
-        along arms, legs, or head. This rule can be turned off in the setup.</p>
-
         <button class="close-btn" onclick="closeRules()">Got it!</button>
     </div>
 </div>
@@ -872,27 +863,8 @@ const JOKER_VALID_SLOTS = [
     'l_upper_leg', 'r_upper_leg', 'l_lower_leg', 'r_lower_leg'
 ];
 
-// Limb chains for color rule
-const COLOR_CHAINS = {
-    r_upper_arm:  { prev: null, next: 'r_lower_arm' },
-    r_lower_arm:  { prev: 'r_upper_arm', next: 'r_hand' },
-    r_hand:       { prev: 'r_lower_arm', next: null },
-    l_upper_arm:  { prev: null, next: 'l_lower_arm' },
-    l_lower_arm:  { prev: 'l_upper_arm', next: 'l_hand' },
-    l_hand:       { prev: 'l_lower_arm', next: null },
-    l_upper_leg:  { prev: null, next: 'l_lower_leg' },
-    l_lower_leg:  { prev: 'l_upper_leg', next: 'l_foot' },
-    l_foot:       { prev: 'l_lower_leg', next: null },
-    r_upper_leg:  { prev: null, next: 'r_lower_leg' },
-    r_lower_leg:  { prev: 'r_upper_leg', next: 'r_foot' },
-    r_foot:       { prev: 'r_lower_leg', next: null },
-    lower_head:   { prev: null, next: 'upper_head' },
-    upper_head:   { prev: 'lower_head', next: null }
-};
-
 // ─── Game State ───
 let numPlayers = 2;
-let colorRuleEnabled = true;
 let trackMistakes = true;
 let isSoloMode = false;
 let gameState = 'SETUP'; // SETUP | PLAYING | GAME_OVER
@@ -936,7 +908,6 @@ const rulesModal = document.getElementById('rulesModal');
 function startGame(n) {
     isSoloMode = (n === 1);
     numPlayers = isSoloMode ? 2 : n;
-    colorRuleEnabled = document.getElementById('colorRuleToggle').checked;
     trackMistakes = document.getElementById('trackMistakesToggle').checked;
     currentGameId = Date.now().toString(36);
 
@@ -1157,8 +1128,7 @@ function findValidSlot(partType, color, player) {
     if (!possibleSlots) return null;
 
     for (const slot of possibleSlots) {
-        if (!player.body[slot] && prerequisiteMet(slot, player) &&
-            (!colorRuleEnabled || colorRuleValid(slot, color, player))) {
+        if (!player.body[slot] && prerequisiteMet(slot, player)) {
             return slot;
         }
     }
@@ -1189,22 +1159,6 @@ function prerequisiteMet(slot, player) {
         torso_bl: () => true, torso_br: () => true
     };
     return rules[slot] ? rules[slot]() : true;
-}
-
-function colorRuleValid(slot, color, player) {
-    const chain = COLOR_CHAINS[slot];
-    if (!chain) return true; // torso has no color constraint
-    if (color === 'grey' || color === 'joker') return true;
-
-    if (chain.prev && player.body[chain.prev]) {
-        const prevColor = player.body[chain.prev].color;
-        if (prevColor !== 'grey' && prevColor !== 'joker' && prevColor === color) return false;
-    }
-    if (chain.next && player.body[chain.next]) {
-        const nextColor = player.body[chain.next].color;
-        if (nextColor !== 'grey' && nextColor !== 'joker' && nextColor === color) return false;
-    }
-    return true;
 }
 
 function placeCard(card, slot, playerIdx) {
