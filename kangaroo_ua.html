@@ -206,9 +206,9 @@
                     <option value="12x12">12 x 12</option>
                 </select>
                 <select id="difficulty">
-                    <option value="beginner">Центр (Легко)</option>
-                    <option value="normal" selected>Нормально</option>
-                    <option value="high">Складно</option>
+                    <option value="beginner">Центр 6×6 (Легко)</option>
+                    <option value="normal" selected>Внутр. 8×8 (Середнє)</option>
+                    <option value="high">Повне (Складно)</option>
                 </select>
                 <button class="btn-start" onclick="confirmReset()">Кинути кубик</button>
             </div>
@@ -612,11 +612,12 @@
     // --- ГЕНЕРАТОР ВИПАДКОВОГО ПОЛЯ ---
     function generateRandomBoard() {
         const diff = document.getElementById('difficulty').value;
-        const totalCells = COLS * ROWS;
-        let density = diff === 'high' ? 0.45 : (diff === 'beginner' ? 0.2 : 0.35);
+        let innerSize, totalDishes;
+        if (diff === 'beginner') { innerSize = 6; totalDishes = 12; }
+        else if (diff === 'normal') { innerSize = 8; totalDishes = 20; }
+        else { innerSize = Math.max(COLS, ROWS); totalDishes = Math.floor(COLS * ROWS * 0.34); if (totalDishes % 2 !== 0) totalDishes--; }
 
-        let totalDishes = Math.floor(totalCells * density);
-        if (totalDishes % 2 !== 0) totalDishes--;
+        let pad = innerSize >= COLS ? 0 : Math.floor((COLS - innerSize) / 2);
         let greenCount = totalDishes / 2;
         let blueCount = totalDishes / 2;
 
@@ -626,7 +627,6 @@
         deck.sort(() => Math.random() - 0.5);
 
         let coords = [];
-        let pad = diff === 'beginner' ? Math.floor(COLS/4) : 0;
         for(let y = pad; y < ROWS - pad; y++) {
             for(let x = pad; x < COLS - pad; x++) { coords.push({x, y}); }
         }

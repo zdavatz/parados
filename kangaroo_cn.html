@@ -206,9 +206,9 @@
                     <option value="12x12">12 x 12</option>
                 </select>
                 <select id="difficulty">
-                    <option value="beginner">中央 (简单)</option>
-                    <option value="normal" selected>普通</option>
-                    <option value="high">困难</option>
+                    <option value="beginner">中央 6×6 (简单)</option>
+                    <option value="normal" selected>内侧 8×8 (普通)</option>
+                    <option value="high">全部 (困难)</option>
                 </select>
                 <button class="btn-start" onclick="confirmReset()">生成地图</button>
             </div>
@@ -610,11 +610,12 @@
     // --- RANDOM GENERATOR ---
     function generateRandomBoard() {
         const diff = document.getElementById('difficulty').value;
-        const totalCells = COLS * ROWS;
-        let density = diff === 'high' ? 0.45 : (diff === 'beginner' ? 0.2 : 0.35);
-        
-        let totalDishes = Math.floor(totalCells * density);
-        if (totalDishes % 2 !== 0) totalDishes--; 
+        let innerSize, totalDishes;
+        if (diff === 'beginner') { innerSize = 6; totalDishes = 12; }
+        else if (diff === 'normal') { innerSize = 8; totalDishes = 20; }
+        else { innerSize = Math.max(COLS, ROWS); totalDishes = Math.floor(COLS * ROWS * 0.34); if (totalDishes % 2 !== 0) totalDishes--; }
+
+        let pad = innerSize >= COLS ? 0 : Math.floor((COLS - innerSize) / 2);
         let greenCount = totalDishes / 2;
         let blueCount = totalDishes / 2;
 
@@ -624,7 +625,6 @@
         deck.sort(() => Math.random() - 0.5);
 
         let coords = [];
-        let pad = diff === 'beginner' ? Math.floor(COLS/4) : 0;
         for(let y = pad; y < ROWS - pad; y++) {
             for(let x = pad; x < COLS - pad; x++) { coords.push({x, y}); }
         }
