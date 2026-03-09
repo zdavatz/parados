@@ -349,27 +349,7 @@
         {
             id: 'mid1',
             group: '中級',
-            name: 'レベル 1: 散在',
-            cols: 10, rows: 10,
-            layout: [
-                "..........",
-                "..........",
-                "...G.B....",
-                "..........",
-                ".....G....",
-                "..........",
-                ".B......B.",
-                "..........",
-                ".....G....",
-                ".........."
-            ],
-            startHint: {x: 1, y: 1},
-            startHintB: {x: 8, y: 8}
-        },
-        {
-            id: 'mid2',
-            group: '中級',
-            name: 'レベル 2: 階段',
+            name: 'レベル 1: 階段',
             cols: 10, rows: 10,
             layout: [
                 "..........",
@@ -383,8 +363,26 @@
                 "....B.....",
                 ".........."
             ],
-            startHint: {x: 5, y: 8},
-            startHintB: {x: 1, y: 1}
+            startHint: {x: 5, y: 8}
+        },
+        {
+            id: 'mid2',
+            group: '中級',
+            name: 'レベル 2: 散在',
+            cols: 10, rows: 10,
+            layout: [
+                "..........",
+                "..........",
+                "...G.B....",
+                "..........",
+                ".....G....",
+                "..........",
+                ".B......B.",
+                "..........",
+                ".....G....",
+                ".........."
+            ],
+            startHint: {x: 1, y: 1}
         },
         {
             id: 'mid3',
@@ -403,8 +401,7 @@
                 "..........",
                 ".........."
             ],
-            startHint: {x: 8, y: 8},
-            startHintB: {x: 1, y: 1}
+            startHint: {x: 8, y: 8}
         },
         {
             id: 'adv1',
@@ -584,6 +581,10 @@
             const lvlIndex = document.getElementById('levelSelect').value;
             const lvl = LEVEL_DATABASE[lvlIndex];
             currentLevelData = lvl;
+            // Show/hide A/B toggle based on whether level has two start positions
+            const hasVariants = !!lvl.startHintB;
+            document.querySelector('.variant-toggle').style.display = hasVariants ? 'inline-flex' : 'none';
+            if (!hasVariants) selectedVariant = 'A';
             COLS = lvl.cols; ROWS = lvl.rows;
             board = Array(ROWS).fill(null).map(() => Array(COLS).fill(null));
             
