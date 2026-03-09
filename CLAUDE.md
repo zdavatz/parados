@@ -35,6 +35,7 @@ There is no build step, no package manager, and no test framework. To run a game
 - `localStorage` for persisting user preferences (e.g., rules acceptance)
 - CSV export via `downloadCSV()` for gameplay analytics logging
 - Modal-based rules display with localStorage-gated auto-show
+- Rules button placed at the top of the page (above the board) for immediate visibility
 
 ## Git Workflow
 
