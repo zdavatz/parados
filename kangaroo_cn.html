@@ -179,11 +179,15 @@
 </head>
 <body>
 
+    <div class="top-rules-zone">
+        <button class="btn-rules" onclick="openRules()">❓ 游戏规则</button>
+    </div>
+
     <h1>急躁的袋鼠 🦘</h1>
     <div class="subtitle">The Impatient Kangaroo</div>
 
     <div class="game-wrapper">
-        
+
         <div class="mode-tabs">
             <div class="mode-tab active" onclick="switchMode('LEVEL')">🏆 关卡</div>
             <div class="mode-tab" onclick="switchMode('RANDOM')">🎲 随机模式</div>
@@ -228,10 +232,6 @@
                 </div>
                 <button class="btn-start" onclick="startCustomGame()">开始游戏！</button>
             </div>
-        </div>
-
-        <div class="top-rules-zone">
-            <button class="btn-rules" onclick="openRules()">❓ 游戏规则</button>
         </div>
 
         <div class="status-panel">
@@ -423,8 +423,8 @@
                 "..........",
                 ".........."
             ],
-            startHint: {x: 4, y: 4},
-            startHintB: {x: 0, y: 0}
+            startHint: {x: 0, y: 0},
+            startHintB: {x: 4, y: 4}
         }
     ];
 

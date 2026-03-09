@@ -179,6 +179,10 @@
 </head>
 <body>
 
+    <div class="top-rules-zone">
+        <button class="btn-rules" onclick="openRules()">❓ Правила</button>
+    </div>
+
     <h1>DUK 🦘</h1>
     <div class="subtitle">Нетерпляче Кенгуру</div>
 
@@ -228,10 +232,6 @@
                 </div>
                 <button class="btn-start" onclick="startCustomGame()">Грати!</button>
             </div>
-        </div>
-
-        <div class="top-rules-zone">
-            <button class="btn-rules" onclick="openRules()">❓ Правила</button>
         </div>
 
         <div class="status-panel">
@@ -425,8 +425,8 @@
                 "..........",
                 ".........."
             ],
-            startHint: {x: 4, y: 4},
-            startHintB: {x: 0, y: 0}
+            startHint: {x: 0, y: 0},
+            startHintB: {x: 4, y: 4}
         }
     ];
 
