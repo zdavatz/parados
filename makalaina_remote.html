@@ -610,6 +610,7 @@
 
             <div class="panel" style="display:flex; flex-direction:column; gap:8px;">
                 <button class="action-btn" onclick="toggleRules(true)">📖 View Rules</button>
+                <button class="action-btn" id="los-toggle" onclick="toggleLOS()" style="opacity:0.6;">Show Line of Sight</button>
                 <button class="action-btn" id="sacrifice-btn" onclick="doSacrifice()" style="display:none;">⚡ Sacrifice & Move</button>
                 <div id="draft-panel">
                     <p id="draft-label">DRAFT: Pick a disc to place on the board</p>
@@ -650,9 +651,9 @@
         </ul>
         <h3>Draft System</h3>
         <ul>
-            <li>After each collection, <b>1 new disc</b> is drawn from the bag.</li>
-            <li>You choose where to place it <b>in your line of sight</b> (green cells).</li>
-            <li>Use this strategically to <b>block your opponent!</b></li>
+            <li>After each collection, <b>3 new discs</b> are drawn from the bag.</li>
+            <li>You pick 1 to place on the board; the other 2 return to the bag.</li>
+            <li>You choose where to place it <b>in your line of sight</b>.</li>
             <li>The disc cannot be collected immediately (it's in your LOS).</li>
             <li>54 discs total: 24 start on the board, 24 are drafted in, 6 stay hidden.</li>
         </ul>
@@ -766,7 +767,9 @@ function handleNetMessage(data) {
         case 'click':
             handleClick(data.idx, true);
             break;
-        // draft_pick no longer needed (simplified draft system)
+        case 'draft_pick':
+            pickDraftDisc(data.idx, true);
+            break;
         case 'sacrifice_pick':
             applySacrificeDisc(data.discColor, data.discNum, data.discCounted, true);
             break;
@@ -831,11 +834,21 @@ const discColorMap = {
 // Draft and sacrifice state
 let collectedDiscs = { 1: [], 2: [] };
 let draftChosen = null;
+let draftOffered = [];
 let pendingExtraTurn = false;
 let sacrificeRange = 0;
+let showLOS = false;
 
 function toggleRules(show) {
     document.getElementById('modal-overlay').style.display = show ? 'flex' : 'none';
+}
+
+function toggleLOS() {
+    showLOS = !showLOS;
+    const btn = document.getElementById('los-toggle');
+    btn.innerText = showLOS ? 'Hide Line of Sight' : 'Show Line of Sight';
+    btn.style.opacity = showLOS ? '1' : '0.6';
+    render();
 }
 
 function initBag() {
@@ -938,6 +951,7 @@ function syncState() {
         bag: JSON.parse(JSON.stringify(bag)),
         collectedDiscs: JSON.parse(JSON.stringify(collectedDiscs)),
         draftChosen: draftChosen ? JSON.parse(JSON.stringify(draftChosen)) : null,
+        draftOffered: JSON.parse(JSON.stringify(draftOffered)),
         pendingExtraTurn,
         sacrificeRange
     });
@@ -954,8 +968,27 @@ function applySyncState(data) {
     if (data.bag !== undefined) bag = data.bag;
     if (data.collectedDiscs !== undefined) collectedDiscs = data.collectedDiscs;
     if (data.draftChosen !== undefined) draftChosen = data.draftChosen;
+    if (data.draftOffered !== undefined) draftOffered = data.draftOffered;
     if (data.pendingExtraTurn !== undefined) pendingExtraTurn = data.pendingExtraTurn;
     if (data.sacrificeRange !== undefined) sacrificeRange = data.sacrificeRange;
+    // Re-show draft panel if syncing into a draft state
+    if (gameState === 'DRAFT_PICK' && draftOffered.length > 0) {
+        showDraftPickPanel(draftOffered);
+    } else if (gameState === 'DRAFT_PLACE' && draftChosen) {
+        const panel = document.getElementById('draft-panel');
+        panel.style.display = 'block';
+        const label = document.getElementById('draft-label');
+        label.innerText = 'Place this disc in your line of sight:';
+        const choices = document.getElementById('draft-choices');
+        choices.innerHTML = '';
+        const d = document.createElement('div');
+        d.className = 'disc';
+        d.style.backgroundColor = discColorMap[draftChosen.color] || draftChosen.color;
+        d.innerText = draftChosen.num;
+        d.style.cursor = 'default';
+        d.style.boxShadow = '0 0 12px rgba(93, 232, 138, 0.5)';
+        choices.appendChild(d);
+    }
     render(); updateUI();
 }
 
@@ -1029,12 +1062,14 @@ function processCollection(disc, newIdx) {
         return;
     }
 
-    // Draft: draw 1 disc from bag, let player place it
+    // Draft: draw up to 3 discs from bag, let player pick one to place
     if (bag.length > 0) {
         pendingExtraTurn = (disc.num === 1);
-        draftChosen = bag.pop();
-        gameState = 'DRAFT_PLACE';
-        showDraftPlacePanel(draftChosen);
+        draftOffered = [];
+        const drawCount = Math.min(3, bag.length);
+        for (let d = 0; d < drawCount; d++) draftOffered.push(bag.pop());
+        gameState = 'DRAFT_PICK';
+        showDraftPickPanel(draftOffered);
         updateUI(); render();
         return;
     }
@@ -1046,21 +1081,45 @@ function processCollection(disc, newIdx) {
     updateUI(); render();
 }
 
-// ─── DRAFT SYSTEM (simplified: 1 disc per collection) ───────
-function showDraftPlacePanel(disc) {
+// ─── DRAFT SYSTEM (3-disc choice) ────────────────────────────
+function showDraftPickPanel(discs) {
     const panel = document.getElementById('draft-panel');
     panel.style.display = 'block';
     const label = document.getElementById('draft-label');
-    label.innerText = 'Place this disc on a green cell (your line of sight):';
+    label.innerText = discs.length > 1 ? 'DRAFT: Pick a disc to place on the board' : 'DRAFT: Place this disc on the board';
+    const choices = document.getElementById('draft-choices');
+    choices.innerHTML = '';
+    discs.forEach((disc, idx) => {
+        const d = document.createElement('div');
+        d.className = 'disc';
+        d.style.backgroundColor = discColorMap[disc.color] || disc.color;
+        d.innerText = disc.num;
+        d.onclick = () => pickDraftDisc(idx);
+        choices.appendChild(d);
+    });
+}
+
+function pickDraftDisc(idx, isRemote) {
+    if (!isRemote && currentPlayer !== myPlayer) return;
+    draftChosen = draftOffered[idx];
+    // Return unchosen discs to bag and reshuffle
+    draftOffered.forEach((d, i) => { if (i !== idx) bag.push(d); });
+    bag.sort(() => Math.random() - 0.5);
+    draftOffered = [];
+    gameState = 'DRAFT_PLACE';
+    if (!isRemote) sendNet({ type: 'draft_pick', idx: idx });
+    const label = document.getElementById('draft-label');
+    label.innerText = 'Place this disc in your line of sight:';
     const choices = document.getElementById('draft-choices');
     choices.innerHTML = '';
     const d = document.createElement('div');
     d.className = 'disc';
-    d.style.backgroundColor = discColorMap[disc.color] || disc.color;
-    d.innerText = disc.num;
+    d.style.backgroundColor = discColorMap[draftChosen.color] || draftChosen.color;
+    d.innerText = draftChosen.num;
     d.style.cursor = 'default';
     d.style.boxShadow = '0 0 12px rgba(93, 232, 138, 0.5)';
     choices.appendChild(d);
+    updateUI(); render();
 }
 
 // ─── SACRIFICE SYSTEM ────────────────────────────────────────
@@ -1172,8 +1231,12 @@ function updateUI() {
             statusEl.innerHTML = `<span class="player-indicator p${currentPlayer}"></span> ${isMe ? 'YOUR TURN' : "Opponent's turn"}`;
             statusEl.classList.toggle('your-turn', isMe);
             break;
+        case 'DRAFT_PICK':
+            statusEl.innerHTML = `<span class="player-indicator p${currentPlayer}"></span> ${isMe ? 'Pick a disc from the draft' : who + ': Picking disc...'}`;
+            statusEl.classList.toggle('your-turn', isMe);
+            break;
         case 'DRAFT_PLACE':
-            statusEl.innerHTML = `<span class="player-indicator p${currentPlayer}"></span> ${isMe ? 'Place the disc on a green cell to block!' : who + ': Placing disc...'}`;
+            statusEl.innerHTML = `<span class="player-indicator p${currentPlayer}"></span> ${isMe ? 'Place the disc in your line of sight' : who + ': Placing disc...'}`;
             statusEl.classList.toggle('your-turn', isMe);
             break;
         case 'SACRIFICE_SELECT':
@@ -1210,7 +1273,7 @@ function updateUI() {
 }
 
 function render() {
-    const los = (gameState === 'PLAY' || gameState === 'DRAFT_PLACE') ? getLOS(collectors[currentPlayer]) : [];
+    const los = showLOS && (gameState === 'PLAY' || gameState === 'DRAFT_PLACE') ? getLOS(collectors[currentPlayer]) : [];
     const reachable = (gameState === 'SACRIFICE_MOVE') ? getReachableCells(collectors[currentPlayer], sacrificeRange) : [];
 
     for (let i = 0; i < 144; i++) {
@@ -1220,7 +1283,7 @@ function render() {
         if (los.includes(i)) cls += ' los';
         if (selectedIdx === i) cls += ' selected';
         if (reachable.includes(i)) cls += ' reachable';
-        if (gameState === 'DRAFT_PLACE' && !cells[i] && los.includes(i)) cls += ' placeable';
+        if (showLOS && gameState === 'DRAFT_PLACE' && !cells[i] && getLOS(collectors[currentPlayer]).includes(i)) cls += ' placeable';
         el.className = cls;
 
         if (cells[i]) {
