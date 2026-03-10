@@ -220,6 +220,8 @@
         .cell:hover { background: #2d3248; }
         .cell.los { background: rgba(201,162,39,0.08); }
         .cell.selected { background: rgba(33,150,243,0.15); box-shadow: inset 0 0 0 2px #2196f3; }
+        .cell.reachable { background: rgba(93,232,138,0.1); box-shadow: inset 0 0 6px rgba(93,232,138,0.3); }
+        .cell.placeable { background: rgba(201,162,39,0.12); box-shadow: inset 0 0 4px rgba(201,162,39,0.3); }
 
         .disc {
             width: 32px; height: 32px;
@@ -359,6 +361,78 @@
 
         .action-btn.danger { border-color: #5d3333; }
         .action-btn.danger:hover { border-color: var(--red); background: rgba(232,93,93,0.08); }
+
+        /* DRAFT PANEL */
+        #draft-panel {
+            display: none;
+            background: rgba(33, 150, 243, 0.06);
+            border: 1px solid rgba(33, 150, 243, 0.2);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        #draft-label {
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+
+        #draft-choices {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin: 10px 0;
+        }
+
+        #draft-choices .disc {
+            width: 50px; height: 50px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        #draft-choices .disc:hover {
+            transform: scale(1.15);
+            box-shadow: 0 0 12px rgba(33, 150, 243, 0.5);
+        }
+
+        /* SACRIFICE PANEL */
+        #sacrifice-panel {
+            display: none;
+            background: rgba(232, 93, 93, 0.06);
+            border: 1px solid rgba(232, 93, 93, 0.2);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        #sacrifice-choices {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+            margin: 10px 0;
+        }
+
+        #sacrifice-choices .disc {
+            width: 38px; height: 38px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        #sacrifice-choices .disc:hover {
+            transform: scale(1.15);
+            box-shadow: 0 0 8px rgba(168, 93, 232, 0.5);
+        }
+
+        #bag-count {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-align: center;
+            margin-top: 4px;
+        }
 
         /* CHAT */
         #chat-panel {
@@ -529,11 +603,21 @@
                     <div class="hdr" style="text-align:center"><span class="player-indicator p2"></span>P2</div>
                 </div>
                 <div class="score-grid" id="score-body"></div>
+                <div id="bag-count"></div>
             </div>
 
             <div class="panel" style="display:flex; flex-direction:column; gap:8px;">
                 <button class="action-btn" onclick="toggleRules(true)">📖 View Rules</button>
-                <button class="action-btn" id="relinquish-btn" onclick="doRelinquish()" style="display:none;">⏭ Relinquish Turn</button>
+                <button class="action-btn" id="sacrifice-btn" onclick="doSacrifice()" style="display:none;">⚡ Sacrifice & Move</button>
+                <div id="draft-panel">
+                    <p id="draft-label">DRAFT: Pick a disc to place on the board</p>
+                    <div id="draft-choices"></div>
+                </div>
+                <div id="sacrifice-panel">
+                    <p style="font-weight:bold; color:var(--text); margin-bottom:8px; font-size:0.85rem;">SACRIFICE: Pick a disc (value = move range)</p>
+                    <div id="sacrifice-choices"></div>
+                    <button class="action-btn" onclick="cancelSacrifice()" style="margin-top:8px;">Cancel</button>
+                </div>
                 <button class="action-btn danger" onclick="window.location.reload()">✕ Leave Game</button>
             </div>
 
@@ -552,19 +636,30 @@
 <!-- RULES MODAL -->
 <div id="modal-overlay" onclick="toggleRules(false)">
     <div id="modal" onclick="event.stopPropagation()">
-        <h2>The Endspurt Rule</h2>
-        <p>The game ends when all discs are collected, or both players relinquish their moves. Crucially, to keep the tension, the game ends before the very last possible connection can be made.</p>
+        <h2>MAKA LAINA Rules</h2>
+        <h3>Goal</h3>
+        <p>Collect discs on a 12x12 grid to score the most points. The game continues until <b>all discs are collected</b> or both players cannot move.</p>
         <h3>Shifting & Collection</h3>
         <ul>
-            <li>Shift a disc 1 square into your Line of Sight (LOS).</li>
-            <li>The disc <b>cannot</b> have been in your LOS at start of turn.</li>
-            <li>LOS is blocked by other discs or collectors.</li>
+            <li>Select a disc that is <b>not</b> in your Line of Sight (LOS).</li>
+            <li>Shift it 1 square so it enters your LOS.</li>
+            <li>Your collector moves to that square and collects the disc.</li>
+            <li>LOS extends in 8 directions, blocked by other discs or collectors.</li>
+        </ul>
+        <h3>Draft System</h3>
+        <ul>
+            <li>After collecting, <b>3 new discs</b> are drawn from the bag.</li>
+            <li>The collecting player picks 1 and places it <b>in their line of sight</b> (so it can't be collected immediately).</li>
+            <li>The other player collects, then picks 1 of the remaining 2 and places it in their LOS.</li>
+            <li>The first player takes the last disc and places it in their LOS.</li>
+            <li>This repeats 8 times (24 discs total). The starting player alternates each cycle.</li>
+            <li>54 discs total: 24 start on the board, 24 are drafted in, 6 stay hidden.</li>
         </ul>
         <h3>Special Mechanics</h3>
         <ul>
-            <li><b>Number 1:</b> Immediate extra turn.</li>
-            <li><b>Number 6:</b> Future discs of that color are worthless.</li>
-            <li><b>Stuck?:</b> Sacrifice a collected primary disc to move your collector up to that disc's value.</li>
+            <li><b>Number 1:</b> Immediate extra turn (after draft phase only).</li>
+            <li><b>Number 6:</b> Future discs of that color are worthless for you.</li>
+            <li><b>Stuck?</b> Sacrifice a collected primary disc: your score for that color decreases, but your collector can move up to that many squares freely.</li>
         </ul>
     </div>
 </div>
@@ -670,11 +765,19 @@ function handleNetMessage(data) {
         case 'click':
             handleClick(data.idx, true);
             break;
+        case 'draft_pick':
+            selectDraftDisc(data.idx, true);
+            break;
+        case 'sacrifice_pick':
+            applySacrificeDisc(data.discColor, data.discNum, data.discCounted, true);
+            break;
+        case 'sacrifice_cancel':
+            cancelSacrifice(true);
+            break;
         case 'relinquish':
             performRelinquish(true);
             break;
         case 'state_sync':
-            // Host sends full state to joiner
             applySyncState(data);
             break;
     }
@@ -699,11 +802,6 @@ function addChatMsg(player, name, text) {
     div.appendChild(document.createTextNode(' ' + text));
     const container = document.getElementById('chat-messages');
     container.prepend(div);
-}
-
-function scrollChat() {
-    const el = document.getElementById('chat-messages');
-    el.scrollTop = el.scrollHeight;
 }
 
 function sendChat() {
@@ -731,6 +829,14 @@ const discColorMap = {
     green: '#5de88a', orange: '#e8995d', purple: '#a85de8'
 };
 
+// Draft and sacrifice state
+let collectedDiscs = { 1: [], 2: [] };
+let draftDiscs = [];
+let draftChosen = null;
+let pendingExtraTurn = false;
+let sacrificeRange = 0;
+let draftCycle = null; // {phase: 1|2|3, startingPlayer: 1|2, remainingDiscs: []}
+
 function toggleRules(show) {
     document.getElementById('modal-overlay').style.display = show ? 'flex' : 'none';
 }
@@ -742,7 +848,6 @@ function initBag() {
     ['green', 'orange', 'purple'].forEach(c => {
         for (let i = 0; i < 6; i++) bag.push({ color: c, num: '', type: 'secondary' });
     });
-    // Use seeded shuffle for host, will sync to joiner
     bag.sort(() => Math.random() - 0.5);
     bag.splice(0, 6);
     allColors.forEach(c => { scores[1][c] = 0; scores[2][c] = 0; });
@@ -755,16 +860,11 @@ function createBoard() {
         cell.className = 'cell';
         cell.id = `cell-${i}`;
         cell.onclick = () => {
-            if (!isMyTurn() && gameState === 'PLAY') return;
-            if (gameState === 'PLACEMENT' && currentPlayer !== myPlayer) return;
+            if (currentPlayer !== myPlayer) return;
             handleClick(i, false);
         };
         boardDiv.appendChild(cell);
     }
-}
-
-function isMyTurn() {
-    return currentPlayer === myPlayer;
 }
 
 function handleClick(i, isRemote) {
@@ -783,13 +883,66 @@ function handleClick(i, isRemote) {
         render(); updateUI();
     } else if (gameState === 'PLAY') {
         handleMove(i, isRemote);
+    } else if (gameState === 'DRAFT_PLACE') {
+        const draftLOS = getLOS(collectors[currentPlayer]);
+        if (!cells[i] && draftLOS.includes(i)) {
+            if (!isRemote) sendNet({ type: 'click', idx: i });
+            cells[i] = draftChosen;
+            draftChosen = null;
+            document.getElementById('draft-panel').style.display = 'none';
+
+            if (draftCycle) {
+                if (draftCycle.phase === 1) {
+                    draftCycle.phase = 2;
+                    gameState = 'PLAY';
+                    currentPlayer = currentPlayer === 1 ? 2 : 1;
+                } else if (draftCycle.phase === 2) {
+                    draftCycle.phase = 3;
+                    if (draftCycle.remainingDiscs.length >= 1) {
+                        draftChosen = draftCycle.remainingDiscs.pop();
+                        currentPlayer = draftCycle.startingPlayer;
+                        gameState = 'DRAFT_PLACE';
+                        showAutoPickPanel(draftChosen);
+                    } else {
+                        const nextPlayer = draftCycle.startingPlayer === 1 ? 2 : 1;
+                        draftCycle = null;
+                        gameState = 'PLAY';
+                        currentPlayer = nextPlayer;
+                    }
+                } else if (draftCycle.phase === 3) {
+                    const nextPlayer = draftCycle.startingPlayer === 1 ? 2 : 1;
+                    draftCycle = null;
+                    gameState = 'PLAY';
+                    currentPlayer = nextPlayer;
+                }
+            } else {
+                gameState = 'PLAY';
+                if (!pendingExtraTurn) {
+                    currentPlayer = currentPlayer === 1 ? 2 : 1;
+                }
+                pendingExtraTurn = false;
+            }
+            updateUI(); render();
+        }
+    } else if (gameState === 'SACRIFICE_MOVE') {
+        const reachable = getReachableCells(collectors[currentPlayer], sacrificeRange);
+        if (reachable.includes(i)) {
+            if (!isRemote) sendNet({ type: 'click', idx: i });
+            cells[collectors[currentPlayer]] = null;
+            collectors[currentPlayer] = i;
+            cells[i] = { type: 'collector', player: currentPlayer };
+            sacrificeRange = 0;
+            gameState = 'PLAY';
+            relinquished[1] = relinquished[2] = false;
+            currentPlayer = currentPlayer === 1 ? 2 : 1;
+            updateUI(); render();
+        }
     }
 }
 
 function startPlay() {
     gameState = 'PLAY';
     currentPlayer = 1;
-    document.getElementById('relinquish-btn').style.display = 'block';
     // Only host places discs, then syncs
     if (myRole === 'host') {
         for (let i = 0; i < 24; i++) {
@@ -811,7 +964,14 @@ function syncState() {
         scores: JSON.parse(JSON.stringify(scores)),
         playerFlags: JSON.parse(JSON.stringify(playerFlags)),
         relinquished: { ...relinquished },
-        gameState
+        gameState,
+        bag: JSON.parse(JSON.stringify(bag)),
+        collectedDiscs: JSON.parse(JSON.stringify(collectedDiscs)),
+        draftDiscs: JSON.parse(JSON.stringify(draftDiscs)),
+        draftChosen: draftChosen ? JSON.parse(JSON.stringify(draftChosen)) : null,
+        draftCycle: draftCycle ? JSON.parse(JSON.stringify(draftCycle)) : null,
+        pendingExtraTurn,
+        sacrificeRange
     });
 }
 
@@ -823,9 +983,13 @@ function applySyncState(data) {
     playerFlags = data.playerFlags;
     relinquished = data.relinquished;
     gameState = data.gameState;
-    if (gameState === 'PLAY') {
-        document.getElementById('relinquish-btn').style.display = 'block';
-    }
+    if (data.bag !== undefined) bag = data.bag;
+    if (data.collectedDiscs !== undefined) collectedDiscs = data.collectedDiscs;
+    if (data.draftDiscs !== undefined) draftDiscs = data.draftDiscs;
+    if (data.draftChosen !== undefined) draftChosen = data.draftChosen;
+    if (data.draftCycle !== undefined) draftCycle = data.draftCycle;
+    if (data.pendingExtraTurn !== undefined) pendingExtraTurn = data.pendingExtraTurn;
+    if (data.sacrificeRange !== undefined) sacrificeRange = data.sacrificeRange;
     render(); updateUI();
 }
 
@@ -849,6 +1013,7 @@ function handleMove(i, isRemote) {
     if (selectedIdx === null) {
         if (cells[i] && cells[i].type !== 'collector' && !los.includes(i)) {
             selectedIdx = i;
+            if (!isRemote) sendNet({ type: 'click', idx: i });
             render();
         }
     } else {
@@ -861,6 +1026,7 @@ function handleMove(i, isRemote) {
             processCollection(cells[selectedIdx], i);
         } else {
             selectedIdx = null;
+            if (!isRemote) sendNet({ type: 'click', idx: i });
             render();
         }
     }
@@ -868,10 +1034,19 @@ function handleMove(i, isRemote) {
 
 function processCollection(disc, newIdx) {
     const colorKey = disc.color + '6';
-    if (!playerFlags[currentPlayer][colorKey]) {
+    const counted = !playerFlags[currentPlayer][colorKey];
+
+    if (counted) {
         scores[currentPlayer][disc.color] += (disc.num || 1);
         if (disc.num === 6) playerFlags[currentPlayer][colorKey] = true;
     }
+
+    // Track collected disc (primary only, for sacrifice)
+    if (disc.type === 'primary') {
+        collectedDiscs[currentPlayer].push({...disc, counted});
+    }
+
+    // Move collector
     cells[collectors[currentPlayer]] = null;
     cells[selectedIdx] = null;
     collectors[currentPlayer] = newIdx;
@@ -879,20 +1054,181 @@ function processCollection(disc, newIdx) {
     selectedIdx = null;
     relinquished[1] = relinquished[2] = false;
 
+    // Check if all discs collected and bag empty
     const remaining = cells.filter(c => c && c.type !== 'collector').length;
-    if (remaining <= 1) {
+    if (remaining === 0 && bag.length === 0) {
         gameState = 'END';
-        addSystemMsg('Game Over! The final sprint is complete.');
-    } else if (disc.num !== 1) {
+        addSystemMsg('Game Over! All discs collected.');
+        updateUI(); render();
+        return;
+    }
+
+    // Draft phase
+    if (draftCycle && draftCycle.phase === 2) {
+        pendingExtraTurn = false;
+        draftDiscs = [...draftCycle.remainingDiscs];
+        gameState = 'DRAFT_PICK';
+        showDraftPanel();
+        updateUI(); render();
+        return;
+    } else if (!draftCycle && bag.length > 0) {
+        pendingExtraTurn = false;
+        startDraft();
+        return;
+    }
+
+    // No draft: normal turn switch (extra turn from "1" only after draft is done)
+    if (disc.num !== 1) {
         currentPlayer = currentPlayer === 1 ? 2 : 1;
     }
     updateUI(); render();
 }
 
-function doRelinquish() {
-    if (!isMyTurn() || gameState !== 'PLAY') return;
-    performRelinquish(false);
-    sendNet({ type: 'relinquish' });
+// ─── DRAFT SYSTEM ────────────────────────────────────────────
+function startDraft() {
+    draftDiscs = [];
+    const drawCount = Math.min(3, bag.length);
+    for (let i = 0; i < drawCount; i++) {
+        draftDiscs.push(bag.pop());
+    }
+    draftCycle = {
+        phase: 1,
+        startingPlayer: currentPlayer,
+        remainingDiscs: [...draftDiscs]
+    };
+    gameState = 'DRAFT_PICK';
+    showDraftPanel();
+    updateUI(); render();
+}
+
+function showDraftPanel() {
+    const panel = document.getElementById('draft-panel');
+    panel.style.display = 'block';
+    const label = document.getElementById('draft-label');
+    const remaining = draftCycle ? draftCycle.remainingDiscs.length : draftDiscs.length;
+    label.innerText = `DRAFT: Pick 1 of ${remaining} disc${remaining > 1 ? 's' : ''} to place`;
+    const choices = document.getElementById('draft-choices');
+    choices.innerHTML = '';
+    draftDiscs.forEach((disc, idx) => {
+        const d = document.createElement('div');
+        d.className = 'disc';
+        d.style.backgroundColor = discColorMap[disc.color] || disc.color;
+        d.innerText = disc.num;
+        d.title = `${disc.color} ${disc.num || '(secondary)'}`;
+        if (currentPlayer === myPlayer) {
+            d.onclick = () => selectDraftDisc(idx, false);
+        } else {
+            d.style.cursor = 'default';
+            d.style.opacity = '0.7';
+        }
+        choices.appendChild(d);
+    });
+}
+
+function showAutoPickPanel(disc) {
+    const panel = document.getElementById('draft-panel');
+    panel.style.display = 'block';
+    document.getElementById('draft-label').innerText = 'DRAFT: Last disc — place it on the board';
+    const choices = document.getElementById('draft-choices');
+    choices.innerHTML = '';
+    const d = document.createElement('div');
+    d.className = 'disc';
+    d.style.backgroundColor = discColorMap[disc.color] || disc.color;
+    d.innerText = disc.num;
+    d.style.cursor = 'default';
+    d.style.boxShadow = '0 0 12px rgba(93, 232, 138, 0.5)';
+    choices.appendChild(d);
+}
+
+function selectDraftDisc(idx, isRemote) {
+    if (!isRemote && currentPlayer !== myPlayer) return;
+    draftChosen = draftDiscs[idx];
+    if (draftCycle) {
+        draftCycle.remainingDiscs = draftCycle.remainingDiscs.filter(d => d !== draftChosen);
+    }
+    draftDiscs = [];
+    gameState = 'DRAFT_PLACE';
+    document.getElementById('draft-choices').innerHTML = '';
+    if (!isRemote) sendNet({ type: 'draft_pick', idx: idx });
+    updateUI(); render();
+}
+
+// ─── SACRIFICE SYSTEM ────────────────────────────────────────
+function doSacrifice() {
+    if (gameState !== 'PLAY' || currentPlayer !== myPlayer) return;
+    const primaryDiscs = collectedDiscs[currentPlayer].filter(d => d.type === 'primary');
+    if (primaryDiscs.length === 0) {
+        // No primary discs: relinquish
+        performRelinquish(false);
+        sendNet({ type: 'relinquish' });
+        return;
+    }
+    gameState = 'SACRIFICE_SELECT';
+    showSacrificePanel();
+    updateUI();
+}
+
+function showSacrificePanel() {
+    const panel = document.getElementById('sacrifice-panel');
+    panel.style.display = 'block';
+    document.getElementById('sacrifice-btn').style.display = 'none';
+    const choices = document.getElementById('sacrifice-choices');
+    choices.innerHTML = '';
+    const primaryDiscs = collectedDiscs[currentPlayer].filter(d => d.type === 'primary');
+    primaryDiscs.forEach((disc) => {
+        const d = document.createElement('div');
+        d.className = 'disc';
+        d.style.backgroundColor = discColorMap[disc.color] || disc.color;
+        d.innerText = disc.num;
+        d.title = `Sacrifice: ${disc.counted ? 'lose ' + disc.num + ' pts from ' + disc.color + ', ' : ''}move up to ${disc.num} squares`;
+        d.onclick = () => {
+            applySacrificeDisc(disc.color, disc.num, disc.counted, false);
+        };
+        choices.appendChild(d);
+    });
+}
+
+function applySacrificeDisc(color, num, counted, isRemote) {
+    // Find and remove the disc from collected
+    const arr = collectedDiscs[currentPlayer];
+    const removeIdx = arr.findIndex(d => d.color === color && d.num === num && d.counted === counted);
+    if (removeIdx >= 0) arr.splice(removeIdx, 1);
+
+    sacrificeRange = num;
+
+    // Subtract value from score only if it was counted
+    if (counted) {
+        scores[currentPlayer][color] -= num;
+    }
+
+    document.getElementById('sacrifice-panel').style.display = 'none';
+    gameState = 'SACRIFICE_MOVE';
+    if (!isRemote) {
+        sendNet({ type: 'sacrifice_pick', discColor: color, discNum: num, discCounted: counted });
+    }
+    updateUI(); render();
+}
+
+function cancelSacrifice(isRemote) {
+    gameState = 'PLAY';
+    document.getElementById('sacrifice-panel').style.display = 'none';
+    if (!isRemote) sendNet({ type: 'sacrifice_cancel' });
+    updateUI(); render();
+}
+
+function getReachableCells(fromIdx, range) {
+    const reachable = [];
+    const fr = Math.floor(fromIdx / 12), fc = fromIdx % 12;
+    for (let r = 0; r < 12; r++) {
+        for (let c = 0; c < 12; c++) {
+            const dist = Math.max(Math.abs(r - fr), Math.abs(c - fc));
+            const idx = r * 12 + c;
+            if (dist > 0 && dist <= range && !cells[idx]) {
+                reachable.push(idx);
+            }
+        }
+    }
+    return reachable;
 }
 
 function performRelinquish(isRemote) {
@@ -904,22 +1240,48 @@ function performRelinquish(isRemote) {
         addSystemMsg('Player ' + currentPlayer + ' relinquished their turn.');
         currentPlayer = currentPlayer === 1 ? 2 : 1;
     }
-    updateUI();
+    updateUI(); render();
 }
 
+// ─── UI ──────────────────────────────────────────────────────
 function updateUI() {
     const statusEl = document.getElementById('status-text');
-    if (gameState === 'END') {
-        statusEl.textContent = '🏁 GAME OVER';
-        statusEl.classList.remove('your-turn');
-    } else if (gameState === 'PLACEMENT') {
-        const who = currentPlayer === myPlayer ? 'You' : 'Opponent';
-        statusEl.innerHTML = `<span class="player-indicator p${currentPlayer}"></span> ${who}: Place collector`;
-        statusEl.classList.toggle('your-turn', currentPlayer === myPlayer);
-    } else if (gameState === 'PLAY') {
-        const who = currentPlayer === myPlayer ? 'YOUR TURN' : "Opponent's turn";
-        statusEl.innerHTML = `<span class="player-indicator p${currentPlayer}"></span> ${who}`;
-        statusEl.classList.toggle('your-turn', currentPlayer === myPlayer);
+    const isMe = currentPlayer === myPlayer;
+    const who = isMe ? 'You' : 'Opponent';
+
+    switch (gameState) {
+        case 'END':
+            statusEl.textContent = '🏁 GAME OVER';
+            statusEl.classList.remove('your-turn');
+            break;
+        case 'PLACEMENT':
+            statusEl.innerHTML = `<span class="player-indicator p${currentPlayer}"></span> ${who}: Place collector`;
+            statusEl.classList.toggle('your-turn', isMe);
+            break;
+        case 'PLAY':
+            statusEl.innerHTML = `<span class="player-indicator p${currentPlayer}"></span> ${isMe ? 'YOUR TURN' : "Opponent's turn"}`;
+            statusEl.classList.toggle('your-turn', isMe);
+            break;
+        case 'DRAFT_PICK': {
+            const pickPhase = draftCycle ? ` (${draftCycle.phase}/3)` : '';
+            statusEl.innerHTML = `<span class="player-indicator p${currentPlayer}"></span> ${who}: Pick a draft disc${pickPhase}`;
+            statusEl.classList.toggle('your-turn', isMe);
+            break;
+        }
+        case 'DRAFT_PLACE': {
+            const placePhase = draftCycle ? ` (${draftCycle.phase}/3)` : '';
+            statusEl.innerHTML = `<span class="player-indicator p${currentPlayer}"></span> ${who}: Place disc in LOS${placePhase}`;
+            statusEl.classList.toggle('your-turn', isMe);
+            break;
+        }
+        case 'SACRIFICE_SELECT':
+            statusEl.innerHTML = `<span class="player-indicator p${currentPlayer}"></span> ${who}: Choose sacrifice disc`;
+            statusEl.classList.toggle('your-turn', isMe);
+            break;
+        case 'SACRIFICE_MOVE':
+            statusEl.innerHTML = `<span class="player-indicator p${currentPlayer}"></span> ${who}: Move collector (up to ${sacrificeRange})`;
+            statusEl.classList.toggle('your-turn', isMe);
+            break;
     }
 
     // Scores
@@ -933,16 +1295,31 @@ function updateUI() {
             <div class="score-val${p1W}">${scores[1][c]}</div>
             <div class="score-val${p2W}">${scores[2][c]}</div>`;
     });
+
+    // Bag count
+    const bagEl = document.getElementById('bag-count');
+    if (bagEl) bagEl.innerText = `Bag: ${bag.length} discs remaining`;
+
+    // Show/hide sacrifice button
+    const sacBtn = document.getElementById('sacrifice-btn');
+    if (sacBtn) {
+        sacBtn.style.display = (gameState === 'PLAY') ? 'block' : 'none';
+    }
 }
 
 function render() {
-    const los = (gameState === 'PLAY') ? getLOS(collectors[currentPlayer]) : [];
+    const los = (gameState === 'PLAY' || gameState === 'DRAFT_PLACE') ? getLOS(collectors[currentPlayer]) : [];
+    const reachable = (gameState === 'SACRIFICE_MOVE') ? getReachableCells(collectors[currentPlayer], sacrificeRange) : [];
+
     for (let i = 0; i < 144; i++) {
         const el = document.getElementById(`cell-${i}`);
         el.innerHTML = '';
-        el.className = 'cell' +
-            (los.includes(i) ? ' los' : '') +
-            (selectedIdx === i ? ' selected' : '');
+        let cls = 'cell';
+        if (los.includes(i)) cls += ' los';
+        if (selectedIdx === i) cls += ' selected';
+        if (reachable.includes(i)) cls += ' reachable';
+        if (gameState === 'DRAFT_PLACE' && !cells[i] && los.includes(i)) cls += ' placeable';
+        el.className = cls;
 
         if (cells[i]) {
             const d = document.createElement('div');
