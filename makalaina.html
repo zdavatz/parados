@@ -15,7 +15,9 @@
         .cell.los { background: #fffde7; }
         .cell.selected { background: #e3f2fd; border: 2px solid #2196f3; box-sizing: border-box; }
         .cell.reachable { background: #e8f5e9; box-shadow: inset 0 0 6px rgba(76, 175, 80, 0.4); }
-        .cell.placeable { background: #fff8e1; box-shadow: inset 0 0 4px rgba(255, 193, 7, 0.4); }
+        .cell.placeable { background: #b2ff59; box-shadow: inset 0 0 8px rgba(76, 175, 80, 0.6); cursor: crosshair; }
+        @keyframes pulse-placeable { 0%,100% { box-shadow: inset 0 0 6px rgba(76,175,80,0.4); } 50% { box-shadow: inset 0 0 12px rgba(76,175,80,0.8); } }
+        .cell.placeable { animation: pulse-placeable 1.2s ease-in-out infinite; }
         .disc { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; text-shadow: 1px 1px 2px #000; z-index: 2; border: 1px solid rgba(0,0,0,0.1); }
         .collector { width: 36px; height: 36px; border: 3px solid gold; border-radius: 6px; z-index: 3; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
         .black { background: #000; }
@@ -93,11 +95,10 @@
                 </ul>
                 <h3>Draft System</h3>
                 <ul>
-                    <li>After collecting, <b>3 new discs</b> are drawn from the bag.</li>
-                    <li>The collecting player picks 1 and places it <b>in their line of sight</b> (so it can't be collected immediately).</li>
-                    <li>The other player collects, then picks 1 of the remaining 2 and places it in their LOS.</li>
-                    <li>The first player takes the last disc and places it in their LOS.</li>
-                    <li>This repeats 8 times (24 discs total). The starting player alternates each cycle.</li>
+                    <li>After each collection, <b>1 new disc</b> is drawn from the bag.</li>
+                    <li>You choose where to place it <b>in your line of sight</b> (green cells).</li>
+                    <li>Use this strategically to <b>block your opponent!</b></li>
+                    <li>The disc cannot be collected immediately (it's in your LOS).</li>
                     <li>54 discs total: 24 start on the board, 24 are drafted in, 6 stay hidden.</li>
                 </ul>
                 <h3>Special Mechanics</h3>
@@ -124,11 +125,9 @@
 
     // New state for draft and sacrifice
     let collectedDiscs = { 1: [], 2: [] };
-    let draftDiscs = [];
     let draftChosen = null;
     let pendingExtraTurn = false;
     let sacrificeRange = 0;
-    let draftCycle = null; // {phase: 1|2|3, startingPlayer: 1|2, remainingDiscs: []}
 
     function toggleRules(show) { document.getElementById('modal-overlay').style.display = show ? 'flex' : 'none'; }
 
@@ -165,43 +164,11 @@
                 cells[i] = draftChosen;
                 draftChosen = null;
                 document.getElementById('draft-panel').style.display = 'none';
-
-                if (draftCycle) {
-                    if (draftCycle.phase === 1) {
-                        // Phase 1 done: other player collects next
-                        draftCycle.phase = 2;
-                        gameState = 'PLAY';
-                        currentPlayer = currentPlayer === 1 ? 2 : 1;
-                    } else if (draftCycle.phase === 2) {
-                        // Phase 2 done: auto-select last disc for starting player
-                        draftCycle.phase = 3;
-                        if (draftCycle.remainingDiscs.length >= 1) {
-                            draftChosen = draftCycle.remainingDiscs.pop();
-                            currentPlayer = draftCycle.startingPlayer;
-                            gameState = 'DRAFT_PLACE';
-                            showAutoPickPanel(draftChosen);
-                        } else {
-                            // Edge case: no discs left
-                            const nextPlayer = draftCycle.startingPlayer === 1 ? 2 : 1;
-                            draftCycle = null;
-                            gameState = 'PLAY';
-                            currentPlayer = nextPlayer;
-                        }
-                    } else if (draftCycle.phase === 3) {
-                        // Phase 3 done: cycle complete, other player starts next cycle
-                        const nextPlayer = draftCycle.startingPlayer === 1 ? 2 : 1;
-                        draftCycle = null;
-                        gameState = 'PLAY';
-                        currentPlayer = nextPlayer;
-                    }
-                } else {
-                    // Fallback (no cycle, e.g. bag had <3 discs)
-                    gameState = 'PLAY';
-                    if (!pendingExtraTurn) {
-                        currentPlayer = currentPlayer === 1 ? 2 : 1;
-                    }
-                    pendingExtraTurn = false;
+                gameState = 'PLAY';
+                if (!pendingExtraTurn) {
+                    currentPlayer = currentPlayer === 1 ? 2 : 1;
                 }
+                pendingExtraTurn = false;
                 updateUI(); render();
             }
         } else if (gameState === 'SACRIFICE_MOVE') {
@@ -280,19 +247,13 @@
             return;
         }
 
-        // Draft phase
-        if (draftCycle && draftCycle.phase === 2) {
-            // Continue existing cycle: player picks from remaining discs
-            pendingExtraTurn = false; // no extra turns during draft cycles
-            draftDiscs = [...draftCycle.remainingDiscs];
-            gameState = 'DRAFT_PICK';
-            showDraftPanel();
+        // Draft: draw 1 disc from bag, let player place it
+        if (bag.length > 0) {
+            pendingExtraTurn = (disc.num === 1);
+            draftChosen = bag.pop();
+            gameState = 'DRAFT_PLACE';
+            showDraftPlacePanel(draftChosen);
             updateUI(); render();
-            return;
-        } else if (!draftCycle && bag.length > 0) {
-            // Start new draft cycle
-            pendingExtraTurn = false; // no extra turns during draft cycles
-            startDraft();
             return;
         }
 
@@ -303,47 +264,13 @@
         updateUI(); render();
     }
 
-    // --- DRAFT SYSTEM ---
+    // --- DRAFT SYSTEM (simplified: 1 disc per collection) ---
 
-    function startDraft() {
-        draftDiscs = [];
-        const drawCount = Math.min(3, bag.length);
-        for (let i = 0; i < drawCount; i++) {
-            draftDiscs.push(bag.pop());
-        }
-        draftCycle = {
-            phase: 1,
-            startingPlayer: currentPlayer,
-            remainingDiscs: [...draftDiscs]
-        };
-        gameState = 'DRAFT_PICK';
-        showDraftPanel();
-        updateUI(); render();
-    }
-
-    function showDraftPanel() {
+    function showDraftPlacePanel(disc) {
         const panel = document.getElementById('draft-panel');
         panel.style.display = 'block';
         const label = document.getElementById('draft-label');
-        const remaining = draftCycle ? draftCycle.remainingDiscs.length : draftDiscs.length;
-        label.innerText = `DRAFT: Pick 1 of ${remaining} disc${remaining > 1 ? 's' : ''} to place`;
-        const choices = document.getElementById('draft-choices');
-        choices.innerHTML = '';
-        draftDiscs.forEach((disc, idx) => {
-            const d = document.createElement('div');
-            d.className = 'disc';
-            d.style.backgroundColor = disc.color;
-            d.innerText = disc.num;
-            d.title = `${disc.color} ${disc.num || '(secondary)'}`;
-            d.onclick = () => selectDraftDisc(idx);
-            choices.appendChild(d);
-        });
-    }
-
-    function showAutoPickPanel(disc) {
-        const panel = document.getElementById('draft-panel');
-        panel.style.display = 'block';
-        document.getElementById('draft-label').innerText = 'DRAFT: Last disc — place it on the board';
+        label.innerText = 'Place this disc on a green cell (your line of sight):';
         const choices = document.getElementById('draft-choices');
         choices.innerHTML = '';
         const d = document.createElement('div');
@@ -353,18 +280,6 @@
         d.style.cursor = 'default';
         d.style.boxShadow = '0 0 12px rgba(76, 175, 80, 0.6)';
         choices.appendChild(d);
-    }
-
-    function selectDraftDisc(idx) {
-        draftChosen = draftDiscs[idx];
-        // Remove chosen disc from remaining in cycle
-        if (draftCycle) {
-            draftCycle.remainingDiscs = draftCycle.remainingDiscs.filter(d => d !== draftChosen);
-        }
-        draftDiscs = [];
-        gameState = 'DRAFT_PLACE';
-        document.getElementById('draft-choices').innerHTML = '';
-        updateUI(); render();
     }
 
     // --- SACRIFICE SYSTEM ---
@@ -469,12 +384,8 @@
                 status.innerText = "GAME OVER"; break;
             case 'PLAY':
                 status.innerText = `Turn: Player ${currentPlayer}`; break;
-            case 'DRAFT_PICK':
-                const pickPhase = draftCycle ? ` (${draftCycle.phase}/3)` : '';
-                status.innerText = `Player ${currentPlayer}: Pick a disc from the draft${pickPhase}`; break;
             case 'DRAFT_PLACE':
-                const placePhase = draftCycle ? ` (${draftCycle.phase}/3)` : '';
-                status.innerText = `Player ${currentPlayer}: Place the disc in your line of sight${placePhase}`; break;
+                status.innerText = `Player ${currentPlayer}: Place the new disc on a green cell to block your opponent!`; break;
             case 'SACRIFICE_SELECT':
                 status.innerText = `Player ${currentPlayer}: Choose a disc to sacrifice`; break;
             case 'SACRIFICE_MOVE':
