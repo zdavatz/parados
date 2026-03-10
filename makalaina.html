@@ -94,9 +94,9 @@
                 <h3>Draft System</h3>
                 <ul>
                     <li>After collecting, <b>3 new discs</b> are drawn from the bag.</li>
-                    <li>The collecting player picks 1 and places it on any empty square.</li>
-                    <li>The other player collects, then picks 1 of the remaining 2 and places it.</li>
-                    <li>The first player takes the last disc and places it.</li>
+                    <li>The collecting player picks 1 and places it <b>in their line of sight</b> (so it can't be collected immediately).</li>
+                    <li>The other player collects, then picks 1 of the remaining 2 and places it in their LOS.</li>
+                    <li>The first player takes the last disc and places it in their LOS.</li>
                     <li>This repeats 8 times (24 discs total). The starting player alternates each cycle.</li>
                     <li>54 discs total: 24 start on the board, 24 are drafted in, 6 stay hidden.</li>
                 </ul>
@@ -160,7 +160,8 @@
         } else if (gameState === 'PLAY') {
             handleMove(i);
         } else if (gameState === 'DRAFT_PLACE') {
-            if (!cells[i]) {
+            const draftLOS = getLOS(collectors[currentPlayer]);
+            if (!cells[i] && draftLOS.includes(i)) {
                 cells[i] = draftChosen;
                 draftChosen = null;
                 document.getElementById('draft-panel').style.display = 'none';
@@ -473,7 +474,7 @@
                 status.innerText = `Player ${currentPlayer}: Pick a disc from the draft${pickPhase}`; break;
             case 'DRAFT_PLACE':
                 const placePhase = draftCycle ? ` (${draftCycle.phase}/3)` : '';
-                status.innerText = `Player ${currentPlayer}: Place the disc on an empty cell${placePhase}`; break;
+                status.innerText = `Player ${currentPlayer}: Place the disc in your line of sight${placePhase}`; break;
             case 'SACRIFICE_SELECT':
                 status.innerText = `Player ${currentPlayer}: Choose a disc to sacrifice`; break;
             case 'SACRIFICE_MOVE':
@@ -502,7 +503,7 @@
     }
 
     function render() {
-        const los = (gameState === 'PLAY') ? getLOS(collectors[currentPlayer]) : [];
+        const los = (gameState === 'PLAY' || gameState === 'DRAFT_PLACE') ? getLOS(collectors[currentPlayer]) : [];
         const reachable = (gameState === 'SACRIFICE_MOVE') ? getReachableCells(collectors[currentPlayer], sacrificeRange) : [];
 
         for (let i = 0; i < 144; i++) {
@@ -512,7 +513,7 @@
             if (los.includes(i)) cls += ' los';
             if (selectedIdx === i) cls += ' selected';
             if (reachable.includes(i)) cls += ' reachable';
-            if (gameState === 'DRAFT_PLACE' && !cells[i]) cls += ' placeable';
+            if (gameState === 'DRAFT_PLACE' && !cells[i] && getLOS(collectors[currentPlayer]).includes(i)) cls += ' placeable';
             el.className = cls;
 
             if (cells[i]) {
