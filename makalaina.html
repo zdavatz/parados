@@ -62,7 +62,7 @@
                 <div id="bag-count"></div>
             </div>
             <div id="draft-panel">
-                <p style="font-weight:bold; color:#2c3e50; margin-bottom:8px;">DRAFT: Pick a disc to place on the board</p>
+                <p id="draft-label" style="font-weight:bold; color:#2c3e50; margin-bottom:8px;">DRAFT: Pick a disc to place on the board</p>
                 <div id="draft-choices"></div>
             </div>
             <div id="sacrifice-panel">
@@ -93,9 +93,11 @@
                 </ul>
                 <h3>Draft System</h3>
                 <ul>
-                    <li>After each collection, <b>3 new discs</b> are drawn from the bag.</li>
-                    <li>You pick one and place it on any empty square.</li>
-                    <li>The other 2 return to the bag.</li>
+                    <li>After collecting, <b>3 new discs</b> are drawn from the bag.</li>
+                    <li>The collecting player picks 1 and places it on any empty square.</li>
+                    <li>The other player collects, then picks 1 of the remaining 2 and places it.</li>
+                    <li>The first player takes the last disc and places it.</li>
+                    <li>This repeats 8 times (24 discs total). The starting player alternates each cycle.</li>
                     <li>54 discs total: 24 start on the board, 24 are drafted in, 6 stay hidden.</li>
                 </ul>
                 <h3>Special Mechanics</h3>
@@ -126,6 +128,7 @@
     let draftChosen = null;
     let pendingExtraTurn = false;
     let sacrificeRange = 0;
+    let draftCycle = null; // {phase: 1|2|3, startingPlayer: 1|2, remainingDiscs: []}
 
     function toggleRules(show) { document.getElementById('modal-overlay').style.display = show ? 'flex' : 'none'; }
 
@@ -161,11 +164,43 @@
                 cells[i] = draftChosen;
                 draftChosen = null;
                 document.getElementById('draft-panel').style.display = 'none';
-                gameState = 'PLAY';
-                if (!pendingExtraTurn) {
-                    currentPlayer = currentPlayer === 1 ? 2 : 1;
+
+                if (draftCycle) {
+                    if (draftCycle.phase === 1) {
+                        // Phase 1 done: other player collects next
+                        draftCycle.phase = 2;
+                        gameState = 'PLAY';
+                        currentPlayer = currentPlayer === 1 ? 2 : 1;
+                    } else if (draftCycle.phase === 2) {
+                        // Phase 2 done: auto-select last disc for starting player
+                        draftCycle.phase = 3;
+                        if (draftCycle.remainingDiscs.length >= 1) {
+                            draftChosen = draftCycle.remainingDiscs.pop();
+                            currentPlayer = draftCycle.startingPlayer;
+                            gameState = 'DRAFT_PLACE';
+                            showAutoPickPanel(draftChosen);
+                        } else {
+                            // Edge case: no discs left
+                            const nextPlayer = draftCycle.startingPlayer === 1 ? 2 : 1;
+                            draftCycle = null;
+                            gameState = 'PLAY';
+                            currentPlayer = nextPlayer;
+                        }
+                    } else if (draftCycle.phase === 3) {
+                        // Phase 3 done: cycle complete, other player starts next cycle
+                        const nextPlayer = draftCycle.startingPlayer === 1 ? 2 : 1;
+                        draftCycle = null;
+                        gameState = 'PLAY';
+                        currentPlayer = nextPlayer;
+                    }
+                } else {
+                    // Fallback (no cycle, e.g. bag had <3 discs)
+                    gameState = 'PLAY';
+                    if (!pendingExtraTurn) {
+                        currentPlayer = currentPlayer === 1 ? 2 : 1;
+                    }
+                    pendingExtraTurn = false;
                 }
-                pendingExtraTurn = false;
                 updateUI(); render();
             }
         } else if (gameState === 'SACRIFICE_MOVE') {
@@ -244,9 +279,18 @@
             return;
         }
 
-        // Draft phase if bag has discs
-        if (bag.length > 0) {
-            pendingExtraTurn = (disc.num === 1);
+        // Draft phase
+        if (draftCycle && draftCycle.phase === 2) {
+            // Continue existing cycle: player picks from remaining discs
+            pendingExtraTurn = false; // no extra turns during draft cycles
+            draftDiscs = [...draftCycle.remainingDiscs];
+            gameState = 'DRAFT_PICK';
+            showDraftPanel();
+            updateUI(); render();
+            return;
+        } else if (!draftCycle && bag.length > 0) {
+            // Start new draft cycle
+            pendingExtraTurn = false; // no extra turns during draft cycles
             startDraft();
             return;
         }
@@ -266,6 +310,11 @@
         for (let i = 0; i < drawCount; i++) {
             draftDiscs.push(bag.pop());
         }
+        draftCycle = {
+            phase: 1,
+            startingPlayer: currentPlayer,
+            remainingDiscs: [...draftDiscs]
+        };
         gameState = 'DRAFT_PICK';
         showDraftPanel();
         updateUI(); render();
@@ -274,6 +323,9 @@
     function showDraftPanel() {
         const panel = document.getElementById('draft-panel');
         panel.style.display = 'block';
+        const label = document.getElementById('draft-label');
+        const remaining = draftCycle ? draftCycle.remainingDiscs.length : draftDiscs.length;
+        label.innerText = `DRAFT: Pick 1 of ${remaining} disc${remaining > 1 ? 's' : ''} to place`;
         const choices = document.getElementById('draft-choices');
         choices.innerHTML = '';
         draftDiscs.forEach((disc, idx) => {
@@ -287,11 +339,27 @@
         });
     }
 
+    function showAutoPickPanel(disc) {
+        const panel = document.getElementById('draft-panel');
+        panel.style.display = 'block';
+        document.getElementById('draft-label').innerText = 'DRAFT: Last disc — place it on the board';
+        const choices = document.getElementById('draft-choices');
+        choices.innerHTML = '';
+        const d = document.createElement('div');
+        d.className = 'disc';
+        d.style.backgroundColor = disc.color;
+        d.innerText = disc.num;
+        d.style.cursor = 'default';
+        d.style.boxShadow = '0 0 12px rgba(76, 175, 80, 0.6)';
+        choices.appendChild(d);
+    }
+
     function selectDraftDisc(idx) {
         draftChosen = draftDiscs[idx];
-        // Return unchosen discs to bag
-        draftDiscs.forEach((d, i) => { if (i !== idx) bag.push(d); });
-        bag.sort(() => Math.random() - 0.5);
+        // Remove chosen disc from remaining in cycle
+        if (draftCycle) {
+            draftCycle.remainingDiscs = draftCycle.remainingDiscs.filter(d => d !== draftChosen);
+        }
         draftDiscs = [];
         gameState = 'DRAFT_PLACE';
         document.getElementById('draft-choices').innerHTML = '';
@@ -401,9 +469,11 @@
             case 'PLAY':
                 status.innerText = `Turn: Player ${currentPlayer}`; break;
             case 'DRAFT_PICK':
-                status.innerText = `Player ${currentPlayer}: Pick a disc from the draft`; break;
+                const pickPhase = draftCycle ? ` (${draftCycle.phase}/3)` : '';
+                status.innerText = `Player ${currentPlayer}: Pick a disc from the draft${pickPhase}`; break;
             case 'DRAFT_PLACE':
-                status.innerText = `Player ${currentPlayer}: Place the disc on an empty cell`; break;
+                const placePhase = draftCycle ? ` (${draftCycle.phase}/3)` : '';
+                status.innerText = `Player ${currentPlayer}: Place the disc on an empty cell${placePhase}`; break;
             case 'SACRIFICE_SELECT':
                 status.innerText = `Player ${currentPlayer}: Choose a disc to sacrifice`; break;
             case 'SACRIFICE_MOVE':
