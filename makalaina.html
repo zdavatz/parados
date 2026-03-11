@@ -65,7 +65,7 @@
                 <div id="bag-count"></div>
             </div>
             <div id="draft-panel">
-                <p id="draft-label" style="font-weight:bold; color:#2c3e50; margin-bottom:8px;">DRAFT: Pick a disc to place on the board</p>
+                <p id="draft-label" style="font-weight:bold; color:#2c3e50; margin-bottom:8px;">Place this disc in your line of sight:</p>
                 <div id="draft-choices"></div>
             </div>
             <div id="sacrifice-panel">
@@ -96,9 +96,8 @@
                 </ul>
                 <h3>Draft System</h3>
                 <ul>
-                    <li>After each collection, <b>3 new discs</b> are drawn from the bag.</li>
-                    <li>You pick 1 to place on the board; the other 2 return to the bag.</li>
-                    <li>You choose where to place it <b>in your line of sight</b>.</li>
+                    <li>After each collection, <b>1 new disc</b> is drawn from the bag.</li>
+                    <li>You must place it <b>in your line of sight</b>.</li>
                     <li>The disc cannot be collected immediately (it's in your LOS).</li>
                     <li>54 discs total: 24 start on the board, 24 are drafted in, 6 stay hidden.</li>
                 </ul>
@@ -127,7 +126,7 @@
     // New state for draft and sacrifice
     let collectedDiscs = { 1: [], 2: [] };
     let draftChosen = null;
-    let draftOffered = [];
+
     let pendingExtraTurn = false;
     let showLOS = false;
     let sacrificeRange = 0;
@@ -258,14 +257,12 @@
             return;
         }
 
-        // Draft: draw up to 3 discs from bag, let player pick one to place
+        // Draft: draw 1 disc from bag, player must place it
         if (bag.length > 0) {
             pendingExtraTurn = (disc.num === 1);
-            draftOffered = [];
-            const drawCount = Math.min(3, bag.length);
-            for (let d = 0; d < drawCount; d++) draftOffered.push(bag.pop());
-            gameState = 'DRAFT_PICK';
-            showDraftPickPanel(draftOffered);
+            draftChosen = bag.pop();
+            gameState = 'DRAFT_PLACE';
+            showDraftPlacePanel(draftChosen);
             updateUI(); render();
             return;
         }
@@ -277,44 +274,22 @@
         updateUI(); render();
     }
 
-    // --- DRAFT SYSTEM (3-disc choice) ---
+    // --- DRAFT SYSTEM (1-disc placement) ---
 
-    function showDraftPickPanel(discs) {
+    function showDraftPlacePanel(disc) {
         const panel = document.getElementById('draft-panel');
         panel.style.display = 'block';
-        const label = document.getElementById('draft-label');
-        label.innerText = discs.length > 1 ? 'DRAFT: Pick a disc to place on the board' : 'DRAFT: Place this disc on the board';
-        const choices = document.getElementById('draft-choices');
-        choices.innerHTML = '';
-        discs.forEach((disc, idx) => {
-            const d = document.createElement('div');
-            d.className = 'disc';
-            d.style.backgroundColor = disc.color;
-            d.innerText = disc.num;
-            d.onclick = () => pickDraftDisc(idx);
-            choices.appendChild(d);
-        });
-    }
-
-    function pickDraftDisc(idx) {
-        draftChosen = draftOffered[idx];
-        // Return unchosen discs to bag and reshuffle
-        draftOffered.forEach((d, i) => { if (i !== idx) bag.push(d); });
-        bag.sort(() => Math.random() - 0.5);
-        draftOffered = [];
-        gameState = 'DRAFT_PLACE';
         const label = document.getElementById('draft-label');
         label.innerText = 'Place this disc in your line of sight:';
         const choices = document.getElementById('draft-choices');
         choices.innerHTML = '';
         const d = document.createElement('div');
         d.className = 'disc';
-        d.style.backgroundColor = draftChosen.color;
-        d.innerText = draftChosen.num;
+        d.style.backgroundColor = disc.color;
+        d.innerText = disc.num;
         d.style.cursor = 'default';
         d.style.boxShadow = '0 0 12px rgba(76, 175, 80, 0.6)';
         choices.appendChild(d);
-        updateUI(); render();
     }
 
     // --- SACRIFICE SYSTEM ---
@@ -419,8 +394,6 @@
                 status.innerText = "GAME OVER"; break;
             case 'PLAY':
                 status.innerText = `Turn: Player ${currentPlayer}`; break;
-            case 'DRAFT_PICK':
-                status.innerText = `Player ${currentPlayer}: Pick a disc from the draft`; break;
             case 'DRAFT_PLACE':
                 status.innerText = `Player ${currentPlayer}: Place the disc in your line of sight`; break;
             case 'SACRIFICE_SELECT':
