@@ -617,9 +617,8 @@
                     <div id="draft-choices"></div>
                 </div>
                 <div id="sacrifice-panel">
-                    <p style="font-weight:bold; color:var(--text); margin-bottom:8px; font-size:0.85rem;">SACRIFICE: Pick a disc (value = move range)</p>
+                    <p style="font-weight:bold; color:var(--text); margin-bottom:8px; font-size:0.85rem;">SACRIFICE: Pick a disc to sacrifice (value = move range)</p>
                     <div id="sacrifice-choices"></div>
-                    <button class="action-btn" onclick="cancelSacrifice()" style="margin-top:8px;">Cancel</button>
                 </div>
                 <button class="action-btn danger" onclick="window.location.reload()">✕ Leave Game</button>
             </div>
@@ -660,7 +659,7 @@
         <ul>
             <li><b>Number 1:</b> Immediate extra turn.</li>
             <li><b>Number 6:</b> Future discs of that color are worthless for you.</li>
-            <li><b>Stuck?</b> Sacrifice a collected primary disc: your score for that color decreases, but your collector can move up to that many squares freely.</li>
+            <li><b>Stuck?</b> Your opponent picks one of your collected primary discs to sacrifice: your score for that color decreases, but your collector can move up to that many squares freely.</li>
         </ul>
     </div>
 </div>
@@ -769,8 +768,11 @@ function handleNetMessage(data) {
         case 'sacrifice_pick':
             applySacrificeDisc(data.discColor, data.discNum, data.discCounted, true);
             break;
-        case 'sacrifice_cancel':
-            cancelSacrifice(true);
+        case 'sacrifice_request':
+            sacrificingPlayer = data.sacrificingPlayer;
+            gameState = 'SACRIFICE_OPPONENT_SELECT';
+            showSacrificePanel();
+            updateUI(); render();
             break;
         case 'relinquish':
             performRelinquish(true);
@@ -833,6 +835,7 @@ let draftChosen = null;
 
 let pendingExtraTurn = false;
 let sacrificeRange = 0;
+let sacrificingPlayer = 0;
 let showLOS = false;
 
 function toggleRules(show) {
@@ -904,6 +907,7 @@ function handleClick(i, isRemote) {
             updateUI(); render();
         }
     } else if (gameState === 'SACRIFICE_MOVE') {
+        if (!isRemote && currentPlayer !== myPlayer) return;
         const reachable = getReachableCells(collectors[currentPlayer], sacrificeRange);
         if (reachable.includes(i)) {
             if (!isRemote) sendNet({ type: 'click', idx: i });
@@ -911,6 +915,7 @@ function handleClick(i, isRemote) {
             collectors[currentPlayer] = i;
             cells[i] = { type: 'collector', player: currentPlayer };
             sacrificeRange = 0;
+            sacrificingPlayer = 0;
             gameState = 'PLAY';
             relinquished[1] = relinquished[2] = false;
             currentPlayer = currentPlayer === 1 ? 2 : 1;
@@ -948,7 +953,8 @@ function syncState() {
         collectedDiscs: JSON.parse(JSON.stringify(collectedDiscs)),
         draftChosen: draftChosen ? JSON.parse(JSON.stringify(draftChosen)) : null,
         pendingExtraTurn,
-        sacrificeRange
+        sacrificeRange,
+        sacrificingPlayer
     });
 }
 
@@ -965,9 +971,14 @@ function applySyncState(data) {
     if (data.draftChosen !== undefined) draftChosen = data.draftChosen;
     if (data.pendingExtraTurn !== undefined) pendingExtraTurn = data.pendingExtraTurn;
     if (data.sacrificeRange !== undefined) sacrificeRange = data.sacrificeRange;
+    if (data.sacrificingPlayer !== undefined) sacrificingPlayer = data.sacrificingPlayer;
     // Re-show draft panel if syncing into a draft state
     if (gameState === 'DRAFT_PLACE' && draftChosen) {
         showDraftPlacePanel(draftChosen);
+    }
+    // Re-show sacrifice panel if syncing into opponent-select state
+    if (gameState === 'SACRIFICE_OPPONENT_SELECT') {
+        showSacrificePanel();
     }
     render(); updateUI();
 }
@@ -985,6 +996,25 @@ function getLOS(idx) {
         }
     });
     return los;
+}
+
+function hasValidMove(player) {
+    const los = getLOS(collectors[player]);
+    for (let i = 0; i < 144; i++) {
+        if (!cells[i] || cells[i].type === 'collector') continue;
+        if (los.includes(i)) continue;
+        const r = Math.floor(i / 12), c = i % 12;
+        for (let dr = -1; dr <= 1; dr++) {
+            for (let dc = -1; dc <= 1; dc++) {
+                if (dr === 0 && dc === 0) continue;
+                const nr = r + dr, nc = c + dc;
+                if (nr < 0 || nr >= 12 || nc < 0 || nc >= 12) continue;
+                const adj = nr * 12 + nc;
+                if (!cells[adj] && los.includes(adj)) return true;
+            }
+        }
+    }
+    return false;
 }
 
 function handleMove(i, isRemote) {
@@ -1079,16 +1109,17 @@ function showDraftPlacePanel(disc) {
 // ─── SACRIFICE SYSTEM ────────────────────────────────────────
 function doSacrifice() {
     if (gameState !== 'PLAY' || currentPlayer !== myPlayer) return;
-    const primaryDiscs = collectedDiscs[currentPlayer].filter(d => d.type === 'primary');
+    sacrificingPlayer = currentPlayer;
+    const primaryDiscs = collectedDiscs[sacrificingPlayer].filter(d => d.type === 'primary');
     if (primaryDiscs.length === 0) {
         // No primary discs: relinquish
         performRelinquish(false);
         sendNet({ type: 'relinquish' });
         return;
     }
-    gameState = 'SACRIFICE_SELECT';
-    showSacrificePanel();
-    updateUI();
+    gameState = 'SACRIFICE_OPPONENT_SELECT';
+    sendNet({ type: 'sacrifice_request', sacrificingPlayer: sacrificingPlayer });
+    updateUI(); render();
 }
 
 function showSacrificePanel() {
@@ -1097,23 +1128,29 @@ function showSacrificePanel() {
     document.getElementById('sacrifice-btn').style.display = 'none';
     const choices = document.getElementById('sacrifice-choices');
     choices.innerHTML = '';
-    const primaryDiscs = collectedDiscs[currentPlayer].filter(d => d.type === 'primary');
+    const primaryDiscs = collectedDiscs[sacrificingPlayer].filter(d => d.type === 'primary');
+    const isOpponent = myPlayer !== sacrificingPlayer;
     primaryDiscs.forEach((disc) => {
         const d = document.createElement('div');
         d.className = 'disc';
         d.style.backgroundColor = discColorMap[disc.color] || disc.color;
         d.innerText = disc.num;
         d.title = `Sacrifice: ${disc.counted ? 'lose ' + disc.num + ' pts from ' + disc.color + ', ' : ''}move up to ${disc.num} squares`;
-        d.onclick = () => {
-            applySacrificeDisc(disc.color, disc.num, disc.counted, false);
-        };
+        if (isOpponent) {
+            d.onclick = () => {
+                applySacrificeDisc(disc.color, disc.num, disc.counted, false);
+            };
+        } else {
+            d.style.opacity = '0.5';
+            d.style.cursor = 'not-allowed';
+        }
         choices.appendChild(d);
     });
 }
 
 function applySacrificeDisc(color, num, counted, isRemote) {
-    // Find and remove the disc from collected
-    const arr = collectedDiscs[currentPlayer];
+    // Find and remove the disc from sacrificingPlayer's collected
+    const arr = collectedDiscs[sacrificingPlayer];
     const removeIdx = arr.findIndex(d => d.color === color && d.num === num && d.counted === counted);
     if (removeIdx >= 0) arr.splice(removeIdx, 1);
 
@@ -1121,21 +1158,16 @@ function applySacrificeDisc(color, num, counted, isRemote) {
 
     // Subtract value from score only if it was counted
     if (counted) {
-        scores[currentPlayer][color] -= num;
+        scores[sacrificingPlayer][color] -= num;
     }
 
     document.getElementById('sacrifice-panel').style.display = 'none';
+    // The sacrificing player now moves
+    currentPlayer = sacrificingPlayer;
     gameState = 'SACRIFICE_MOVE';
     if (!isRemote) {
         sendNet({ type: 'sacrifice_pick', discColor: color, discNum: num, discCounted: counted });
     }
-    updateUI(); render();
-}
-
-function cancelSacrifice(isRemote) {
-    gameState = 'PLAY';
-    document.getElementById('sacrifice-panel').style.display = 'none';
-    if (!isRemote) sendNet({ type: 'sacrifice_cancel' });
     updateUI(); render();
 }
 
@@ -1189,13 +1221,23 @@ function updateUI() {
             statusEl.innerHTML = `<span class="player-indicator p${currentPlayer}"></span> ${isMe ? 'Place the disc in your line of sight' : who + ': Placing disc...'}`;
             statusEl.classList.toggle('your-turn', isMe);
             break;
-        case 'SACRIFICE_SELECT':
-            statusEl.innerHTML = `<span class="player-indicator p${currentPlayer}"></span> ${who}: Choose sacrifice disc`;
-            statusEl.classList.toggle('your-turn', isMe);
+        case 'SACRIFICE_OPPONENT_SELECT':
+            if (myPlayer !== sacrificingPlayer) {
+                statusEl.innerHTML = `<span class="player-indicator p${sacrificingPlayer}"></span> Choose which disc to sacrifice`;
+                statusEl.classList.add('your-turn');
+            } else {
+                statusEl.innerHTML = `<span class="player-indicator p${sacrificingPlayer}"></span> Opponent choosing sacrifice...`;
+                statusEl.classList.remove('your-turn');
+            }
             break;
         case 'SACRIFICE_MOVE':
-            statusEl.innerHTML = `<span class="player-indicator p${currentPlayer}"></span> ${who}: Move collector (up to ${sacrificeRange})`;
-            statusEl.classList.toggle('your-turn', isMe);
+            if (myPlayer === sacrificingPlayer) {
+                statusEl.innerHTML = `<span class="player-indicator p${sacrificingPlayer}"></span> Move collector (up to ${sacrificeRange})`;
+                statusEl.classList.add('your-turn');
+            } else {
+                statusEl.innerHTML = `<span class="player-indicator p${sacrificingPlayer}"></span> Opponent moving...`;
+                statusEl.classList.remove('your-turn');
+            }
             break;
     }
 
@@ -1215,10 +1257,10 @@ function updateUI() {
     const bagEl = document.getElementById('bag-count');
     if (bagEl) bagEl.innerText = `Bag: ${bag.length} discs remaining`;
 
-    // Show/hide sacrifice button
+    // Show/hide sacrifice button - only when stuck (no valid move)
     const sacBtn = document.getElementById('sacrifice-btn');
     if (sacBtn) {
-        sacBtn.style.display = (gameState === 'PLAY') ? 'block' : 'none';
+        sacBtn.style.display = (gameState === 'PLAY' && currentPlayer === myPlayer && !hasValidMove(currentPlayer)) ? 'block' : 'none';
     }
 }
 
