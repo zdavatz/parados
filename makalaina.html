@@ -44,7 +44,18 @@
         #modal { background: white; width: 80%; max-width: 600px; padding: 30px; border-radius: 12px; max-height: 80vh; overflow-y: auto; }
         .scoring-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.85em; }
         .scoring-table td, .scoring-table th { border: 1px solid #eee; padding: 6px; text-align: center; }
-        .worthless { text-decoration: line-through; color: #bdc3c7; }
+        .worthless { color: #888; }
+        .worthless-box { display: inline-block; border: 2px solid #e74c3c; background: #fde; padding: 1px 5px; border-radius: 4px; font-weight: bold; }
+        .leader-dot { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: middle; }
+        .leader-dot.black { background: #000; }
+        .leader-dot.white { background: #fff; border: 1px solid #999; }
+        .leader-dot.tied { background: #bbb; }
+
+        #winner-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 200; justify-content: center; align-items: center; }
+        #winner-box { background: white; padding: 40px; border-radius: 16px; text-align: center; max-width: 400px; }
+        #winner-box h2 { font-size: 1.8em; margin-bottom: 15px; }
+        #winner-box .score-final { font-size: 1.3em; margin: 10px 0; }
+        #winner-box button { margin-top: 20px; padding: 12px 30px; font-size: 1em; cursor: pointer; border: none; border-radius: 8px; background: #3498db; color: white; font-weight: bold; }
 
         #bag-count { font-size: 0.8em; color: #7f8c8d; text-align: center; margin-top: 6px; }
     </style>
@@ -68,6 +79,13 @@
             <button class="btn" style="width:auto; padding:8px 16px; background:#3498db; color:white;" onclick="loadCuratedPosition(10)">10</button>
         </div>
     </div>
+    <div id="starter-panel" style="display:none; margin-bottom:15px; text-align:center; background:white; padding:15px 20px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
+        <p style="font-weight:bold; margin:0 0 10px; color:#2c3e50;">Who starts?</p>
+        <div style="display:flex; gap:12px; justify-content:center;">
+            <button class="btn" style="width:auto; padding:10px 24px; background:#222; color:white; font-size:1em;" onclick="chooseStarter(1)">&#9632; Black</button>
+            <button class="btn" style="width:auto; padding:10px 24px; background:#f5f5f5; color:#222; border:2px solid #999; font-size:1em;" onclick="chooseStarter(2)">&#9633; White</button>
+        </div>
+    </div>
     <div id="game-container">
         <div id="board"></div>
         <div id="ui">
@@ -77,7 +95,8 @@
             <hr>
             <div id="game-actions" style="display:none;">
                 <button id="sacrifice-btn" class="btn btn-action" onclick="sacrificeTurn()">Sacrifice & Move</button>
-                <p style="font-size: 0.75em; color: #7f8c8d; text-align: center;">No valid move! Sacrifice a disc (opponent picks) or relinquish.</p>
+                <button id="relinquish-btn" class="btn btn-cancel" onclick="relinquishTurn()" style="display:none;">Relinquish Turn</button>
+                <p id="stuck-hint" style="display:none; font-size: 0.75em; color: #7f8c8d; text-align: center;">No valid move! Sacrifice a disc (opponent picks) or relinquish your turn.</p>
                 <div id="bag-count"></div>
             </div>
             <div id="draft-panel">
@@ -89,7 +108,7 @@
                 <div id="sacrifice-choices"></div>
             </div>
             <table class="scoring-table">
-                <thead><tr><th>Color</th><th>P1</th><th>P2</th></tr></thead>
+                <thead><tr><th>Color</th><th>&#9632;</th><th>&#9633;</th><th></th></tr></thead>
                 <tbody id="score-body"></tbody>
             </table>
             <button class="btn btn-reset" onclick="window.location.reload()">Reset Game</button>
@@ -126,6 +145,14 @@
         </div>
     </div>
 
+    <div id="winner-overlay" onclick="this.style.display='none'">
+        <div id="winner-box" onclick="event.stopPropagation()">
+            <h2 id="winner-title"></h2>
+            <div id="winner-scores"></div>
+            <button onclick="window.location.reload()">New Game</button>
+        </div>
+    </div>
+
 <script>
     let gameState = 'SETUP';
     let currentPlayer = 1;
@@ -146,6 +173,7 @@
     let showLOS = false;
     let sacrificeRange = 0;
     let sacrificingPlayer = 0;
+    let isFirstMove = true;
 
     const CURATED_POSITIONS = [null,
         {b:[2,7],w:[9,7],d:[[0,0,'blue',1],[3,0,'blue',4],[10,0,'green',''],[11,0,'purple',''],[4,2,'red',5],[5,2,'blue',4],[2,3,'purple',''],[4,3,'red',6],[6,3,'yellow',4],[9,3,'green',''],[1,4,'red',5],[4,6,'blue',6],[7,6,'blue',3],[11,5,'red',3],[0,7,'red',3],[10,6,'red',3],[2,8,'green',''],[6,8,'red',4],[7,8,'yellow',2],[2,9,'yellow',3],[11,9,'purple',''],[8,10,'yellow',4],[5,11,'blue',5],[1,9,'orange','']]},
@@ -203,8 +231,17 @@
 
         colors.forEach(c => { scores[1][c] = 0; scores[2][c] = 0; });
 
-        gameState = 'PLAY';
+        gameState = 'CHOOSE_STARTER';
+        document.getElementById('starter-panel').style.display = 'block';
+        updateUI(); render();
+    }
+
+    function chooseStarter(player) {
+        currentPlayer = player;
+        document.getElementById('starter-panel').style.display = 'none';
         document.getElementById('game-actions').style.display = 'block';
+        gameState = 'PLAY';
+        isFirstMove = true;
         updateUI(); render();
     }
 
@@ -238,7 +275,7 @@
     }
 
     function handleClick(i) {
-        if (gameState === 'SETUP') return;
+        if (gameState === 'SETUP' || gameState === 'CHOOSE_STARTER') return;
         if (gameState === 'PLACEMENT') {
             if (cells[i]) return;
             if (!collectors[1]) { collectors[1] = i; cells[i] = {type:'collector', player:1}; }
@@ -248,7 +285,9 @@
             handleMove(i);
         } else if (gameState === 'DRAFT_PLACE') {
             const draftLOS = getLOS(collectors[currentPlayer]);
-            if (!cells[i] && draftLOS.includes(i)) {
+            const opponentLOS = isFirstMove ? getLOS(collectors[currentPlayer === 1 ? 2 : 1]) : [];
+            if (!cells[i] && draftLOS.includes(i) && !opponentLOS.includes(i)) {
+                isFirstMove = false;
                 cells[i] = draftChosen;
                 draftChosen = null;
                 document.getElementById('draft-panel').style.display = 'none';
@@ -265,12 +304,12 @@
     }
 
     function startPlay() {
-        gameState = 'PLAY';
-        document.getElementById('game-actions').style.display = 'block';
         for (let i = 0; i < 24; i++) {
             let r; do { r = Math.floor(Math.random() * 144); } while (cells[r]);
             cells[r] = bag.pop();
         }
+        gameState = 'CHOOSE_STARTER';
+        document.getElementById('starter-panel').style.display = 'block';
         updateUI(); render();
     }
 
@@ -414,12 +453,27 @@
         updateUI();
     }
 
+    function relinquishTurn() {
+        if (gameState !== 'PLAY') return;
+        relinquished[currentPlayer] = true;
+        if (relinquished[1] && relinquished[2]) {
+            gameState = 'END';
+        } else {
+            currentPlayer = currentPlayer === 1 ? 2 : 1;
+        }
+        updateUI(); render();
+    }
+
     function showSacrificePanel() {
         const panel = document.getElementById('sacrifice-panel');
         panel.style.display = 'block';
         document.getElementById('sacrifice-btn').style.display = 'none';
+        document.getElementById('relinquish-btn').style.display = 'none';
+        document.getElementById('stuck-hint').style.display = 'none';
         const label = document.getElementById('sacrifice-label');
-        label.innerText = `Player ${currentPlayer}: Choose which disc Player ${sacrificingPlayer} must sacrifice`;
+        const oppName = currentPlayer === 1 ? 'Black' : 'White';
+        const sacName = sacrificingPlayer === 1 ? 'Black' : 'White';
+        label.innerText = `${oppName}: Choose which disc ${sacName} must sacrifice`;
         const choices = document.getElementById('sacrifice-choices');
         choices.innerHTML = '';
         const primaryDiscs = collectedDiscs[sacrificingPlayer].filter(d => d.type === 'primary');
@@ -487,40 +541,91 @@
 
     function updateUI() {
         const status = document.getElementById('status');
+        const pLabel = currentPlayer === 1 ? 'Black' : 'White';
         switch (gameState) {
             case 'END':
-                status.innerText = "GAME OVER"; break;
+                status.innerText = "GAME OVER";
+                showWinner();
+                break;
             case 'PLAY':
-                status.innerText = `Turn: Player ${currentPlayer}`; break;
+                status.innerText = `Turn: ${pLabel}`; break;
             case 'DRAFT_PLACE':
-                status.innerText = `Player ${currentPlayer}: Place the disc in your line of sight`; break;
+                status.innerText = `${pLabel}: Place the disc in your line of sight`; break;
             case 'SACRIFICE_SELECT':
-                status.innerText = `Player ${currentPlayer}: Choose which disc Player ${sacrificingPlayer} must sacrifice`; break;
+                const oppLabel = currentPlayer === 1 ? 'Black' : 'White';
+                const sacLabel = sacrificingPlayer === 1 ? 'Black' : 'White';
+                status.innerText = `${oppLabel}: Choose which disc ${sacLabel} must sacrifice`; break;
             case 'SACRIFICE_MOVE':
-                status.innerText = `Player ${sacrificingPlayer}: Move collector (up to ${sacrificeRange} squares)`; break;
+                const smLabel = sacrificingPlayer === 1 ? 'Black' : 'White';
+                status.innerText = `${smLabel}: Move collector (up to ${sacrificeRange} squares)`; break;
             case 'PLACEMENT':
-                status.innerText = `SETUP: Player ${collectors[1] ? 2 : 1}, place your collector.`; break;
+                status.innerText = `SETUP: Place ${collectors[1] ? 'White' : 'Black'} collector.`; break;
+            case 'CHOOSE_STARTER':
+                status.innerText = 'Choose who starts above.'; break;
             case 'SETUP':
                 status.innerText = 'Choose a starting position above.'; break;
         }
 
         const body = document.getElementById('score-body');
         body.innerHTML = '';
+        let totalP1 = 0, totalP2 = 0;
         colors.forEach(c => {
-            const p1W = playerFlags[1][c+'6'] ? 'worthless' : '';
-            const p2W = playerFlags[2][c+'6'] ? 'worthless' : '';
-            body.innerHTML += `<tr><td>${c.toUpperCase()}</td><td class="${p1W}">${scores[1][c]}</td><td class="${p2W}">${scores[2][c]}</td></tr>`;
+            const s1 = scores[1][c] || 0;
+            const s2 = scores[2][c] || 0;
+            const p1W = playerFlags[1][c+'6'];
+            const p2W = playerFlags[2][c+'6'];
+            const s1Text = p1W ? `<span class="worthless-box">${s1}</span>` : s1;
+            const s2Text = p2W ? `<span class="worthless-box">${s2}</span>` : s2;
+            const p1Class = p1W ? 'worthless' : '';
+            const p2Class = p2W ? 'worthless' : '';
+            // Leader indicator
+            let leaderClass = 'tied';
+            if (s1 > s2) leaderClass = 'black';
+            else if (s2 > s1) leaderClass = 'white';
+            body.innerHTML += `<tr><td>${c.toUpperCase()}</td><td class="${p1Class}">${s1Text}</td><td class="${p2Class}">${s2Text}</td><td><span class="leader-dot ${leaderClass}"></span></td></tr>`;
+            if (!p1W) totalP1 += s1;
+            if (!p2W) totalP2 += s2;
         });
+        // Total row
+        let totalLeader = 'tied';
+        if (totalP1 > totalP2) totalLeader = 'black';
+        else if (totalP2 > totalP1) totalLeader = 'white';
+        body.innerHTML += `<tr style="font-weight:bold; border-top:2px solid #333;"><td>TOTAL</td><td>${totalP1}</td><td>${totalP2}</td><td><span class="leader-dot ${totalLeader}"></span></td></tr>`;
 
         // Bag count
         const bagEl = document.getElementById('bag-count');
         if (bagEl) bagEl.innerText = `Bag: ${bag.length} discs remaining`;
 
-        // Show/hide sacrifice button based on state
+        // Show/hide sacrifice & relinquish buttons based on state
+        const stuck = gameState === 'PLAY' && !hasValidMove(currentPlayer);
         const sacBtn = document.getElementById('sacrifice-btn');
-        if (sacBtn) {
-            sacBtn.style.display = (gameState === 'PLAY' && !hasValidMove(currentPlayer)) ? 'block' : 'none';
+        const relBtn = document.getElementById('relinquish-btn');
+        const stuckHint = document.getElementById('stuck-hint');
+        if (sacBtn) sacBtn.style.display = stuck ? 'block' : 'none';
+        if (relBtn) relBtn.style.display = stuck ? 'block' : 'none';
+        if (stuckHint) stuckHint.style.display = stuck ? 'block' : 'none';
+    }
+
+    function showWinner() {
+        let totalP1 = 0, totalP2 = 0;
+        colors.forEach(c => {
+            if (!playerFlags[1][c+'6']) totalP1 += (scores[1][c] || 0);
+            if (!playerFlags[2][c+'6']) totalP2 += (scores[2][c] || 0);
+        });
+        const title = document.getElementById('winner-title');
+        const scoresDiv = document.getElementById('winner-scores');
+        if (totalP1 > totalP2) {
+            title.innerText = 'Black wins!';
+            title.style.color = '#000';
+        } else if (totalP2 > totalP1) {
+            title.innerText = 'White wins!';
+            title.style.color = '#555';
+        } else {
+            title.innerText = "It's a tie!";
+            title.style.color = '#7f8c8d';
         }
+        scoresDiv.innerHTML = `<div class="score-final">Black: ${totalP1} &mdash; White: ${totalP2}</div>`;
+        document.getElementById('winner-overlay').style.display = 'flex';
     }
 
     function render() {
@@ -534,7 +639,10 @@
             if (los.includes(i)) cls += ' los';
             if (selectedIdx === i) cls += ' selected';
             if (reachable.includes(i)) cls += ' reachable';
-            if (showLOS && gameState === 'DRAFT_PLACE' && !cells[i] && getLOS(collectors[currentPlayer]).includes(i)) cls += ' placeable';
+            if (showLOS && gameState === 'DRAFT_PLACE' && !cells[i] && getLOS(collectors[currentPlayer]).includes(i)) {
+                const oppLOS = isFirstMove ? getLOS(collectors[currentPlayer === 1 ? 2 : 1]) : [];
+                if (!oppLOS.includes(i)) cls += ' placeable';
+            }
             el.className = cls;
 
             if (cells[i]) {
