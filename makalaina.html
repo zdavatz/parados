@@ -568,7 +568,7 @@
 
         const body = document.getElementById('score-body');
         body.innerHTML = '';
-        let totalP1 = 0, totalP2 = 0;
+        let winsP1 = 0, winsP2 = 0, ties = 0;
         colors.forEach(c => {
             const s1 = scores[1][c] || 0;
             const s2 = scores[2][c] || 0;
@@ -580,17 +580,11 @@
             const p2Class = p2W ? 'worthless' : '';
             // Leader indicator
             let leaderClass = 'tied';
-            if (s1 > s2) leaderClass = 'black';
-            else if (s2 > s1) leaderClass = 'white';
+            if (s1 > s2) { leaderClass = 'black'; winsP1++; }
+            else if (s2 > s1) { leaderClass = 'white'; winsP2++; }
+            else { ties++; }
             body.innerHTML += `<tr><td>${c.toUpperCase()}</td><td class="${p1Class}">${s1Text}</td><td class="${p2Class}">${s2Text}</td><td><span class="leader-dot ${leaderClass}"></span></td></tr>`;
-            if (!p1W) totalP1 += s1;
-            if (!p2W) totalP2 += s2;
         });
-        // Total row
-        let totalLeader = 'tied';
-        if (totalP1 > totalP2) totalLeader = 'black';
-        else if (totalP2 > totalP1) totalLeader = 'white';
-        body.innerHTML += `<tr style="font-weight:bold; border-top:2px solid #333;"><td>TOTAL</td><td>${totalP1}</td><td>${totalP2}</td><td><span class="leader-dot ${totalLeader}"></span></td></tr>`;
 
         // Bag count
         const bagEl = document.getElementById('bag-count');
@@ -607,24 +601,41 @@
     }
 
     function showWinner() {
-        let totalP1 = 0, totalP2 = 0;
+        let winsP1 = 0, winsP2 = 0;
+        let maxSingleP1 = 0, maxSingleP2 = 0;
         colors.forEach(c => {
-            if (!playerFlags[1][c+'6']) totalP1 += (scores[1][c] || 0);
-            if (!playerFlags[2][c+'6']) totalP2 += (scores[2][c] || 0);
+            const s1 = scores[1][c] || 0;
+            const s2 = scores[2][c] || 0;
+            if (s1 > s2) winsP1++;
+            else if (s2 > s1) winsP2++;
+            if (s1 > maxSingleP1) maxSingleP1 = s1;
+            if (s2 > maxSingleP2) maxSingleP2 = s2;
         });
         const title = document.getElementById('winner-title');
         const scoresDiv = document.getElementById('winner-scores');
-        if (totalP1 > totalP2) {
+        let detail = `Colors won: Black ${winsP1} \u2014 White ${winsP2}`;
+        if (winsP1 > winsP2) {
             title.innerText = 'Black wins!';
             title.style.color = '#000';
-        } else if (totalP2 > totalP1) {
+        } else if (winsP2 > winsP1) {
             title.innerText = 'White wins!';
             title.style.color = '#555';
         } else {
-            title.innerText = "It's a tie!";
-            title.style.color = '#7f8c8d';
+            // Tiebreaker: highest score in any single color
+            if (maxSingleP1 > maxSingleP2) {
+                title.innerText = 'Black wins!';
+                title.style.color = '#000';
+                detail += `<br>Tiebreaker: Black's highest color (${maxSingleP1}) beats White's (${maxSingleP2})`;
+            } else if (maxSingleP2 > maxSingleP1) {
+                title.innerText = 'White wins!';
+                title.style.color = '#555';
+                detail += `<br>Tiebreaker: White's highest color (${maxSingleP2}) beats Black's (${maxSingleP1})`;
+            } else {
+                title.innerText = "It's a tie!";
+                title.style.color = '#7f8c8d';
+            }
         }
-        scoresDiv.innerHTML = `<div class="score-final">Black: ${totalP1} &mdash; White: ${totalP2}</div>`;
+        scoresDiv.innerHTML = `<div class="score-final">${detail}</div>`;
         document.getElementById('winner-overlay').style.display = 'flex';
     }
 
