@@ -591,12 +591,13 @@
         if (bagEl) bagEl.innerText = `Bag: ${bag.length} discs remaining`;
 
         // Show/hide sacrifice & relinquish buttons based on state
-        const stuck = gameState === 'PLAY' && !hasValidMove(currentPlayer);
+        const inPlay = gameState === 'PLAY';
+        const stuck = inPlay && !hasValidMove(currentPlayer);
         const sacBtn = document.getElementById('sacrifice-btn');
         const relBtn = document.getElementById('relinquish-btn');
         const stuckHint = document.getElementById('stuck-hint');
         if (sacBtn) sacBtn.style.display = stuck ? 'block' : 'none';
-        if (relBtn) relBtn.style.display = stuck ? 'block' : 'none';
+        if (relBtn) relBtn.style.display = inPlay ? 'block' : 'none';
         if (stuckHint) stuckHint.style.display = stuck ? 'block' : 'none';
     }
 
