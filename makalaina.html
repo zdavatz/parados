@@ -182,6 +182,8 @@
     let playerFlags = { 1: {}, 2: {} };
     let scores = { 1: {}, 2: {} };
     let relinquished = { 1: false, 2: false };
+    let relinquishCount = { 1: 0, 2: 0 };
+    const RELINQUISH_LIMIT = 3;
     const colors = ['red', 'blue', 'yellow', 'green', 'orange', 'purple'];
 
     // New state for draft and sacrifice
@@ -518,10 +520,10 @@
         sacrificingPlayer = currentPlayer;
         const primaryDiscs = collectedDiscs[sacrificingPlayer].filter(d => d.type === 'primary');
         if (primaryDiscs.length === 0) {
-            // No primary discs to sacrifice: plain relinquish
+            // No primary discs to sacrifice: forced relinquish
             const sName = sacrificingPlayer === 1 ? 'Black' : 'White';
             relinquished[sacrificingPlayer] = true;
-            saveSnapshot(`${sName} relinquishes (no discs to sacrifice)`);
+            saveSnapshot(`${sName} forced relinquish (no discs to sacrifice)`);
             if (relinquished[1] && relinquished[2]) {
                 gameState = 'END';
             } else {
@@ -539,9 +541,11 @@
 
     function relinquishTurn() {
         if (gameState !== 'PLAY') return;
+        if (relinquishCount[currentPlayer] >= RELINQUISH_LIMIT) return;
         const rName = currentPlayer === 1 ? 'Black' : 'White';
+        relinquishCount[currentPlayer]++;
         relinquished[currentPlayer] = true;
-        saveSnapshot(`${rName} relinquishes turn`);
+        saveSnapshot(`${rName} relinquishes turn (${RELINQUISH_LIMIT - relinquishCount[currentPlayer]} left)`);
         if (relinquished[1] && relinquished[2]) {
             gameState = 'END';
         } else {
@@ -673,9 +677,38 @@
         const sacBtn = document.getElementById('sacrifice-btn');
         const relBtn = document.getElementById('relinquish-btn');
         const stuckHint = document.getElementById('stuck-hint');
+        const canRelinquish = relinquishCount[currentPlayer] < RELINQUISH_LIMIT;
         if (sacBtn) sacBtn.style.display = stuck ? 'block' : 'none';
-        if (relBtn) relBtn.style.display = inPlay ? 'block' : 'none';
-        if (stuckHint) stuckHint.style.display = stuck ? 'block' : 'none';
+        if (relBtn) {
+            relBtn.style.display = (inPlay && canRelinquish) ? 'block' : 'none';
+            const remaining = RELINQUISH_LIMIT - relinquishCount[currentPlayer];
+            relBtn.innerText = `Relinquish Turn (${remaining}/${RELINQUISH_LIMIT})`;
+        }
+        if (stuckHint) {
+            if (stuck && !canRelinquish) {
+                stuckHint.innerText = 'No valid move! No relinquishes left — you must sacrifice a disc!';
+            } else if (stuck) {
+                stuckHint.innerText = 'No valid move! Sacrifice a disc (opponent picks) or relinquish your turn.';
+            }
+            stuckHint.style.display = stuck ? 'block' : 'none';
+        }
+        // Force sacrifice when stuck, no relinquishes left, and no primary discs
+        if (stuck && !canRelinquish) {
+            const primaryDiscs = collectedDiscs[currentPlayer].filter(d => d.type === 'primary');
+            if (primaryDiscs.length === 0) {
+                // Cannot sacrifice either — game ends
+                const fName = currentPlayer === 1 ? 'Black' : 'White';
+                relinquished[currentPlayer] = true;
+                saveSnapshot(`${fName} forced end (no relinquishes, no discs to sacrifice)`);
+                if (relinquished[1] && relinquished[2]) {
+                    gameState = 'END';
+                    updateUI(); render();
+                } else {
+                    currentPlayer = currentPlayer === 1 ? 2 : 1;
+                    updateUI(); render();
+                }
+            }
+        }
     }
 
     function renderScoreTable(sc, flags) {
