@@ -58,6 +58,14 @@
         #winner-box button { margin-top: 20px; padding: 12px 30px; font-size: 1em; cursor: pointer; border: none; border-radius: 8px; background: #3498db; color: white; font-weight: bold; }
 
         #bag-count { font-size: 0.8em; color: #7f8c8d; text-align: center; margin-top: 6px; }
+
+        #history-controls { display: none; background: #f5f5f5; border-radius: 8px; padding: 10px; margin-top: 10px; text-align: center; border: 2px solid #bbb; }
+        #history-controls .history-nav { display: flex; gap: 6px; justify-content: center; align-items: center; margin-top: 6px; }
+        #history-controls .history-nav button { padding: 6px 14px; cursor: pointer; border: 1px solid #999; border-radius: 4px; background: #fff; font-weight: bold; font-size: 1em; }
+        #history-controls .history-nav button:hover { background: #e0e0e0; }
+        #history-controls .history-nav button:disabled { opacity: 0.4; cursor: default; }
+        #history-label { font-weight: bold; color: #2c3e50; margin: 0; font-size: 0.9em; }
+        #history-desc { font-size: 0.8em; color: #555; margin: 4px 0 0; }
     </style>
 </head>
 <body>
@@ -111,6 +119,17 @@
                 <thead><tr><th>Color</th><th>&#9632;</th><th>&#9633;</th><th></th></tr></thead>
                 <tbody id="score-body"></tbody>
             </table>
+            <div id="history-controls">
+                <p id="history-label">Move History</p>
+                <div class="history-nav">
+                    <button onclick="stepHistory(-999)" title="First">&#x23EE;</button>
+                    <button onclick="stepHistory(-1)" title="Previous">&#x25C0;</button>
+                    <span id="history-pos">0 / 0</span>
+                    <button onclick="stepHistory(1)" title="Next">&#x25B6;</button>
+                    <button onclick="stepHistory(999)" title="Last">&#x23ED;</button>
+                </div>
+                <p id="history-desc"></p>
+            </div>
             <button class="btn btn-reset" onclick="window.location.reload()">Reset Game</button>
         </div>
     </div>
@@ -174,6 +193,62 @@
     let sacrificeRange = 0;
     let sacrificingPlayer = 0;
     let isFirstMove = true;
+
+    // Move history for replay
+    let moveHistory = [];
+    let historyIndex = -1;
+    let isReviewing = false;
+
+    const COLOR_HEX = { red: '#e74c3c', blue: '#3498db', yellow: '#d4ac0d', green: '#27ae60', orange: '#e67e22', purple: '#9b59b6' };
+
+    function saveSnapshot(desc) {
+        moveHistory.push({
+            cells: cells.map(c => c ? {...c} : null),
+            collectors: { 1: collectors[1], 2: collectors[2] },
+            scores: { 1: {...scores[1]}, 2: {...scores[2]} },
+            playerFlags: { 1: {...playerFlags[1]}, 2: {...playerFlags[2]} },
+            currentPlayer: currentPlayer,
+            bagLen: bag.length,
+            desc: desc
+        });
+    }
+
+    function stepHistory(delta) {
+        if (moveHistory.length === 0) return;
+        const maxIdx = moveHistory.length - 1;
+        if (!isReviewing) {
+            // Enter review mode at last move
+            historyIndex = maxIdx;
+            isReviewing = true;
+        }
+        historyIndex = Math.max(0, Math.min(maxIdx, historyIndex + delta));
+        renderSnapshot(moveHistory[historyIndex]);
+        updateHistoryControls();
+    }
+
+    function renderSnapshot(snap) {
+        // Render board from snapshot
+        for (let i = 0; i < 144; i++) {
+            const el = document.getElementById(`cell-${i}`);
+            el.innerHTML = '';
+            el.className = 'cell';
+            if (snap.cells[i]) {
+                const d = document.createElement('div');
+                if (snap.cells[i].type === 'collector') d.className = `collector ${snap.cells[i].player === 1 ? 'black' : 'white'}`;
+                else { d.className = 'disc'; d.style.backgroundColor = snap.cells[i].color; d.innerText = snap.cells[i].num; }
+                el.appendChild(d);
+            }
+        }
+        // Update scoring table from snapshot
+        renderScoreTable(snap.scores, snap.playerFlags);
+    }
+
+    function updateHistoryControls() {
+        const pos = document.getElementById('history-pos');
+        const desc = document.getElementById('history-desc');
+        pos.innerText = `${historyIndex + 1} / ${moveHistory.length}`;
+        desc.innerText = moveHistory[historyIndex].desc || '';
+    }
 
     const CURATED_POSITIONS = [null,
         {b:[2,7],w:[9,7],d:[[0,0,'blue',1],[3,0,'blue',4],[10,0,'green',''],[11,0,'purple',''],[4,2,'red',5],[5,2,'blue',4],[2,3,'purple',''],[4,3,'red',6],[6,3,'yellow',4],[9,3,'green',''],[1,4,'red',5],[4,6,'blue',6],[7,6,'blue',3],[11,5,'red',3],[0,7,'red',3],[10,6,'red',3],[2,8,'green',''],[6,8,'red',4],[7,8,'yellow',2],[2,9,'yellow',3],[11,9,'purple',''],[8,10,'yellow',4],[5,11,'blue',5],[1,9,'orange','']]},
@@ -242,6 +317,7 @@
         document.getElementById('game-actions').style.display = 'block';
         gameState = 'PLAY';
         isFirstMove = true;
+        saveSnapshot('Game start — ' + (player === 1 ? 'Black' : 'White') + ' goes first');
         updateUI(); render();
     }
 
@@ -288,14 +364,18 @@
             const opponentLOS = isFirstMove ? getLOS(collectors[currentPlayer === 1 ? 2 : 1]) : [];
             if (!cells[i] && draftLOS.includes(i) && !opponentLOS.includes(i)) {
                 isFirstMove = false;
+                const draftColor = draftChosen.color;
+                const draftNum = draftChosen.num;
                 cells[i] = draftChosen;
                 draftChosen = null;
                 document.getElementById('draft-panel').style.display = 'none';
                 gameState = 'PLAY';
+                const dPName = currentPlayer === 1 ? 'Black' : 'White';
                 if (!pendingExtraTurn) {
                     currentPlayer = currentPlayer === 1 ? 2 : 1;
                 }
                 pendingExtraTurn = false;
+                saveSnapshot(`${dPName} places ${draftColor} ${draftNum || ''} on board`);
                 updateUI(); render();
             }
         } else if (gameState === 'SACRIFICE_MOVE') {
@@ -365,6 +445,7 @@
     }
 
     function processCollection(disc, newIdx) {
+        const pName = currentPlayer === 1 ? 'Black' : 'White';
         const colorKey = disc.color + '6';
         const counted = !playerFlags[currentPlayer][colorKey];
 
@@ -385,6 +466,7 @@
         cells[newIdx] = { type: 'collector', player: currentPlayer };
         selectedIdx = null;
         relinquished[1] = relinquished[2] = false;
+        saveSnapshot(`${pName} collects ${disc.color} ${disc.num || ''}${disc.num === 6 ? ' (worthless!)' : ''}${disc.num === 1 ? ' (extra turn!)' : ''}`);
 
         // Check if all discs collected and bag empty
         const remaining = cells.filter(c => c && c.type !== 'collector').length;
@@ -437,7 +519,9 @@
         const primaryDiscs = collectedDiscs[sacrificingPlayer].filter(d => d.type === 'primary');
         if (primaryDiscs.length === 0) {
             // No primary discs to sacrifice: plain relinquish
+            const sName = sacrificingPlayer === 1 ? 'Black' : 'White';
             relinquished[sacrificingPlayer] = true;
+            saveSnapshot(`${sName} relinquishes (no discs to sacrifice)`);
             if (relinquished[1] && relinquished[2]) {
                 gameState = 'END';
             } else {
@@ -455,7 +539,9 @@
 
     function relinquishTurn() {
         if (gameState !== 'PLAY') return;
+        const rName = currentPlayer === 1 ? 'Black' : 'White';
         relinquished[currentPlayer] = true;
+        saveSnapshot(`${rName} relinquishes turn`);
         if (relinquished[1] && relinquished[2]) {
             gameState = 'END';
         } else {
@@ -505,12 +591,15 @@
         // Switch back to the stuck player for the move phase
         currentPlayer = sacrificingPlayer;
         gameState = 'SACRIFICE_MOVE';
+        const sacName = sacrificingPlayer === 1 ? 'Black' : 'White';
+        saveSnapshot(`${sacName} sacrifices ${disc.color} ${disc.num}`);
         updateUI(); render();
     }
 
     function handleSacrificeMove(i) {
         const reachable = getReachableCells(collectors[currentPlayer], sacrificeRange);
         if (reachable.includes(i)) {
+            const smName = currentPlayer === 1 ? 'Black' : 'White';
             cells[collectors[currentPlayer]] = null;
             collectors[currentPlayer] = i;
             cells[i] = { type: 'collector', player: currentPlayer };
@@ -518,6 +607,7 @@
             gameState = 'PLAY';
             relinquished[1] = relinquished[2] = false;
             currentPlayer = currentPlayer === 1 ? 2 : 1;
+            saveSnapshot(`${smName} moves collector after sacrifice`);
             updateUI(); render();
         }
     }
@@ -546,6 +636,11 @@
             case 'END':
                 status.innerText = "GAME OVER";
                 showWinner();
+                if (moveHistory.length > 0) {
+                    document.getElementById('history-controls').style.display = 'block';
+                    historyIndex = moveHistory.length - 1;
+                    updateHistoryControls();
+                }
                 break;
             case 'PLAY':
                 status.innerText = `Turn: ${pLabel}`; break;
@@ -566,25 +661,7 @@
                 status.innerText = 'Choose a starting position above.'; break;
         }
 
-        const body = document.getElementById('score-body');
-        body.innerHTML = '';
-        let winsP1 = 0, winsP2 = 0, ties = 0;
-        colors.forEach(c => {
-            const s1 = scores[1][c] || 0;
-            const s2 = scores[2][c] || 0;
-            const p1W = playerFlags[1][c+'6'];
-            const p2W = playerFlags[2][c+'6'];
-            const s1Text = p1W ? `<span class="worthless-box">${s1}</span>` : s1;
-            const s2Text = p2W ? `<span class="worthless-box">${s2}</span>` : s2;
-            const p1Class = p1W ? 'worthless' : '';
-            const p2Class = p2W ? 'worthless' : '';
-            // Leader indicator
-            let leaderClass = 'tied';
-            if (s1 > s2) { leaderClass = 'black'; winsP1++; }
-            else if (s2 > s1) { leaderClass = 'white'; winsP2++; }
-            else { ties++; }
-            body.innerHTML += `<tr><td>${c.toUpperCase()}</td><td class="${p1Class}">${s1Text}</td><td class="${p2Class}">${s2Text}</td><td><span class="leader-dot ${leaderClass}"></span></td></tr>`;
-        });
+        renderScoreTable(scores, playerFlags);
 
         // Bag count
         const bagEl = document.getElementById('bag-count');
@@ -599,6 +676,26 @@
         if (sacBtn) sacBtn.style.display = stuck ? 'block' : 'none';
         if (relBtn) relBtn.style.display = inPlay ? 'block' : 'none';
         if (stuckHint) stuckHint.style.display = stuck ? 'block' : 'none';
+    }
+
+    function renderScoreTable(sc, flags) {
+        const body = document.getElementById('score-body');
+        body.innerHTML = '';
+        colors.forEach(c => {
+            const s1 = sc[1][c] || 0;
+            const s2 = sc[2][c] || 0;
+            const hex = COLOR_HEX[c];
+            const p1W = flags[1][c+'6'];
+            const p2W = flags[2][c+'6'];
+            const s1Text = p1W ? `<span class="worthless-box" style="border-color:${hex}; background:${hex}22;">${s1}</span>` : s1;
+            const s2Text = p2W ? `<span class="worthless-box" style="border-color:${hex}; background:${hex}22;">${s2}</span>` : s2;
+            const p1Class = p1W ? 'worthless' : '';
+            const p2Class = p2W ? 'worthless' : '';
+            let leaderClass = 'tied';
+            if (s1 > s2) leaderClass = 'black';
+            else if (s2 > s1) leaderClass = 'white';
+            body.innerHTML += `<tr><td style="color:${hex}; font-weight:bold;">${c.toUpperCase()}</td><td class="${p1Class}">${s1Text}</td><td class="${p2Class}">${s2Text}</td><td><span class="leader-dot ${leaderClass}"></span></td></tr>`;
+        });
     }
 
     function showWinner() {
