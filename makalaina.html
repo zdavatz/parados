@@ -100,6 +100,7 @@
             <div id="status" style="font-weight: bold; margin-bottom: 10px; color: #2c3e50;">SETUP: Player 1, place both collectors.</div>
             <button class="btn btn-rules" onclick="toggleRules(true)">View Rules</button>
             <button id="los-toggle" class="btn" style="background:#7f8c8d;color:white;" onclick="toggleLOS()">Show Line of Sight</button>
+            <button id="csv-export-btn" class="btn" style="background:#27ae60;color:white;display:none;" onclick="downloadCSV()">Export CSV</button>
             <hr>
             <div id="game-actions" style="display:none;">
                 <button id="sacrifice-btn" class="btn btn-action" onclick="sacrificeTurn()">Sacrifice & Move</button>
@@ -129,6 +130,7 @@
                     <button onclick="stepHistory(999)" title="Last">&#x23ED;</button>
                 </div>
                 <p id="history-desc"></p>
+                <button class="btn" style="margin-top:8px; background:#27ae60; color:white;" onclick="downloadCSV()">Export CSV</button>
             </div>
             <button class="btn btn-reset" onclick="window.location.reload()">Reset Game</button>
         </div>
@@ -169,6 +171,7 @@
             <h2 id="winner-title"></h2>
             <div id="winner-scores"></div>
             <button onclick="window.location.reload()">New Game</button>
+            <button onclick="downloadCSV()" style="margin-top:10px; padding:12px 30px; font-size:1em; cursor:pointer; border:none; border-radius:8px; background:#27ae60; color:white; font-weight:bold;">Export CSV</button>
         </div>
     </div>
 
@@ -317,6 +320,7 @@
         currentPlayer = player;
         document.getElementById('starter-panel').style.display = 'none';
         document.getElementById('game-actions').style.display = 'block';
+        document.getElementById('csv-export-btn').style.display = '';
         gameState = 'PLAY';
         isFirstMove = true;
         saveSnapshot('Game start — ' + (player === 1 ? 'Black' : 'White') + ' goes first');
@@ -768,6 +772,56 @@
         }
         scoresDiv.innerHTML = `<div class="score-final">${detail}</div>`;
         document.getElementById('winner-overlay').style.display = 'flex';
+    }
+
+    function downloadCSV() {
+        if (moveHistory.length === 0) {
+            alert('No move data to export.');
+            return;
+        }
+
+        const rows = [];
+        rows.push('Move,Player,Description,Bag_Remaining,' +
+            colors.map(c => `Black_${c}`).join(',') + ',' +
+            colors.map(c => `White_${c}`).join(',') + ',' +
+            colors.map(c => `Flag_Black_${c}`).join(',') + ',' +
+            colors.map(c => `Flag_White_${c}`).join(',') + ',' +
+            'Black_X,Black_Y,White_X,White_Y,Discs_On_Board');
+
+        moveHistory.forEach((snap, idx) => {
+            const desc = (snap.desc || '').replace(/"/g, '""');
+            const discsOnBoard = snap.cells.filter(c => c && c.type !== 'collector').length;
+            const bx = snap.collectors[1] != null ? (snap.collectors[1] % 12) : '';
+            const by = snap.collectors[1] != null ? Math.floor(snap.collectors[1] / 12) : '';
+            const wx = snap.collectors[2] != null ? (snap.collectors[2] % 12) : '';
+            const wy = snap.collectors[2] != null ? Math.floor(snap.collectors[2] / 12) : '';
+            const row = [
+                idx + 1,
+                snap.currentPlayer === 1 ? 'Black' : 'White',
+                `"${desc}"`,
+                snap.bagLen,
+                ...colors.map(c => snap.scores[1][c] || 0),
+                ...colors.map(c => snap.scores[2][c] || 0),
+                ...colors.map(c => snap.playerFlags[1][c] ? 1 : 0),
+                ...colors.map(c => snap.playerFlags[2][c] ? 1 : 0),
+                bx, by, wx, wy,
+                discsOnBoard
+            ];
+            rows.push(row.join(','));
+        });
+
+        const csvContent = rows.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        const now = new Date();
+        const ts = now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        link.download = `makalaina_${ts}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
     }
 
     function render() {

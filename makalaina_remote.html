@@ -637,6 +637,7 @@
             <div class="panel" style="display:flex; flex-direction:column; gap:8px;">
                 <button class="action-btn" onclick="toggleRules(true)">📖 View Rules</button>
                 <button class="action-btn" id="los-toggle" onclick="toggleLOS()" style="opacity:0.6;">Show Line of Sight</button>
+                <button class="action-btn" id="csv-export-btn" onclick="downloadCSV()" style="display:none; background:#27ae60; color:white;">Export CSV</button>
                 <button class="action-btn" id="sacrifice-btn" onclick="doSacrifice()" style="display:none;">⚡ Sacrifice & Move</button>
                 <button class="action-btn" id="relinquish-btn" onclick="doRelinquish()" style="display:none;">Relinquish Turn (3/3)</button>
                 <p id="stuck-hint" style="display:none; font-size: 0.75em; color: #7f8c8d; text-align: center;">No valid move! Sacrifice a disc (opponent picks) or relinquish your turn.</p>
@@ -658,6 +659,7 @@
                         <button onclick="stepHistory(999)" title="Last">&#x23ED;</button>
                     </div>
                     <p id="history-desc"></p>
+                    <button class="action-btn" style="margin-top:8px; background:#27ae60; color:white;" onclick="downloadCSV()">Export CSV</button>
                 </div>
                 <button class="action-btn danger" onclick="window.location.reload()">✕ Leave Game</button>
             </div>
@@ -1011,6 +1013,7 @@ function loadCuratedPosition(posId) {
 
     gameState = 'PLAY';
     currentPlayer = 1;
+    document.getElementById('csv-export-btn').style.display = '';
     saveSnapshot('Game start — Player 1 goes first');
     if (myRole === 'host') setTimeout(() => syncState(), 100);
     updateUI(); render();
@@ -1509,6 +1512,56 @@ function updateUI() {
             updateUI(); render();
         }
     }
+}
+
+function downloadCSV() {
+    if (moveHistory.length === 0) {
+        alert('No move data to export.');
+        return;
+    }
+
+    const rows = [];
+    rows.push('Move,Player,Description,Bag_Remaining,' +
+        allColors.map(c => `Black_${c}`).join(',') + ',' +
+        allColors.map(c => `White_${c}`).join(',') + ',' +
+        allColors.map(c => `Flag_Black_${c}`).join(',') + ',' +
+        allColors.map(c => `Flag_White_${c}`).join(',') + ',' +
+        'Black_X,Black_Y,White_X,White_Y,Discs_On_Board');
+
+    moveHistory.forEach((snap, idx) => {
+        const desc = (snap.desc || '').replace(/"/g, '""');
+        const discsOnBoard = snap.cells.filter(c => c && c.type !== 'collector').length;
+        const bx = snap.collectors[1] != null ? (snap.collectors[1] % 12) : '';
+        const by = snap.collectors[1] != null ? Math.floor(snap.collectors[1] / 12) : '';
+        const wx = snap.collectors[2] != null ? (snap.collectors[2] % 12) : '';
+        const wy = snap.collectors[2] != null ? Math.floor(snap.collectors[2] / 12) : '';
+        const row = [
+            idx + 1,
+            snap.currentPlayer === 1 ? 'Black' : 'White',
+            `"${desc}"`,
+            snap.bagLen,
+            ...allColors.map(c => snap.scores[1][c] || 0),
+            ...allColors.map(c => snap.scores[2][c] || 0),
+            ...allColors.map(c => snap.playerFlags[1][c] ? 1 : 0),
+            ...allColors.map(c => snap.playerFlags[2][c] ? 1 : 0),
+            bx, by, wx, wy,
+            discsOnBoard
+        ];
+        rows.push(row.join(','));
+    });
+
+    const csvContent = rows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const now = new Date();
+    const ts = now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    link.download = `makalaina_${ts}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
 }
 
 function render() {
