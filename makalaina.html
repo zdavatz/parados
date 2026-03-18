@@ -811,13 +811,26 @@
         });
 
         const csvContent = rows.join('\n');
+
+        // POST to server
+        fetch('cgi-bin/save_csv.py', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({game: 'makalaina', csv: csvContent})
+        }).then(r => r.json()).then(d => {
+            if (d.ok) console.log('CSV saved on server: ' + d.filename);
+            else console.warn('Server CSV save failed: ' + (d.error || 'unknown'));
+        }).catch(e => console.warn('Server CSV save failed: ' + e));
+
+        // Local download
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
         const now = new Date();
-        const ts = now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
-        link.download = `makalaina_${ts}.csv`;
+        const pad = n => String(n).padStart(2, '0');
+        const fname = `makalaina_${pad(now.getHours())}${pad(now.getMinutes())}_${pad(now.getDate())}.${pad(now.getMonth()+1)}.${now.getFullYear()}.csv`;
+        link.download = fname;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);

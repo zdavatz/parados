@@ -1817,11 +1817,25 @@ function downloadCSV() {
     for (const r of sessionLog) {
         csv += `${r.gameId},${r.round},${r.player},${r.action},"${r.detail.replace(/"/g, '""')}",${r.timestamp}\n`;
     }
+
+    // Save to server
+    fetch('cgi-bin/save_csv.py', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({game: 'rainbow_blackjack_remote', csv: csv})
+    }).then(r => r.json()).then(d => {
+        if (d.ok) console.log('CSV saved on server: ' + d.filename);
+        else console.warn('Server CSV save failed: ' + (d.error || 'unknown'));
+    }).catch(e => console.warn('Server CSV save failed: ' + e));
+
+    // Local download
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `rainbow_blackjack_remote_${currentGameId}.csv`;
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    a.download = `rainbow_blackjack_remote_${pad(now.getHours())}${pad(now.getMinutes())}_${pad(now.getDate())}.${pad(now.getMonth()+1)}.${now.getFullYear()}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

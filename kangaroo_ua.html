@@ -492,21 +492,31 @@
             return;
         }
 
-        let csvContent = "data:text/csv;charset=utf-8,";
-        csvContent += "ID_Гри,Режим,Номер_Ходу,Дія,Від_X,Від_Y,До_X,До_Y,Деталі,Час\n";
-
+        let csv = "ID_Гри,Режим,Номер_Ходу,Дія,Від_X,Від_Y,До_X,До_Y,Деталі,Час\n";
         sessionLog.forEach(row => {
-            let rowStr = `${row.gameId},${row.mode},${row.turn},${row.action},${row.fromX},${row.fromY},${row.toX},${row.toY},"${row.details}",${row.timestamp}`;
-            csvContent += rowStr + "\n";
+            csv += `${row.gameId},${row.mode},${row.turn},${row.action},${row.fromX},${row.fromY},${row.toX},${row.toY},"${row.details}",${row.timestamp}\n`;
         });
 
-        const encodedUri = encodeURI(csvContent);
+        fetch('cgi-bin/save_csv.py', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({game: 'kangaroo_ua', csv: csv})
+        }).then(r => r.json()).then(d => {
+            if (d.ok) console.log('CSV saved on server: ' + d.filename);
+            else console.warn('Server CSV save failed: ' + (d.error || 'unknown'));
+        }).catch(e => console.warn('Server CSV save failed: ' + e));
+
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "duk_zhurnal_gry.csv");
+        link.href = url;
+        const now = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        link.download = `kangaroo_ua_${pad(now.getHours())}${pad(now.getMinutes())}_${pad(now.getDate())}.${pad(now.getMonth()+1)}.${now.getFullYear()}.csv`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        URL.revokeObjectURL(url);
     }
 
     function getActiveStartHint(lvl) {

@@ -33,9 +33,11 @@ There is no build step, no package manager, and no test framework. To run a game
 - `renderBoard()` for DOM updates, `initGame()` for setup
 - `historyStack` array with `undoMove()` for undo support
 - `localStorage` for persisting user preferences (e.g., rules acceptance)
-- CSV export via `downloadCSV()` for gameplay analytics logging
+- CSV export via `downloadCSV()` for gameplay analytics logging — POSTs to `cgi-bin/save_csv.py` (saves to `csv/` directory as `gamename_HHMM_dd.mm.yyyy.csv`) and also triggers a local browser download
 - Modal-based rules display with localStorage-gated auto-show
 - Rules button placed at the very top of the page (above the title) for immediate visibility
+
+**Server-side CGI:** `cgi-bin/save_csv.py` is a Python 3 CGI script that accepts POST requests with `{game, csv}` JSON and saves CSV files to the `csv/` directory. Filename format: `gamename_HHMM_dd.mm.yyyy.csv` with collision-avoidance suffixes. The `csv/` directory is owned by `www-data`. Apache CGI is enabled via `cgid` module with `ExecCGI` on the `cgi-bin/` directory.
 
 ## Git Workflow
 
