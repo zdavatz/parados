@@ -153,6 +153,28 @@
         .btn-rules { background-color: #0277bd; color: white; }
         .btn-csv { background-color: #2e7d32; color: white; opacity: 0.9; }
 
+        /* REPLAY CONTROLS */
+        .replay-bar {
+            display: none; width: 100%; background: rgba(0,0,0,0.3); padding: 12px;
+            border-radius: 8px; margin-bottom: 10px; box-sizing: border-box;
+            flex-direction: column; align-items: center; gap: 8px;
+        }
+        .replay-bar.active { display: flex; }
+        .replay-buttons { display: flex; gap: 6px; align-items: center; }
+        .replay-btn {
+            background: #546e7a; color: white; border: none; border-radius: 6px;
+            padding: 8px 14px; cursor: pointer; font-size: 1.1em; font-weight: bold;
+            min-width: 40px; text-align: center;
+        }
+        .replay-btn:hover { background: #78909c; }
+        .replay-btn.playing { background: #ff9800; color: #263238; }
+        .replay-info { font-size: 0.95em; color: #cfd8dc; }
+        .replay-speed { display: flex; align-items: center; gap: 8px; font-size: 0.85em; color: #b0bec5; }
+        .replay-speed input[type=range] { width: 120px; }
+        .replay-highlight-from { outline: 3px solid #ffeb3b !important; box-shadow: inset 0 0 12px rgba(255,235,59,0.5) !important; z-index: 5; }
+        .replay-highlight-to { outline: 3px dashed #64ffda !important; box-shadow: inset 0 0 12px rgba(100,255,218,0.5) !important; z-index: 5; }
+        .replay-file-input { background: #455a64; color: white; border: 1px solid #78909c; padding: 6px; border-radius: 4px; font-size: 0.85em; max-width: 200px; }
+
         /* MODAL */
         .modal {
             display: none; position: fixed; z-index: 2000; left: 0; top: 0;
@@ -192,6 +214,7 @@
             <div class="mode-tab active" onclick="switchMode('LEVEL')">🏆 Level</div>
             <div class="mode-tab" onclick="switchMode('RANDOM')">🎲 Take a Chance</div>
             <div class="mode-tab" onclick="switchMode('EDITOR')">🛠️ Eigene</div>
+            <div class="mode-tab" onclick="switchMode('REPLAY')">📽️ Replay</div>
         </div>
 
         <div class="top-bar">
@@ -232,6 +255,13 @@
                 </div>
                 <button class="btn-start" onclick="startCustomGame()">Spielen!</button>
             </div>
+
+            <div id="panel-REPLAY" class="config-panel">
+                <input type="file" id="replayFileInput" accept=".csv" class="replay-file-input" onchange="loadReplayCSV(event)">
+                <select id="replayGameSelect" onchange="selectReplayGame()" disabled>
+                    <option value="">-- Spiel wählen --</option>
+                </select>
+            </div>
         </div>
 
         <div class="status-panel">
@@ -246,6 +276,24 @@
         </div>
 
         <div id="board" class="board"></div>
+
+        <div id="replayBar" class="replay-bar">
+            <div class="replay-buttons">
+                <button class="replay-btn" onclick="replayFirst()" title="Anfang">|&#9664;</button>
+                <button class="replay-btn" onclick="replayPrev()" title="Zurück">&#9664;</button>
+                <button class="replay-btn" id="btnReplayPlay" onclick="toggleReplayPlay()" title="Abspielen">&#9654;</button>
+                <button class="replay-btn" onclick="replayNext()" title="Weiter">&#9654;</button>
+                <button class="replay-btn" onclick="replayLast()" title="Ende">|&#9654;</button>
+            </div>
+            <div class="replay-info">
+                <span id="replayMoveInfo">Zug 0 / 0</span>
+            </div>
+            <div class="replay-speed">
+                <span>Schnell</span>
+                <input type="range" id="replaySpeed" min="200" max="3000" value="1000" step="100">
+                <span>Langsam</span>
+            </div>
+        </div>
 
         <div class="bottom-zone">
             <button class="btn-reset" onclick="confirmReset()">⚠️ Neustart</button>
@@ -550,16 +598,24 @@
         if (gameState === 'PLAYING' && board.some(row => row.includes('G') || row.includes('B'))) {
             if (!confirm("Spiel abbrechen und Modus wechseln?")) return;
         }
-        
+
+        stopReplayPlay();
         currentMode = mode;
         document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.config-panel').forEach(p => p.classList.remove('active'));
-        
-        event.target.classList.add('active');
+
+        const tabs = document.querySelectorAll('.mode-tab');
+        const modeOrder = ['LEVEL','RANDOM','EDITOR','REPLAY'];
+        tabs.forEach((t, i) => { if (modeOrder[i] === mode) t.classList.add('active'); });
         document.getElementById('panel-' + mode).classList.add('active');
+
+        document.getElementById('replayBar').classList.toggle('active', mode === 'REPLAY');
+        document.querySelector('.main-controls').style.display = mode === 'REPLAY' ? 'none' : 'flex';
 
         if (mode === 'EDITOR') {
             initEditorBoard();
+        } else if (mode === 'REPLAY') {
+            initReplayView();
         } else {
             initGame();
         }
@@ -844,10 +900,13 @@
             }
         } else if (gameState === 'WON') {
              turnInfoEl.innerText = "Kangys Familie ist glücklich!";
+        } else if (gameState === 'REPLAY') {
+            btnMoveDish.disabled = true;
         }
     }
 
     function handleCellClick(x, y) {
+        if (gameState === 'REPLAY') return;
         if (gameState === 'EDITOR') {
             if (currentBrush === 'K') {
                 for(let r=0; r<ROWS; r++) for(let c=0; c<COLS; c++) if(board[r][c]==='K') board[r][c] = null;
@@ -1085,6 +1144,317 @@
     
     if (!localStorage.getItem('kangy_master_v2')) openRules();
     
+    // --- REPLAY SYSTEM ---
+    let replayGames = {};       // gameId -> array of parsed moves
+    let replaySnapshots = [];   // array of {board, kangyPos, action, details, fromX, fromY, toX, toY}
+    let replayIndex = 0;
+    let replayTimer = null;
+    let replayActive = false;
+
+    function initReplayView() {
+        gameState = 'REPLAY';
+        board = Array(10).fill(null).map(() => Array(10).fill(null));
+        COLS = 10; ROWS = 10;
+        kangyPos = {x: -1, y: -1};
+        replaySnapshots = [];
+        replayIndex = 0;
+        updateGridCSS();
+        renderBoard();
+        statusEl.style.color = "#ffcc80";
+        statusEl.innerText = "CSV-Datei laden um Replay zu starten";
+        turnInfoEl.innerText = "";
+        countEl.innerText = "";
+        updateReplayInfo();
+    }
+
+    function loadReplayCSV(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            parseReplayCSV(e.target.result);
+        };
+        reader.readAsText(file);
+    }
+
+    function parseReplayCSV(text) {
+        replayGames = {};
+        const lines = text.trim().split('\n');
+        for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+            // Parse CSV with quoted fields
+            const parts = [];
+            let current = '', inQuotes = false;
+            for (let c = 0; c < line.length; c++) {
+                if (line[c] === '"') { inQuotes = !inQuotes; }
+                else if (line[c] === ',' && !inQuotes) { parts.push(current); current = ''; }
+                else { current += line[c]; }
+            }
+            parts.push(current);
+
+            const gameId = parts[0];
+            const move = {
+                gameId: gameId,
+                mode: parts[1],
+                turn: parseInt(parts[2]),
+                action: parts[3],
+                fromX: parseInt(parts[4]),
+                fromY: parseInt(parts[5]),
+                toX: parseInt(parts[6]),
+                toY: parseInt(parts[7]),
+                details: parts[8] || '',
+                timestamp: parts[9] || ''
+            };
+            if (!replayGames[gameId]) replayGames[gameId] = [];
+            replayGames[gameId].push(move);
+        }
+
+        // Populate game selector
+        const select = document.getElementById('replayGameSelect');
+        select.innerHTML = '<option value="">-- Spiel wählen --</option>';
+        for (const gid of Object.keys(replayGames)) {
+            const moves = replayGames[gid];
+            const won = moves.some(m => m.action === 'WIN');
+            const opt = document.createElement('option');
+            opt.value = gid;
+            opt.innerText = `Spiel ${gid} (${moves.length} Züge${won ? ', gewonnen' : ''})`;
+            select.appendChild(opt);
+        }
+        select.disabled = false;
+        statusEl.innerText = `${Object.keys(replayGames).length} Spiel(e) geladen`;
+        turnInfoEl.innerText = "Wähle ein Spiel aus der Liste";
+    }
+
+    function selectReplayGame() {
+        const gid = document.getElementById('replayGameSelect').value;
+        if (!gid || !replayGames[gid]) return;
+        stopReplayPlay();
+        buildReplaySnapshots(replayGames[gid]);
+        replayIndex = 0;
+        showReplaySnapshot();
+    }
+
+    function buildReplaySnapshots(moves) {
+        // Determine board size from max coordinates
+        let maxCoord = 0;
+        moves.forEach(m => {
+            if (m.fromX >= 0) maxCoord = Math.max(maxCoord, m.fromX, m.fromY);
+            if (m.toX >= 0) maxCoord = Math.max(maxCoord, m.toX, m.toY);
+        });
+        const size = maxCoord < 8 ? 8 : maxCoord < 10 ? 10 : 12;
+        COLS = size; ROWS = size;
+        updateGridCSS();
+
+        // Reconstruct initial board + generate snapshots
+        // Two-pass: first reconstruct initial state, then generate snapshots
+        let sim = Array(size).fill(null).map(() => Array(size).fill(null));
+        let initialDishes = []; // {x, y, color}
+
+        // Pass 1: Forward simulation to discover all initial dish positions
+        for (const move of moves) {
+            if (move.action === 'MOVE_DISH') {
+                const color = move.details.includes('G') ? 'G' : 'B';
+                if (!sim[move.fromY][move.fromX]) {
+                    sim[move.fromY][move.fromX] = color;
+                    initialDishes.push({x: move.fromX, y: move.fromY, color: color});
+                }
+                sim[move.toY][move.toX] = sim[move.fromY][move.fromX];
+                sim[move.fromY][move.fromX] = null;
+            } else if (move.action === 'JUMP') {
+                const colors = move.details.replace('Skipped: ', '').split('+');
+                const dx = move.toX - move.fromX, dy = move.toY - move.fromY;
+                const stepX = dx === 0 ? 0 : dx / Math.abs(dx);
+                const stepY = dy === 0 ? 0 : dy / Math.abs(dy);
+
+                const pathCells = [];
+                let cx = move.fromX + stepX, cy = move.fromY + stepY;
+                while (cx !== move.toX || cy !== move.toY) {
+                    pathCells.push({x: cx, y: cy});
+                    cx += stepX; cy += stepY;
+                }
+
+                const numDishes = colors.length;
+                const empBefore = Math.floor((pathCells.length - numDishes) / 2);
+
+                for (let i = 0; i < numDishes; i++) {
+                    const cell = pathCells[empBefore + i];
+                    if (!sim[cell.y][cell.x]) {
+                        sim[cell.y][cell.x] = colors[i];
+                        initialDishes.push({x: cell.x, y: cell.y, color: colors[i]});
+                    }
+                    sim[cell.y][cell.x] = null;
+                }
+                sim[move.fromY] && (sim[move.fromY][move.fromX] = null);
+                sim[move.toY][move.toX] = 'K';
+            }
+        }
+
+        // Pass 2: Build snapshots by replaying from initial state
+        sim = Array(size).fill(null).map(() => Array(size).fill(null));
+        for (const d of initialDishes) {
+            sim[d.y][d.x] = d.color;
+        }
+
+        replaySnapshots = [];
+        let kPos = {x: -1, y: -1};
+
+        // Snapshot 0: initial board (before any moves)
+        replaySnapshots.push({
+            board: JSON.parse(JSON.stringify(sim)),
+            kangyPos: {...kPos},
+            action: 'INITIAL',
+            details: 'Startaufstellung',
+            fromX: -1, fromY: -1, toX: -1, toY: -1
+        });
+
+        for (const move of moves) {
+            if (move.action === 'START') {
+                sim[move.toY][move.toX] = 'K';
+                kPos = {x: move.toX, y: move.toY};
+            } else if (move.action === 'MOVE_DISH') {
+                sim[move.toY][move.toX] = sim[move.fromY][move.fromX];
+                sim[move.fromY][move.fromX] = null;
+            } else if (move.action === 'JUMP') {
+                const colors = move.details.replace('Skipped: ', '').split('+');
+                const dx = move.toX - move.fromX, dy = move.toY - move.fromY;
+                const stepX = dx === 0 ? 0 : dx / Math.abs(dx);
+                const stepY = dy === 0 ? 0 : dy / Math.abs(dy);
+                const pathCells = [];
+                let cx = move.fromX + stepX, cy = move.fromY + stepY;
+                while (cx !== move.toX || cy !== move.toY) {
+                    pathCells.push({x: cx, y: cy});
+                    cx += stepX; cy += stepY;
+                }
+                const numDishes = colors.length;
+                const empBefore = Math.floor((pathCells.length - numDishes) / 2);
+                for (let i = 0; i < numDishes; i++) {
+                    const cell = pathCells[empBefore + i];
+                    sim[cell.y][cell.x] = null;
+                }
+                sim[move.fromY][move.fromX] = null;
+                sim[move.toY][move.toX] = 'K';
+                kPos = {x: move.toX, y: move.toY};
+            } else if (move.action === 'WIN') {
+                // No board change
+            }
+
+            replaySnapshots.push({
+                board: JSON.parse(JSON.stringify(sim)),
+                kangyPos: {...kPos},
+                action: move.action,
+                details: move.details,
+                fromX: move.fromX, fromY: move.fromY,
+                toX: move.toX, toY: move.toY
+            });
+        }
+    }
+
+    function showReplaySnapshot() {
+        if (replaySnapshots.length === 0) return;
+        const snap = replaySnapshots[replayIndex];
+        board = JSON.parse(JSON.stringify(snap.board));
+        kangyPos = {...snap.kangyPos};
+        gameState = 'REPLAY';
+
+        // Render board
+        boardEl.innerHTML = '';
+        let gLeft = 0, bLeft = 0;
+        for (let y = 0; y < ROWS; y++) {
+            for (let x = 0; x < COLS; x++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.dataset.x = x;
+                cell.dataset.y = y;
+                const content = board[y][x];
+                if (content === 'G') {
+                    const d = document.createElement('div'); d.className = 'dish green'; cell.appendChild(d);
+                    gLeft++;
+                } else if (content === 'B') {
+                    const d = document.createElement('div'); d.className = 'dish blue'; cell.appendChild(d);
+                    bLeft++;
+                } else if (content === 'K') {
+                    const k = document.createElement('div'); k.className = 'kangy'; k.innerText = '🦘'; cell.appendChild(k);
+                }
+
+                // Highlights for current action
+                if (snap.action === 'MOVE_DISH') {
+                    if (x === snap.fromX && y === snap.fromY) cell.classList.add('replay-highlight-from');
+                    if (x === snap.toX && y === snap.toY) cell.classList.add('replay-highlight-to');
+                } else if (snap.action === 'JUMP') {
+                    if (x === snap.fromX && y === snap.fromY) cell.classList.add('replay-highlight-from');
+                    if (x === snap.toX && y === snap.toY) cell.classList.add('replay-highlight-to');
+                } else if (snap.action === 'START') {
+                    if (x === snap.toX && y === snap.toY) cell.classList.add('replay-highlight-to');
+                }
+
+                boardEl.appendChild(cell);
+            }
+        }
+
+        countEl.innerText = `Grün: ${gLeft} | Blau: ${bLeft}`;
+        updateReplayInfo();
+
+        // Status text
+        const actionLabels = {
+            'INITIAL': 'Startaufstellung',
+            'START': `Kangy platziert bei (${snap.toX}, ${snap.toY})`,
+            'MOVE_DISH': `Schale verschoben: (${snap.fromX},${snap.fromY}) → (${snap.toX},${snap.toY})`,
+            'JUMP': `Sprung: (${snap.fromX},${snap.fromY}) → (${snap.toX},${snap.toY}) — ${snap.details}`,
+            'WIN': '🏆 Gewonnen!'
+        };
+        statusEl.style.color = snap.action === 'WIN' ? '#66bb6a' : '#ffcc80';
+        statusEl.innerText = actionLabels[snap.action] || snap.action;
+        turnInfoEl.innerText = snap.details || '';
+    }
+
+    function updateReplayInfo() {
+        const total = Math.max(0, replaySnapshots.length - 1);
+        document.getElementById('replayMoveInfo').innerText = `Zug ${replayIndex} / ${total}`;
+    }
+
+    function replayFirst() { stopReplayPlay(); replayIndex = 0; showReplaySnapshot(); }
+    function replayLast() { stopReplayPlay(); replayIndex = replaySnapshots.length - 1; showReplaySnapshot(); }
+    function replayPrev() { if (replayIndex > 0) { replayIndex--; showReplaySnapshot(); } }
+    function replayNext() {
+        if (replayIndex < replaySnapshots.length - 1) { replayIndex++; showReplaySnapshot(); }
+        else { stopReplayPlay(); }
+    }
+
+    function toggleReplayPlay() {
+        if (replayTimer) { stopReplayPlay(); }
+        else { startReplayPlay(); }
+    }
+
+    function startReplayPlay() {
+        if (replaySnapshots.length === 0) return;
+        if (replayIndex >= replaySnapshots.length - 1) replayIndex = 0;
+        replayActive = true;
+        document.getElementById('btnReplayPlay').classList.add('playing');
+        document.getElementById('btnReplayPlay').innerHTML = '⏸';
+        const speed = parseInt(document.getElementById('replaySpeed').value);
+        replayTimer = setInterval(() => {
+            if (replayIndex < replaySnapshots.length - 1) {
+                replayIndex++;
+                showReplaySnapshot();
+            } else {
+                stopReplayPlay();
+            }
+        }, speed);
+    }
+
+    function stopReplayPlay() {
+        if (replayTimer) { clearInterval(replayTimer); replayTimer = null; }
+        replayActive = false;
+        document.getElementById('btnReplayPlay').classList.remove('playing');
+        document.getElementById('btnReplayPlay').innerHTML = '&#9654;';
+    }
+
+    // Update speed while playing
+    document.getElementById('replaySpeed').addEventListener('input', function() {
+        if (replayTimer) { stopReplayPlay(); startReplayPlay(); }
+    });
+
     // START
     populateLevelSelect();
     initGame();
