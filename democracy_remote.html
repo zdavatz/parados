@@ -2,46 +2,49 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Democracy in Space</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        :root { --bg: #0b0e14; --p1: #e94560; --p2: #00d2ff; --accent: #f0a500; --panel: #16213e; --warn: #ffcc00; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; display: flex; flex-direction: column; align-items: center; margin: 0; padding: 10px; }
-        #network-panel { background: var(--panel); padding: 12px; border-radius: 8px; margin-bottom: 10px; border: 1px solid var(--accent); width: 960px; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; }
-        .short-id { font-family: monospace; font-size: 1.1rem; color: var(--accent); background: #000; padding: 4px 8px; border-radius: 4px; }
-        .main-container { display: flex; gap: 15px; align-items: flex-start; }
+        :root { --bg: #0b0e14; --p1: #e94560; --p2: #00d2ff; --accent: #f0a500; --panel: #16213e; --warn: #ffcc00; --cs: 45px; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; display: flex; flex-direction: column; align-items: center; margin: 0; padding: 10px; min-height: 100vh; }
+        #network-panel { background: var(--panel); padding: 10px; border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--accent); width: 100%; max-width: 960px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 0.85rem; }
+        .short-id { font-family: monospace; font-size: 1rem; color: var(--accent); background: #000; padding: 4px 8px; border-radius: 4px; }
+        .main-container { display: flex; gap: 15px; align-items: flex-start; flex-wrap: wrap; justify-content: center; width: 100%; }
         #board-container { position: relative; }
-        #board { display: grid; grid-template-columns: repeat(12, 45px); grid-template-rows: repeat(12, 45px); background: #222; gap: 1px; border: 3px solid #444; position: relative; z-index: 2; }
+        #board { display: grid; grid-template-columns: repeat(12, var(--cs)); grid-template-rows: repeat(12, var(--cs)); background: #222; gap: 1px; border: 3px solid #444; position: relative; z-index: 2; }
         #laser-canvas { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 3; }
-        .cell { width: 45px; height: 45px; background: #1a1f29; display: flex; justify-content: center; align-items: center; position: relative; cursor: pointer; }
+        .cell { width: var(--cs); height: var(--cs); background: #1a1f29; display: flex; justify-content: center; align-items: center; position: relative; cursor: pointer; }
         .cell.rim { background: #12172a; }
         .valid-target { background: rgba(0, 255, 100, 0.3) !important; box-shadow: inset 0 0 10px rgba(0, 255, 100, 0.4); border: 1px solid #0f0; }
-        .satellite { width: 40px; height: 40px; position: relative; display: flex; justify-content: center; align-items: center; z-index: 10; }
-        .wings { position: absolute; width: 36px; height: 12px; background: rgba(255,255,255,0.15); border-radius: 2px; }
+        .satellite { width: calc(var(--cs) - 5px); height: calc(var(--cs) - 5px); position: relative; display: flex; justify-content: center; align-items: center; z-index: 10; }
+        .wings { position: absolute; width: calc(var(--cs) - 9px); height: calc(var(--cs) * 0.27); background: rgba(255,255,255,0.15); border-radius: 2px; }
         .connected .wings { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
-        .core { width: 22px; height: 22px; border-radius: 4px; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 0.85rem; z-index: 11; }
+        .core { width: calc(var(--cs) * 0.49); height: calc(var(--cs) * 0.49); border-radius: 4px; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: calc(var(--cs) * 0.19); z-index: 11; }
         .p1 .core { background: var(--p1); color: white; }
         .p2 .core { background: var(--p2); color: black; }
         .connected .core { border-radius: 50%; border: 2px solid gold; }
         .selected .core { outline: 2px solid white; transform: scale(1.15); }
-        #sidebar { width: 370px; background: var(--panel); padding: 12px; border-radius: 8px; height: 560px; display: flex; flex-direction: column; border: 1px solid #444; box-sizing: border-box; }
+        #sidebar { width: 100%; max-width: 370px; background: var(--panel); padding: 12px; border-radius: 8px; min-height: 200px; display: flex; flex-direction: column; border: 1px solid #444; }
         #score-panel { background: #0b0e14; padding: 8px; border-radius: 4px; margin-bottom: 8px; border: 1px solid #333; font-size: 0.85rem; }
         #colony-list { font-size: 0.8rem; max-height: 120px; overflow-y: auto; margin-top: 5px; }
         .colony-entry { padding: 3px 0; border-bottom: 1px solid #222; display: flex; justify-content: space-between; }
         .colony-owner-1 { color: var(--p1); }
         .colony-owner-2 { color: var(--p2); }
-        #chat-messages { flex-grow: 1; overflow-y: auto; font-size: 0.82rem; background: #0b0e14; padding: 8px; border-radius: 4px; margin-bottom: 8px; border: 1px solid #333; }
-        #chat-input { width: 100%; background: #222; border: 1px solid #555; color: white; padding: 8px; border-radius: 4px; box-sizing: border-box; }
-        .btn { padding: 8px 12px; cursor: pointer; background: #333; border: 1px solid #555; color: white; border-radius: 4px; }
+        #chat-messages { flex-grow: 1; overflow-y: auto; font-size: 0.82rem; background: #0b0e14; padding: 8px; border-radius: 4px; margin-bottom: 8px; border: 1px solid #333; min-height: 80px; }
+        #chat-input { width: 100%; background: #222; border: 1px solid #555; color: white; padding: 8px; border-radius: 4px; }
+        .btn { padding: 8px 12px; cursor: pointer; background: #333; border: 1px solid #555; color: white; border-radius: 4px; font-size: 0.85rem; }
         #rules-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 1000; justify-content: center; align-items: center; overflow-y: auto; }
-        .modal-content { background: #1a1f29; border: 2px solid var(--accent); padding: 25px; border-radius: 12px; max-width: 650px; max-height: 90vh; overflow-y: auto; line-height: 1.5; font-size: 0.9rem; margin: 20px; }
+        .modal-content { background: #1a1f29; border: 2px solid var(--accent); padding: 20px; border-radius: 12px; max-width: 650px; width: 92%; max-height: 90vh; overflow-y: auto; line-height: 1.5; font-size: 0.9rem; margin: 20px; }
         .modal-content h3 { color: var(--accent); margin: 12px 0 6px; }
-        #rule-toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #1a1f29; border: 2px solid #e94560; color: white; padding: 12px 20px; border-radius: 8px; font-size: 0.9rem; z-index: 999; display: none; max-width: 500px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        #rule-toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #1a1f29; border: 2px solid #e94560; color: white; padding: 12px 20px; border-radius: 8px; font-size: 0.9rem; z-index: 999; display: none; max-width: 90%; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
         #rule-toast .rule-icon { font-size: 1.1rem; margin-right: 6px; }
         #rule-toast .rule-ref { color: var(--accent); font-size: 0.75rem; display: block; margin-top: 4px; }
         .displace-target { background: rgba(255, 165, 0, 0.35) !important; box-shadow: inset 0 0 10px rgba(255, 165, 0, 0.5); border: 1px solid orange; }
         .displace-source { box-shadow: 0 0 12px orange !important; }
-        #displace-banner { display: none; background: linear-gradient(90deg, #1a1f29, #2a1500, #1a1f29); border: 1px solid orange; color: orange; padding: 6px 16px; border-radius: 6px; font-size: 0.85rem; text-align: center; margin-bottom: 6px; width: 940px; box-sizing: border-box; }
+        #displace-banner { display: none; background: linear-gradient(90deg, #1a1f29, #2a1500, #1a1f29); border: 1px solid orange; color: orange; padding: 6px 16px; border-radius: 6px; font-size: 0.85rem; text-align: center; margin-bottom: 6px; width: 100%; max-width: 960px; }
+        #turn-bar { margin-bottom: 8px; width: 100%; max-width: 960px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px; font-size: 0.9rem; }
         .star { position: absolute; width: 2px; height: 2px; border-radius: 50%; }
         .star::before, .star::after { content: ''; position: absolute; border-radius: 50%; }
         .star::before { width: 4px; height: 1px; top: 0.5px; left: -1px; }
@@ -62,6 +65,12 @@
         .star-tr { animation-delay: 2.6s; }
         .star-bl { animation-delay: 5.2s; }
         .star-br { animation-delay: 7.8s; }
+
+        @media (max-width: 600px) {
+            .main-container { flex-direction: column; align-items: center; }
+            #sidebar { max-width: 100%; }
+            #network-panel { font-size: 0.8rem; }
+        }
     </style>
 </head>
 <body>
@@ -101,7 +110,7 @@
     <div id="connection-status" style="font-size:0.8rem; color: #888;">LOKAL</div>
 </div>
 
-<div style="margin-bottom: 8px; width:960px; display:flex; justify-content: space-between; align-items:center;">
+<div id="turn-bar">
     <span id="turn-txt" style="font-weight:bold;">Spieler Rot am Zug</span>
     <span id="conn-count">Verbunden: 0 / 23</span>
     <span id="grace-txt" style="color: var(--warn); font-size:0.85rem;"></span>
@@ -828,7 +837,7 @@
         canvas.height = boardEl.offsetHeight;
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const cs = 46;
+        const cs = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cs')) + 1;
 
         // Draw bridge connections between cells
         for (const [r1, c1, r2, c2] of pairs) {
@@ -1114,6 +1123,17 @@
         const m = document.getElementById('rules-modal');
         m.style.display = (m.style.display==='flex')?'none':'flex';
     }
+
+    function calcCellSize() {
+        const vw = window.innerWidth - 28;
+        const vh = window.innerHeight - 120;
+        const maxByWidth = Math.floor((vw - 11) / 12);
+        const maxByHeight = Math.floor((vh - 11) / 12);
+        const cs = Math.max(22, Math.min(maxByWidth, maxByHeight, 45));
+        document.documentElement.style.setProperty('--cs', cs + 'px');
+    }
+    calcCellSize();
+    window.addEventListener('resize', () => { calcCellSize(); render(); });
 
     setupGame();
     render();
