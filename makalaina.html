@@ -2,33 +2,37 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>MAKA LAINA - The Strategic Endspurt</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        #game-container { display: flex; gap: 30px; }
+        :root { --cs: 42px; --disc-size: calc(var(--cs) - 8px); --collector-size: calc(var(--cs) - 6px); }
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 10px; margin: 0; min-height: 100vh; }
+        h1 { font-size: 1.5em; margin: 5px 0; }
+        #game-container { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; width: 100%; }
         #board {
-            display: grid; grid-template-columns: repeat(12, 42px);
-            grid-template-rows: repeat(12, 42px); gap: 1px;
-            background: #2c3e50; border: 5px solid #2c3e50; border-radius: 4px;
+            display: grid; grid-template-columns: repeat(12, var(--cs));
+            grid-template-rows: repeat(12, var(--cs)); gap: 1px;
+            background: #2c3e50; border: 4px solid #2c3e50; border-radius: 4px;
         }
-        .cell { width: 42px; height: 42px; background: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; }
+        .cell { width: var(--cs); height: var(--cs); background: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; }
         .cell.los { background: #fffde7; }
         .cell.selected { background: #e3f2fd; border: 2px solid #2196f3; box-sizing: border-box; }
         .cell.reachable { background: #e8f5e9; box-shadow: inset 0 0 6px rgba(76, 175, 80, 0.4); }
         .cell.placeable { background: #b2ff59; box-shadow: inset 0 0 8px rgba(76, 175, 80, 0.6); cursor: crosshair; }
         @keyframes pulse-placeable { 0%,100% { box-shadow: inset 0 0 6px rgba(76,175,80,0.4); } 50% { box-shadow: inset 0 0 12px rgba(76,175,80,0.8); } }
         .cell.placeable { animation: pulse-placeable 1.2s ease-in-out infinite; }
-        .disc { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; text-shadow: 1px 1px 2px #000; z-index: 2; border: 1px solid rgba(0,0,0,0.1); }
-        .collector { width: 36px; height: 36px; border: 3px solid gold; border-radius: 6px; z-index: 3; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        .disc { width: var(--disc-size); height: var(--disc-size); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: calc(var(--cs) * 0.35); text-shadow: 1px 1px 2px #000; z-index: 2; border: 1px solid rgba(0,0,0,0.1); }
+        .collector { width: var(--collector-size); height: var(--collector-size); border: 3px solid gold; border-radius: 6px; z-index: 3; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
         .black { background: #000; }
         .white { background: #fff; border-color: #000; }
 
-        #ui { width: 380px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .btn { width: 100%; padding: 10px; margin-top: 8px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; transition: 0.2s; }
+        #ui { width: 100%; max-width: 380px; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .btn { width: 100%; padding: 10px; margin-top: 8px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; transition: 0.2s; font-size: 0.9em; }
         .btn-rules { background: #3498db; color: white; }
         .btn-action { background: #9b59b6; color: white; }
         .btn-cancel { background: #95a5a6; color: white; }
-        .btn-reset { background: #e74c3c; color: white; margin-top: 20px; }
+        .btn-reset { background: #e74c3c; color: white; margin-top: 15px; }
 
         #draft-panel { display: none; background: #f0f7ff; border-radius: 8px; padding: 12px; margin-top: 10px; text-align: center; border: 2px solid #90caf9; }
         #draft-choices { display: flex; gap: 12px; justify-content: center; margin: 10px 0; }
@@ -41,9 +45,9 @@
         #sacrifice-choices .disc:hover { transform: scale(1.15); box-shadow: 0 0 8px rgba(155, 89, 182, 0.5); }
 
         #modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 100; justify-content: center; align-items: center; }
-        #modal { background: white; width: 80%; max-width: 600px; padding: 30px; border-radius: 12px; max-height: 80vh; overflow-y: auto; }
-        .scoring-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.85em; }
-        .scoring-table td, .scoring-table th { border: 1px solid #eee; padding: 6px; text-align: center; }
+        #modal { background: white; width: 92%; max-width: 600px; padding: 25px; border-radius: 12px; max-height: 85vh; overflow-y: auto; }
+        .scoring-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85em; }
+        .scoring-table td, .scoring-table th { border: 1px solid #eee; padding: 5px; text-align: center; }
         .worthless { color: #888; }
         .worthless-box { display: inline-block; border: 2px solid #e74c3c; background: #fde; padding: 1px 5px; border-radius: 4px; font-weight: bold; }
         .leader-dot { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: middle; }
@@ -52,10 +56,10 @@
         .leader-dot.tied { background: #bbb; }
 
         #winner-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 200; justify-content: center; align-items: center; }
-        #winner-box { background: white; padding: 40px; border-radius: 16px; text-align: center; max-width: 400px; }
+        #winner-box { background: white; padding: 30px; border-radius: 16px; text-align: center; max-width: 90%; width: 400px; }
         #winner-box h2 { font-size: 1.8em; margin-bottom: 15px; }
-        #winner-box .score-final { font-size: 1.3em; margin: 10px 0; }
-        #winner-box button { margin-top: 20px; padding: 12px 30px; font-size: 1em; cursor: pointer; border: none; border-radius: 8px; background: #3498db; color: white; font-weight: bold; }
+        #winner-box .score-final { font-size: 1.2em; margin: 10px 0; }
+        #winner-box button { margin-top: 15px; padding: 12px 30px; font-size: 1em; cursor: pointer; border: none; border-radius: 8px; background: #3498db; color: white; font-weight: bold; }
 
         #bag-count { font-size: 0.8em; color: #7f8c8d; text-align: center; margin-top: 6px; }
 
@@ -66,6 +70,11 @@
         #history-controls .history-nav button:disabled { opacity: 0.4; cursor: default; }
         #history-label { font-weight: bold; color: #2c3e50; margin: 0; font-size: 0.9em; }
         #history-desc { font-size: 0.8em; color: #555; margin: 4px 0 0; }
+
+        @media (max-width: 600px) {
+            #game-container { flex-direction: column; align-items: center; }
+            #ui { max-width: 100%; }
+        }
     </style>
 </head>
 <body>
@@ -865,6 +874,17 @@
             }
         }
     }
+
+    function calcCellSize() {
+        const vw = window.innerWidth - 28; // 10px padding each side + 8px border
+        const vh = window.innerHeight - 80;
+        const maxByWidth = Math.floor((vw - 11) / 12); // 11 gaps of 1px
+        const maxByHeight = Math.floor((vh - 11) / 12);
+        const cs = Math.max(18, Math.min(maxByWidth, maxByHeight, 42));
+        document.documentElement.style.setProperty('--cs', cs + 'px');
+    }
+    calcCellSize();
+    window.addEventListener('resize', calcCellSize);
 
     createBoard(); render();
 </script>
