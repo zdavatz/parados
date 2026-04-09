@@ -1543,49 +1543,75 @@ function getBodyPartSVG(partType, color) {
     // All heads use consistent face outline at x=20/x=80 so any top fits any bottom.
     if (partType === 'upper_head') {
         const designs = {
-            // Green: wild spiky hair, pointy ear tops
+            // Green: wild spiky hair in ALL directions, pointy elf ear tops
             green: `<svg viewBox="0 0 100 50">
-                <path d="M20 48 Q20 16 50 13 Q80 16 80 48" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
-                <line x1="27" y1="18" x2="18" y2="2" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
-                <line x1="34" y1="15" x2="28" y2="0" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
-                <line x1="42" y1="13" x2="38" y2="0" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
-                <line x1="50" y1="12" x2="50" y2="0" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
-                <line x1="58" y1="13" x2="62" y2="0" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
-                <line x1="66" y1="15" x2="72" y2="0" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
-                <line x1="73" y1="18" x2="82" y2="2" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
-                <path d="M20 38 L10 32 L12 42 L20 48" fill="none" stroke="${c}" stroke-width="2.5" stroke-linejoin="round"/>
-                <path d="M80 38 L90 32 L88 42 L80 48" fill="none" stroke="${c}" stroke-width="2.5" stroke-linejoin="round"/>
+                <path d="M20 48 Q20 16 50 12 Q80 16 80 48" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+                <line x1="25" y1="18" x2="10" y2="0" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+                <line x1="30" y1="15" x2="20" y2="0" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+                <line x1="36" y1="13" x2="32" y2="0" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+                <line x1="43" y1="12" x2="42" y2="0" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+                <line x1="50" y1="11" x2="50" y2="0" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+                <line x1="57" y1="12" x2="58" y2="0" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+                <line x1="64" y1="13" x2="68" y2="0" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+                <line x1="70" y1="15" x2="80" y2="0" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+                <line x1="75" y1="18" x2="90" y2="0" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+                <line x1="22" y1="24" x2="5" y2="12" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="78" y1="24" x2="95" y2="12" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="22" y1="30" x2="8" y2="24" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="78" y1="30" x2="92" y2="24" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+                <path d="M20 38 L8 30 L12 44 L20 48" fill="none" stroke="${c}" stroke-width="2.5" stroke-linejoin="round"/>
+                <path d="M80 38 L92 30 L88 44 L80 48" fill="none" stroke="${c}" stroke-width="2.5" stroke-linejoin="round"/>
             </svg>`,
-            // Orange: curly messy hair, round ear tops
+            // Orange: dense curly hair (many overlapping circles), big round ear tops
             orange: `<svg viewBox="0 0 100 50">
-                <path d="M20 48 Q20 16 50 13 Q80 16 80 48" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
-                <circle cx="28" cy="11" r="8" fill="none" stroke="${c}" stroke-width="2.5"/>
-                <circle cx="44" cy="6" r="7" fill="none" stroke="${c}" stroke-width="2.5"/>
-                <circle cx="60" cy="6" r="7" fill="none" stroke="${c}" stroke-width="2.5"/>
-                <circle cx="74" cy="11" r="8" fill="none" stroke="${c}" stroke-width="2.5"/>
-                <circle cx="50" cy="2" r="5" fill="none" stroke="${c}" stroke-width="2.5"/>
-                <path d="M20 36 Q10 34 8 40 Q8 48 16 48" fill="none" stroke="${c}" stroke-width="2.5"/>
-                <path d="M80 36 Q90 34 92 40 Q92 48 84 48" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <path d="M20 48 Q20 16 50 12 Q80 16 80 48" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+                <circle cx="25" cy="10" r="9" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <circle cx="40" cy="5" r="8" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <circle cx="55" cy="3" r="7" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <circle cx="70" cy="5" r="8" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <circle cx="78" cy="12" r="8" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <circle cx="50" cy="8" r="6" fill="none" stroke="${c}" stroke-width="2"/>
+                <circle cx="33" cy="4" r="6" fill="none" stroke="${c}" stroke-width="2"/>
+                <circle cx="63" cy="2" r="5" fill="none" stroke="${c}" stroke-width="2"/>
+                <circle cx="16" cy="22" r="7" fill="none" stroke="${c}" stroke-width="2"/>
+                <circle cx="84" cy="22" r="7" fill="none" stroke="${c}" stroke-width="2"/>
+                <path d="M20 36 Q8 32 6 40 Q6 48 16 48" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <path d="M80 36 Q92 32 94 40 Q94 48 84 48" fill="none" stroke="${c}" stroke-width="2.5"/>
             </svg>`,
-            // Purple: mohawk, pierced ear tops
+            // Purple: tall dramatic mohawk with shaved sides, multiple ear piercings
             purple: `<svg viewBox="0 0 100 50">
-                <path d="M20 48 Q20 18 50 15 Q80 18 80 48" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
-                <path d="M40 15 L37 3 L42 10 L45 1 L48 9 L50 0 L52 9 L55 1 L58 10 L63 3 L60 15" fill="none" stroke="${c}" stroke-width="3" stroke-linejoin="round"/>
-                <line x1="20" y1="40" x2="8" y2="40" stroke="${c}" stroke-width="2.5"/>
-                <circle cx="6" cy="40" r="3.5" fill="${c}"/>
-                <line x1="80" y1="40" x2="92" y2="40" stroke="${c}" stroke-width="2.5"/>
-                <circle cx="94" cy="40" r="3.5" fill="${c}"/>
+                <path d="M20 48 Q20 20 50 16 Q80 20 80 48" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+                <path d="M38 16 L36 8 L40 12 L42 2 L45 10 L47 0 L50 8 L53 0 L55 10 L58 2 L60 12 L64 8 L62 16" fill="none" stroke="${c}" stroke-width="3" stroke-linejoin="round"/>
+                <line x1="24" y1="24" x2="26" y2="19" stroke="${c}" stroke-width="1.5"/>
+                <line x1="28" y1="22" x2="30" y2="17" stroke="${c}" stroke-width="1.5"/>
+                <line x1="33" y1="19" x2="35" y2="15" stroke="${c}" stroke-width="1.5"/>
+                <line x1="65" y1="19" x2="67" y2="15" stroke="${c}" stroke-width="1.5"/>
+                <line x1="70" y1="22" x2="72" y2="17" stroke="${c}" stroke-width="1.5"/>
+                <line x1="74" y1="24" x2="76" y2="19" stroke="${c}" stroke-width="1.5"/>
+                <line x1="20" y1="38" x2="6" y2="38" stroke="${c}" stroke-width="2.5"/>
+                <circle cx="4" cy="38" r="3" fill="${c}"/>
+                <circle cx="10" cy="43" r="2" fill="${c}"/>
+                <line x1="80" y1="38" x2="94" y2="38" stroke="${c}" stroke-width="2.5"/>
+                <circle cx="96" cy="38" r="3" fill="${c}"/>
+                <circle cx="90" cy="43" r="2" fill="${c}"/>
             </svg>`,
-            // Blue/turquoise: long wavy hair, bolt ear tops (Frankenstein!)
+            // Blue/turquoise: flat-top Frankenstein hair with lightning scar, big bolt ear tops
             blue: `<svg viewBox="0 0 100 50">
-                <path d="M20 48 Q20 15 50 11 Q80 15 80 48" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
-                <path d="M20 22 Q14 28 16 38 Q13 44 8 48" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
-                <path d="M80 22 Q86 28 84 38 Q87 44 92 48" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
-                <path d="M34 13 Q28 6 38 8" fill="none" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
-                <path d="M46 11 Q50 4 56 11" fill="none" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
-                <path d="M66 13 Q72 6 62 8" fill="none" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
-                <rect x="4" y="38" width="16" height="7" rx="2" fill="none" stroke="${c}" stroke-width="2.5"/>
-                <rect x="80" y="38" width="16" height="7" rx="2" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <path d="M20 48 L20 18 Q20 10 30 8 L70 8 Q80 10 80 18 L80 48" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+                <line x1="28" y1="8" x2="28" y2="2" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="36" y1="8" x2="36" y2="0" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="44" y1="8" x2="44" y2="1" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="50" y1="8" x2="50" y2="0" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="56" y1="8" x2="56" y2="1" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="64" y1="8" x2="64" y2="0" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="72" y1="8" x2="72" y2="2" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+                <path d="M45 14 L48 20 L42 22 L48 30" fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round"/>
+                <rect x="2" y="36" width="18" height="8" rx="3" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <line x1="7" y1="36" x2="7" y2="44" stroke="${c}" stroke-width="1.5"/>
+                <line x1="11" y1="36" x2="11" y2="44" stroke="${c}" stroke-width="1.5"/>
+                <rect x="80" y="36" width="18" height="8" rx="3" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <line x1="89" y1="36" x2="89" y2="44" stroke="${c}" stroke-width="1.5"/>
+                <line x1="93" y1="36" x2="93" y2="44" stroke="${c}" stroke-width="1.5"/>
             </svg>`
         };
         return designs[color] || designs.green;
@@ -1593,70 +1619,90 @@ function getBodyPartSVG(partType, color) {
 
     if (partType === 'lower_head') {
         const designs = {
-            // Green: surprised face, pointy ear bottoms
+            // Green: shocked face — BIG round eyes, raised brows, wide O-mouth, jaw outline
             green: `<svg viewBox="0 0 100 50">
-                <path d="M20 0 Q20 8 22 14" fill="none" stroke="${c}" stroke-width="${sw}"/>
-                <path d="M80 0 Q80 8 78 14" fill="none" stroke="${c}" stroke-width="${sw}"/>
-                <path d="M20 0 L12 2 L10 8 L20 6" fill="none" stroke="${c}" stroke-width="2.5" stroke-linejoin="round"/>
-                <path d="M80 0 L88 2 L90 8 L80 6" fill="none" stroke="${c}" stroke-width="2.5" stroke-linejoin="round"/>
-                <circle cx="36" cy="13" r="6" fill="none" stroke="${c}" stroke-width="2.5"/>
-                <circle cx="36" cy="14" r="2.5" fill="${c}"/>
-                <circle cx="64" cy="13" r="6" fill="none" stroke="${c}" stroke-width="2.5"/>
-                <circle cx="64" cy="14" r="2.5" fill="${c}"/>
-                <path d="M48 22 Q50 26 52 22" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round"/>
-                <ellipse cx="50" cy="35" rx="8" ry="5" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <path d="M20 0 Q18 12 22 20 Q26 30 30 38 Q38 44 40 47" fill="none" stroke="${c}" stroke-width="${sw}"/>
+                <path d="M80 0 Q82 12 78 20 Q74 30 70 38 Q62 44 60 47" fill="none" stroke="${c}" stroke-width="${sw}"/>
+                <path d="M20 0 L10 2 L8 10 L20 7" fill="none" stroke="${c}" stroke-width="2.5" stroke-linejoin="round"/>
+                <path d="M80 0 L90 2 L92 10 L80 7" fill="none" stroke="${c}" stroke-width="2.5" stroke-linejoin="round"/>
+                <path d="M27 4 Q36 0 45 4" fill="none" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+                <path d="M55 4 Q64 0 73 4" fill="none" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+                <circle cx="36" cy="13" r="8" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <circle cx="36" cy="14" r="3.5" fill="${c}"/>
+                <circle cx="64" cy="13" r="8" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <circle cx="64" cy="14" r="3.5" fill="${c}"/>
+                <path d="M48 24 Q50 27 52 24" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round"/>
+                <ellipse cx="50" cy="35" rx="10" ry="7" fill="none" stroke="${c}" stroke-width="2.5"/>
                 <line x1="40" y1="47" x2="60" y2="47" stroke="${c}" stroke-width="${sw}"/>
             </svg>`,
-            // Orange: happy grinning face, round ear bottoms
+            // Orange: big happy grin — raised brows, squinty eyes, round nose, HUGE grin with teeth, dimples
             orange: `<svg viewBox="0 0 100 50">
-                <path d="M20 0 Q18 10 24 18" fill="none" stroke="${c}" stroke-width="${sw}"/>
-                <path d="M80 0 Q82 10 76 18" fill="none" stroke="${c}" stroke-width="${sw}"/>
-                <path d="M16 0 Q8 0 8 4 Q10 8 20 4" fill="none" stroke="${c}" stroke-width="2.5"/>
-                <path d="M84 0 Q92 0 92 4 Q90 8 80 4" fill="none" stroke="${c}" stroke-width="2.5"/>
-                <path d="M28 12 Q36 7 44 12" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
-                <path d="M56 12 Q64 7 72 12" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
-                <circle cx="50" cy="22" r="3" fill="${c}"/>
-                <path d="M32 33 Q40 42 50 42 Q60 42 68 33" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
-                <line x1="32" y1="33" x2="30" y2="30" stroke="${c}" stroke-width="2"/>
-                <line x1="68" y1="33" x2="70" y2="30" stroke="${c}" stroke-width="2"/>
-                <line x1="41" y1="37" x2="41" y2="42" stroke="${c}" stroke-width="1.5"/>
-                <line x1="50" y1="39" x2="50" y2="42" stroke="${c}" stroke-width="1.5"/>
-                <line x1="59" y1="37" x2="59" y2="42" stroke="${c}" stroke-width="1.5"/>
-                <line x1="40" y1="47" x2="60" y2="47" stroke="${c}" stroke-width="${sw}"/>
+                <path d="M20 0 Q18 10 22 18 Q28 30 34 38 Q40 44 42 47" fill="none" stroke="${c}" stroke-width="${sw}"/>
+                <path d="M80 0 Q82 10 78 18 Q72 30 66 38 Q60 44 58 47" fill="none" stroke="${c}" stroke-width="${sw}"/>
+                <path d="M16 0 Q6 0 6 6 Q8 10 20 5" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <path d="M84 0 Q94 0 94 6 Q92 10 80 5" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <path d="M27 5 Q36 2 45 5" fill="none" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+                <path d="M55 5 Q64 2 73 5" fill="none" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+                <path d="M28 12 Q36 7 44 12" fill="none" stroke="${c}" stroke-width="3.5" stroke-linecap="round"/>
+                <path d="M56 12 Q64 7 72 12" fill="none" stroke="${c}" stroke-width="3.5" stroke-linecap="round"/>
+                <circle cx="50" cy="22" r="4" fill="none" stroke="${c}" stroke-width="2"/>
+                <path d="M28 32 Q38 44 50 44 Q62 44 72 32" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+                <line x1="38" y1="35" x2="38" y2="42" stroke="${c}" stroke-width="1.5"/>
+                <line x1="44" y1="37" x2="44" y2="44" stroke="${c}" stroke-width="1.5"/>
+                <line x1="50" y1="38" x2="50" y2="44" stroke="${c}" stroke-width="1.5"/>
+                <line x1="56" y1="37" x2="56" y2="44" stroke="${c}" stroke-width="1.5"/>
+                <line x1="62" y1="35" x2="62" y2="42" stroke="${c}" stroke-width="1.5"/>
+                <path d="M26 30 Q24 34 28 34" fill="none" stroke="${c}" stroke-width="1.5"/>
+                <path d="M74 30 Q76 34 72 34" fill="none" stroke="${c}" stroke-width="1.5"/>
+                <line x1="42" y1="47" x2="58" y2="47" stroke="${c}" stroke-width="${sw}"/>
             </svg>`,
-            // Purple: mischievous (winking, tongue out), pierced ear bottoms
+            // Purple: sly trickster — mismatched brows, one big eye + one winking, smirk with tongue
             purple: `<svg viewBox="0 0 100 50">
-                <path d="M20 0 Q18 10 22 16" fill="none" stroke="${c}" stroke-width="${sw}"/>
-                <path d="M80 0 Q82 10 78 16" fill="none" stroke="${c}" stroke-width="${sw}"/>
-                <line x1="20" y1="2" x2="8" y2="2" stroke="${c}" stroke-width="2.5"/>
-                <circle cx="6" cy="2" r="3.5" fill="${c}"/>
-                <line x1="80" y1="2" x2="92" y2="2" stroke="${c}" stroke-width="2.5"/>
-                <circle cx="94" cy="2" r="3.5" fill="${c}"/>
-                <circle cx="36" cy="13" r="5.5" fill="none" stroke="${c}" stroke-width="2.5"/>
-                <circle cx="36" cy="14" r="2" fill="${c}"/>
-                <path d="M58 14 Q64 9 70 14" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
-                <path d="M47 22 L50 28 L53 22" fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round"/>
-                <path d="M36 35 Q50 39 64 35" fill="none" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
-                <path d="M46 37 Q50 47 54 37" fill="${c}" stroke="${c}" stroke-width="2" stroke-linecap="round"/>
-                <line x1="40" y1="47" x2="60" y2="47" stroke="${c}" stroke-width="${sw}"/>
+                <path d="M20 0 Q18 10 22 18 Q26 28 32 36 Q38 42 42 47" fill="none" stroke="${c}" stroke-width="${sw}"/>
+                <path d="M80 0 Q82 10 78 18 Q74 28 68 36 Q62 42 58 47" fill="none" stroke="${c}" stroke-width="${sw}"/>
+                <line x1="20" y1="2" x2="6" y2="2" stroke="${c}" stroke-width="2.5"/>
+                <circle cx="4" cy="2" r="3" fill="${c}"/>
+                <circle cx="10" cy="7" r="2" fill="${c}"/>
+                <line x1="80" y1="2" x2="94" y2="2" stroke="${c}" stroke-width="2.5"/>
+                <circle cx="96" cy="2" r="3" fill="${c}"/>
+                <circle cx="90" cy="7" r="2" fill="${c}"/>
+                <path d="M27 4 Q36 1 45 6" fill="none" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+                <path d="M55 6 Q64 1 73 4" fill="none" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+                <circle cx="36" cy="14" r="7" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <circle cx="36" cy="15" r="3" fill="${c}"/>
+                <path d="M57 14 Q64 10 71 14" fill="none" stroke="${c}" stroke-width="3.5" stroke-linecap="round"/>
+                <path d="M46 23 L50 29 L54 23" fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round"/>
+                <path d="M34 34 Q44 40 56 38 Q64 36 70 32" fill="none" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+                <path d="M56 38 Q60 48 64 38" fill="${c}" stroke="${c}" stroke-width="2" stroke-linecap="round"/>
+                <line x1="42" y1="47" x2="58" y2="47" stroke="${c}" stroke-width="${sw}"/>
             </svg>`,
-            // Blue/turquoise: angry Frankenstein (furrowed brows, frown, stitches), bolt ear bottoms
+            // Blue/turquoise: angry Frankenstein — heavy brows, beady eyes, broad nose, gritted teeth, stitches
             blue: `<svg viewBox="0 0 100 50">
-                <path d="M20 0 Q20 10 22 16" fill="none" stroke="${c}" stroke-width="${sw}"/>
-                <path d="M80 0 Q80 10 78 16" fill="none" stroke="${c}" stroke-width="${sw}"/>
-                <rect x="4" y="0" width="16" height="7" rx="2" fill="none" stroke="${c}" stroke-width="2.5"/>
-                <rect x="80" y="0" width="16" height="7" rx="2" fill="none" stroke="${c}" stroke-width="2.5"/>
-                <line x1="28" y1="10" x2="42" y2="14" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
-                <line x1="72" y1="10" x2="58" y2="14" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
-                <circle cx="36" cy="19" r="4.5" fill="none" stroke="${c}" stroke-width="2.5"/>
-                <circle cx="64" cy="19" r="4.5" fill="none" stroke="${c}" stroke-width="2.5"/>
-                <path d="M47 27 L50 32 L53 27" fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round"/>
-                <path d="M36 40 Q50 33 64 40" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
-                <line x1="72" y1="24" x2="84" y2="24" stroke="${c}" stroke-width="2"/>
-                <line x1="75" y1="21" x2="75" y2="27" stroke="${c}" stroke-width="1.5"/>
-                <line x1="78" y1="21" x2="78" y2="27" stroke="${c}" stroke-width="1.5"/>
-                <line x1="81" y1="21" x2="81" y2="27" stroke="${c}" stroke-width="1.5"/>
-                <line x1="40" y1="47" x2="60" y2="47" stroke="${c}" stroke-width="${sw}"/>
+                <path d="M20 0 L20 14 Q22 28 30 36 Q38 42 42 47" fill="none" stroke="${c}" stroke-width="${sw}"/>
+                <path d="M80 0 L80 14 Q78 28 70 36 Q62 42 58 47" fill="none" stroke="${c}" stroke-width="${sw}"/>
+                <rect x="2" y="0" width="18" height="8" rx="3" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <line x1="7" y1="0" x2="7" y2="8" stroke="${c}" stroke-width="1.5"/>
+                <line x1="11" y1="0" x2="11" y2="8" stroke="${c}" stroke-width="1.5"/>
+                <rect x="80" y="0" width="18" height="8" rx="3" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <line x1="89" y1="0" x2="89" y2="8" stroke="${c}" stroke-width="1.5"/>
+                <line x1="93" y1="0" x2="93" y2="8" stroke="${c}" stroke-width="1.5"/>
+                <path d="M26 9 L44 15" fill="none" stroke="${c}" stroke-width="4" stroke-linecap="round"/>
+                <path d="M74 9 L56 15" fill="none" stroke="${c}" stroke-width="4" stroke-linecap="round"/>
+                <circle cx="36" cy="19" r="4" fill="${c}"/>
+                <circle cx="64" cy="19" r="4" fill="${c}"/>
+                <path d="M44 25 L46 31 Q50 33 54 31 L56 25" fill="none" stroke="${c}" stroke-width="2"/>
+                <line x1="30" y1="36" x2="70" y2="36" stroke="${c}" stroke-width="2.5"/>
+                <line x1="30" y1="42" x2="70" y2="42" stroke="${c}" stroke-width="2.5"/>
+                <line x1="38" y1="36" x2="38" y2="42" stroke="${c}" stroke-width="1.5"/>
+                <line x1="44" y1="36" x2="44" y2="42" stroke="${c}" stroke-width="1.5"/>
+                <line x1="50" y1="36" x2="50" y2="42" stroke="${c}" stroke-width="1.5"/>
+                <line x1="56" y1="36" x2="56" y2="42" stroke="${c}" stroke-width="1.5"/>
+                <line x1="62" y1="36" x2="62" y2="42" stroke="${c}" stroke-width="1.5"/>
+                <line x1="68" y1="22" x2="78" y2="22" stroke="${c}" stroke-width="2"/>
+                <line x1="70" y1="19" x2="70" y2="25" stroke="${c}" stroke-width="1.5"/>
+                <line x1="73" y1="19" x2="73" y2="25" stroke="${c}" stroke-width="1.5"/>
+                <line x1="76" y1="19" x2="76" y2="25" stroke="${c}" stroke-width="1.5"/>
+                <line x1="42" y1="47" x2="58" y2="47" stroke="${c}" stroke-width="${sw}"/>
             </svg>`
         };
         return designs[color] || designs.green;
