@@ -720,7 +720,10 @@ h1 {
     <div class="victory-box">
         <h2 id="victoryTitle">Player 1 wins!</h2>
         <div id="victoryMsg">Frankie is complete!</div>
-        <button onclick="backToSetup()">New Game</button>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+            <button onclick="closeVictory()">View Frankies</button>
+            <button onclick="backToSetup()">New Game</button>
+        </div>
     </div>
 </div>
 
@@ -1844,9 +1847,13 @@ window.onclick = (e) => {
     if (e.target === rulesModal) closeRules();
 };
 
+function closeVictory() {
+    victoryOverlay.classList.remove('show');
+}
+
 // ─── Reset ───
 function confirmReset() {
-    if (confirm('Start a new game? Current progress will be lost.')) {
+    if (gameState === 'GAME_OVER' || confirm('Start a new game? Current progress will be lost.')) {
         backToSetup();
     }
 }
