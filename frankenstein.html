@@ -388,11 +388,13 @@ h1 {
 }
 
 /* grid placement for body slots */
-.slot-upper_head   { grid-column: 2 / 4; grid-row: 1; }
-.slot-lower_head   { grid-column: 2 / 4; grid-row: 2; }
-/* Head slots: minimal gap so halves connect visually */
-.slot-upper_head.filled, .slot-upper_head.empty-available { border-bottom: none; border-radius: 4px 4px 0 0; }
-.slot-lower_head.filled, .slot-lower_head.empty-available { border-top: none; border-radius: 0 0 4px 4px; }
+.slot-upper_head   { grid-column: 2 / 4; grid-row: 1; margin-bottom: -1px; }
+.slot-lower_head   { grid-column: 2 / 4; grid-row: 2; margin-top: -1px; }
+/* Head slots: no borders, no padding — SVG fills edge to edge */
+.slot-upper_head.filled { border: none; border-radius: 4px 4px 0 0; }
+.slot-lower_head.filled { border: none; border-radius: 0 0 4px 4px; }
+.slot-upper_head.empty-available { border-bottom: none; border-radius: 4px 4px 0 0; }
+.slot-lower_head.empty-available { border-top: none; border-radius: 0 0 4px 4px; }
 .slot-upper_head.empty-locked { border-bottom: none; border-radius: 4px 4px 0 0; }
 .slot-lower_head.empty-locked { border-top: none; border-radius: 0 0 4px 4px; }
 .slot-r_upper_arm  { grid-column: 1; grid-row: 3; }
