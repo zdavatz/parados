@@ -1539,11 +1539,13 @@ function getBodyPartSVG(partType, color) {
     const sw = 4; // stroke width
 
     // ─── Color-specific head designs (each color has unique hair & face) ───
+    // Ears are split between upper/lower halves — mixing colors creates funny ear combos!
+    // All heads use consistent face outline at x=20/x=80 so any top fits any bottom.
     if (partType === 'upper_head') {
         const designs = {
-            // Green: wild spiky hair, pointy ears
+            // Green: wild spiky hair, pointy ear tops
             green: `<svg viewBox="0 0 100 50">
-                <path d="M22 48 Q22 16 50 13 Q78 16 78 48" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+                <path d="M20 48 Q20 16 50 13 Q80 16 80 48" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
                 <line x1="27" y1="18" x2="18" y2="2" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
                 <line x1="34" y1="15" x2="28" y2="0" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
                 <line x1="42" y1="13" x2="38" y2="0" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
@@ -1551,39 +1553,39 @@ function getBodyPartSVG(partType, color) {
                 <line x1="58" y1="13" x2="62" y2="0" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
                 <line x1="66" y1="15" x2="72" y2="0" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
                 <line x1="73" y1="18" x2="82" y2="2" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
-                <path d="M22 30 L13 25 L15 36 L22 33" fill="none" stroke="${c}" stroke-width="2.5" stroke-linejoin="round"/>
-                <path d="M78 30 L87 25 L85 36 L78 33" fill="none" stroke="${c}" stroke-width="2.5" stroke-linejoin="round"/>
+                <path d="M20 38 L10 32 L12 42 L20 48" fill="none" stroke="${c}" stroke-width="2.5" stroke-linejoin="round"/>
+                <path d="M80 38 L90 32 L88 42 L80 48" fill="none" stroke="${c}" stroke-width="2.5" stroke-linejoin="round"/>
             </svg>`,
-            // Orange: curly messy hair, round ears
+            // Orange: curly messy hair, round ear tops
             orange: `<svg viewBox="0 0 100 50">
-                <path d="M22 48 Q22 16 50 13 Q78 16 78 48" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+                <path d="M20 48 Q20 16 50 13 Q80 16 80 48" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
                 <circle cx="28" cy="11" r="8" fill="none" stroke="${c}" stroke-width="2.5"/>
                 <circle cx="44" cy="6" r="7" fill="none" stroke="${c}" stroke-width="2.5"/>
                 <circle cx="60" cy="6" r="7" fill="none" stroke="${c}" stroke-width="2.5"/>
                 <circle cx="74" cy="11" r="8" fill="none" stroke="${c}" stroke-width="2.5"/>
                 <circle cx="50" cy="2" r="5" fill="none" stroke="${c}" stroke-width="2.5"/>
-                <circle cx="14" cy="30" r="7" fill="none" stroke="${c}" stroke-width="2.5"/>
-                <circle cx="86" cy="30" r="7" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <path d="M20 36 Q10 34 8 40 Q8 48 16 48" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <path d="M80 36 Q90 34 92 40 Q92 48 84 48" fill="none" stroke="${c}" stroke-width="2.5"/>
             </svg>`,
-            // Purple: mohawk, ear studs
+            // Purple: mohawk, pierced ear tops
             purple: `<svg viewBox="0 0 100 50">
-                <path d="M24 48 Q24 18 50 15 Q76 18 76 48" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+                <path d="M20 48 Q20 18 50 15 Q80 18 80 48" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
                 <path d="M40 15 L37 3 L42 10 L45 1 L48 9 L50 0 L52 9 L55 1 L58 10 L63 3 L60 15" fill="none" stroke="${c}" stroke-width="3" stroke-linejoin="round"/>
-                <circle cx="18" cy="33" r="3.5" fill="${c}"/>
-                <circle cx="82" cy="33" r="3.5" fill="${c}"/>
-                <line x1="14" y1="33" x2="24" y2="33" stroke="${c}" stroke-width="2"/>
-                <line x1="76" y1="33" x2="86" y2="33" stroke="${c}" stroke-width="2"/>
+                <line x1="20" y1="40" x2="8" y2="40" stroke="${c}" stroke-width="2.5"/>
+                <circle cx="6" cy="40" r="3.5" fill="${c}"/>
+                <line x1="80" y1="40" x2="92" y2="40" stroke="${c}" stroke-width="2.5"/>
+                <circle cx="94" cy="40" r="3.5" fill="${c}"/>
             </svg>`,
-            // Blue/turquoise: long wavy hair, big bolt-ears (Frankenstein!)
+            // Blue/turquoise: long wavy hair, bolt ear tops (Frankenstein!)
             blue: `<svg viewBox="0 0 100 50">
-                <path d="M24 48 Q24 15 50 11 Q76 15 76 48" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
-                <path d="M24 22 Q16 28 18 38 Q15 44 10 48" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
-                <path d="M76 22 Q84 28 82 38 Q85 44 90 48" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+                <path d="M20 48 Q20 15 50 11 Q80 15 80 48" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+                <path d="M20 22 Q14 28 16 38 Q13 44 8 48" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+                <path d="M80 22 Q86 28 84 38 Q87 44 92 48" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
                 <path d="M34 13 Q28 6 38 8" fill="none" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
                 <path d="M46 11 Q50 4 56 11" fill="none" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
                 <path d="M66 13 Q72 6 62 8" fill="none" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
-                <path d="M24 28 L12 23 L10 35 L24 31" fill="none" stroke="${c}" stroke-width="2.5" stroke-linejoin="round"/>
-                <path d="M76 28 L88 23 L90 35 L76 31" fill="none" stroke="${c}" stroke-width="2.5" stroke-linejoin="round"/>
+                <rect x="4" y="38" width="16" height="7" rx="2" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <rect x="80" y="38" width="16" height="7" rx="2" fill="none" stroke="${c}" stroke-width="2.5"/>
             </svg>`
         };
         return designs[color] || designs.green;
@@ -1591,10 +1593,12 @@ function getBodyPartSVG(partType, color) {
 
     if (partType === 'lower_head') {
         const designs = {
-            // Green: surprised face (wide eyes, O-mouth)
+            // Green: surprised face, pointy ear bottoms
             green: `<svg viewBox="0 0 100 50">
-                <path d="M22 0 Q22 8 24 14" fill="none" stroke="${c}" stroke-width="${sw}"/>
-                <path d="M78 0 Q78 8 76 14" fill="none" stroke="${c}" stroke-width="${sw}"/>
+                <path d="M20 0 Q20 8 22 14" fill="none" stroke="${c}" stroke-width="${sw}"/>
+                <path d="M80 0 Q80 8 78 14" fill="none" stroke="${c}" stroke-width="${sw}"/>
+                <path d="M20 0 L12 2 L10 8 L20 6" fill="none" stroke="${c}" stroke-width="2.5" stroke-linejoin="round"/>
+                <path d="M80 0 L88 2 L90 8 L80 6" fill="none" stroke="${c}" stroke-width="2.5" stroke-linejoin="round"/>
                 <circle cx="36" cy="13" r="6" fill="none" stroke="${c}" stroke-width="2.5"/>
                 <circle cx="36" cy="14" r="2.5" fill="${c}"/>
                 <circle cx="64" cy="13" r="6" fill="none" stroke="${c}" stroke-width="2.5"/>
@@ -1603,10 +1607,12 @@ function getBodyPartSVG(partType, color) {
                 <ellipse cx="50" cy="35" rx="8" ry="5" fill="none" stroke="${c}" stroke-width="2.5"/>
                 <line x1="40" y1="47" x2="60" y2="47" stroke="${c}" stroke-width="${sw}"/>
             </svg>`,
-            // Orange: happy grinning face (squinty eyes, big smile with teeth)
+            // Orange: happy grinning face, round ear bottoms
             orange: `<svg viewBox="0 0 100 50">
-                <path d="M22 0 Q20 10 26 18" fill="none" stroke="${c}" stroke-width="${sw}"/>
-                <path d="M78 0 Q80 10 74 18" fill="none" stroke="${c}" stroke-width="${sw}"/>
+                <path d="M20 0 Q18 10 24 18" fill="none" stroke="${c}" stroke-width="${sw}"/>
+                <path d="M80 0 Q82 10 76 18" fill="none" stroke="${c}" stroke-width="${sw}"/>
+                <path d="M16 0 Q8 0 8 4 Q10 8 20 4" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <path d="M84 0 Q92 0 92 4 Q90 8 80 4" fill="none" stroke="${c}" stroke-width="2.5"/>
                 <path d="M28 12 Q36 7 44 12" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
                 <path d="M56 12 Q64 7 72 12" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
                 <circle cx="50" cy="22" r="3" fill="${c}"/>
@@ -1618,10 +1624,14 @@ function getBodyPartSVG(partType, color) {
                 <line x1="59" y1="37" x2="59" y2="42" stroke="${c}" stroke-width="1.5"/>
                 <line x1="40" y1="47" x2="60" y2="47" stroke="${c}" stroke-width="${sw}"/>
             </svg>`,
-            // Purple: mischievous (one eye winking, tongue out)
+            // Purple: mischievous (winking, tongue out), pierced ear bottoms
             purple: `<svg viewBox="0 0 100 50">
-                <path d="M24 0 Q22 10 26 16" fill="none" stroke="${c}" stroke-width="${sw}"/>
-                <path d="M76 0 Q78 10 74 16" fill="none" stroke="${c}" stroke-width="${sw}"/>
+                <path d="M20 0 Q18 10 22 16" fill="none" stroke="${c}" stroke-width="${sw}"/>
+                <path d="M80 0 Q82 10 78 16" fill="none" stroke="${c}" stroke-width="${sw}"/>
+                <line x1="20" y1="2" x2="8" y2="2" stroke="${c}" stroke-width="2.5"/>
+                <circle cx="6" cy="2" r="3.5" fill="${c}"/>
+                <line x1="80" y1="2" x2="92" y2="2" stroke="${c}" stroke-width="2.5"/>
+                <circle cx="94" cy="2" r="3.5" fill="${c}"/>
                 <circle cx="36" cy="13" r="5.5" fill="none" stroke="${c}" stroke-width="2.5"/>
                 <circle cx="36" cy="14" r="2" fill="${c}"/>
                 <path d="M58 14 Q64 9 70 14" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
@@ -1630,20 +1640,22 @@ function getBodyPartSVG(partType, color) {
                 <path d="M46 37 Q50 47 54 37" fill="${c}" stroke="${c}" stroke-width="2" stroke-linecap="round"/>
                 <line x1="40" y1="47" x2="60" y2="47" stroke="${c}" stroke-width="${sw}"/>
             </svg>`,
-            // Blue/turquoise: angry Frankenstein (furrowed brows, frown, stitches)
+            // Blue/turquoise: angry Frankenstein (furrowed brows, frown, stitches), bolt ear bottoms
             blue: `<svg viewBox="0 0 100 50">
-                <path d="M24 0 Q24 10 26 16" fill="none" stroke="${c}" stroke-width="${sw}"/>
-                <path d="M76 0 Q76 10 74 16" fill="none" stroke="${c}" stroke-width="${sw}"/>
-                <line x1="28" y1="8" x2="42" y2="12" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
-                <line x1="72" y1="8" x2="58" y2="12" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
-                <circle cx="36" cy="17" r="4.5" fill="none" stroke="${c}" stroke-width="2.5"/>
-                <circle cx="64" cy="17" r="4.5" fill="none" stroke="${c}" stroke-width="2.5"/>
-                <path d="M47 25 L50 30 L53 25" fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round"/>
-                <path d="M36 38 Q50 31 64 38" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
-                <line x1="72" y1="22" x2="84" y2="22" stroke="${c}" stroke-width="2"/>
-                <line x1="75" y1="19" x2="75" y2="25" stroke="${c}" stroke-width="1.5"/>
-                <line x1="78" y1="19" x2="78" y2="25" stroke="${c}" stroke-width="1.5"/>
-                <line x1="81" y1="19" x2="81" y2="25" stroke="${c}" stroke-width="1.5"/>
+                <path d="M20 0 Q20 10 22 16" fill="none" stroke="${c}" stroke-width="${sw}"/>
+                <path d="M80 0 Q80 10 78 16" fill="none" stroke="${c}" stroke-width="${sw}"/>
+                <rect x="4" y="0" width="16" height="7" rx="2" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <rect x="80" y="0" width="16" height="7" rx="2" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <line x1="28" y1="10" x2="42" y2="14" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+                <line x1="72" y1="10" x2="58" y2="14" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+                <circle cx="36" cy="19" r="4.5" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <circle cx="64" cy="19" r="4.5" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <path d="M47 27 L50 32 L53 27" fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round"/>
+                <path d="M36 40 Q50 33 64 40" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+                <line x1="72" y1="24" x2="84" y2="24" stroke="${c}" stroke-width="2"/>
+                <line x1="75" y1="21" x2="75" y2="27" stroke="${c}" stroke-width="1.5"/>
+                <line x1="78" y1="21" x2="78" y2="27" stroke="${c}" stroke-width="1.5"/>
+                <line x1="81" y1="21" x2="81" y2="27" stroke="${c}" stroke-width="1.5"/>
                 <line x1="40" y1="47" x2="60" y2="47" stroke="${c}" stroke-width="${sw}"/>
             </svg>`
         };
@@ -1704,27 +1716,25 @@ function getBodyPartSVG(partType, color) {
             <line x1="35" y1="0" x2="35" y2="50" stroke="${c}" stroke-width="${sw}"/>
         </svg>`,
 
-        // ─── HANDS: 5 spread fingers fanning from wrist ───
+        // ─── HANDS: 5 spread fingers fanning from wrist (no palm curve) ───
         r_hand: `<svg viewBox="0 0 50 50">
             <line x1="15" y1="0" x2="16" y2="14" stroke="${c}" stroke-width="${sw}"/>
             <line x1="25" y1="0" x2="24" y2="14" stroke="${c}" stroke-width="${sw}"/>
-            <line x1="8" y1="14" x2="2" y2="36" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
-            <line x1="13" y1="15" x2="10" y2="40" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
-            <line x1="20" y1="15" x2="20" y2="42" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
-            <line x1="27" y1="15" x2="30" y2="40" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
-            <line x1="32" y1="14" x2="38" y2="34" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
-            <path d="M0 38 Q20 50 40 36" fill="none" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="8" y1="14" x2="1" y2="42" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <line x1="13" y1="15" x2="9" y2="45" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <line x1="20" y1="15" x2="20" y2="48" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <line x1="27" y1="15" x2="31" y2="45" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <line x1="32" y1="14" x2="39" y2="40" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
         </svg>`,
 
         l_hand: `<svg viewBox="0 0 50 50">
             <line x1="25" y1="0" x2="26" y2="14" stroke="${c}" stroke-width="${sw}"/>
             <line x1="35" y1="0" x2="34" y2="14" stroke="${c}" stroke-width="${sw}"/>
-            <line x1="18" y1="14" x2="12" y2="34" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
-            <line x1="23" y1="15" x2="20" y2="40" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
-            <line x1="30" y1="15" x2="30" y2="42" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
-            <line x1="37" y1="15" x2="40" y2="40" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
-            <line x1="42" y1="14" x2="48" y2="36" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
-            <path d="M10 36 Q30 50 50 38" fill="none" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="18" y1="14" x2="11" y2="40" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <line x1="23" y1="15" x2="19" y2="45" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <line x1="30" y1="15" x2="30" y2="48" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <line x1="37" y1="15" x2="41" y2="45" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <line x1="42" y1="14" x2="49" y2="42" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
         </svg>`,
 
         // ─── UPPER LEGS: Thick bulging thigh shape (lines curve outward) ───
@@ -1740,17 +1750,17 @@ function getBodyPartSVG(partType, color) {
             <line x1="12" y1="48" x2="39" y2="48" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
         </svg>`,
 
-        // ─── LOWER LEGS: Calf shape (wide at knee, narrow at ankle, muscle bulge) ───
+        // ─── LOWER LEGS: Calf shape (very wide at knee, narrow at ankle) ───
         l_lower_leg: `<svg viewBox="0 0 50 50">
-            <line x1="11" y1="2" x2="38" y2="2" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
-            <path d="M14 0 Q6 14 10 28 Q14 42 20 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
-            <path d="M35 0 Q38 14 35 28 Q32 42 30 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
+            <line x1="8" y1="2" x2="40" y2="2" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
+            <path d="M8 0 Q3 12 8 26 Q15 42 21 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
+            <path d="M40 0 Q42 12 37 26 Q32 42 29 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
         </svg>`,
 
         r_lower_leg: `<svg viewBox="0 0 50 50">
-            <line x1="12" y1="2" x2="39" y2="2" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
-            <path d="M15 0 Q12 14 15 28 Q18 42 20 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
-            <path d="M36 0 Q44 14 40 28 Q36 42 30 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
+            <line x1="10" y1="2" x2="42" y2="2" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
+            <path d="M10 0 Q8 12 13 26 Q18 42 21 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
+            <path d="M42 0 Q47 12 42 26 Q35 42 29 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
         </svg>`,
 
         // ─── FEET: Wide flat shape with distinct toe bumps ───
@@ -1784,12 +1794,11 @@ function getBodyPartSVG(partType, color) {
         hand: `<svg viewBox="0 0 50 50">
             <line x1="15" y1="0" x2="16" y2="14" stroke="${c}" stroke-width="${sw}"/>
             <line x1="25" y1="0" x2="24" y2="14" stroke="${c}" stroke-width="${sw}"/>
-            <line x1="8" y1="14" x2="2" y2="36" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
-            <line x1="13" y1="15" x2="10" y2="40" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
-            <line x1="20" y1="15" x2="20" y2="42" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
-            <line x1="27" y1="15" x2="30" y2="40" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
-            <line x1="32" y1="14" x2="38" y2="34" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
-            <path d="M0 38 Q20 50 40 36" fill="none" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="8" y1="14" x2="1" y2="42" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <line x1="13" y1="15" x2="9" y2="45" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <line x1="20" y1="15" x2="20" y2="48" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <line x1="27" y1="15" x2="31" y2="45" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <line x1="32" y1="14" x2="39" y2="40" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
         </svg>`,
         upper_leg: `<svg viewBox="0 0 50 50">
             <path d="M10 0 Q4 15 7 30 Q11 42 15 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
@@ -1797,9 +1806,9 @@ function getBodyPartSVG(partType, color) {
             <line x1="12" y1="48" x2="39" y2="48" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
         </svg>`,
         lower_leg: `<svg viewBox="0 0 50 50">
-            <line x1="12" y1="2" x2="39" y2="2" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
-            <path d="M15 0 Q12 14 15 28 Q18 42 20 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
-            <path d="M36 0 Q44 14 40 28 Q36 42 30 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
+            <line x1="10" y1="2" x2="42" y2="2" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
+            <path d="M10 0 Q8 12 13 26 Q18 42 21 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
+            <path d="M42 0 Q47 12 42 26 Q35 42 29 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
         </svg>`,
         foot: `<svg viewBox="0 0 50 50">
             <path d="M20 0 L20 28 Q16 34 10 40 Q6 44 10 46 L40 46 Q44 44 38 40 Q30 34 30 20 L30 0" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
