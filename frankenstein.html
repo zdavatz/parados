@@ -1910,32 +1910,32 @@ function getBodyPartSVG(partType, color) {
             <line x1="42" y1="14" x2="49" y2="42" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
         </svg>`,
 
-        // ─── UPPER LEGS: Very thick bulging thigh (wide hip, muscular bulge, tapers to knee) ───
+        // ─── UPPER LEGS: Very wide barrel thigh with kneecap bump at bottom ───
         l_upper_leg: `<svg viewBox="0 0 50 50">
-            <path d="M6 0 Q-2 10 0 22 Q3 35 12 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
-            <path d="M42 0 Q50 10 48 22 Q45 35 36 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
-            <path d="M16 8 Q24 14 32 8" fill="none" stroke="${c}" stroke-width="2" opacity="0.5"/>
-            <line x1="14" y1="48" x2="34" y2="48" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
+            <path d="M4 0 Q-4 12 0 25 Q4 38 14 46" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <path d="M44 0 Q52 12 48 25 Q44 38 34 46" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <path d="M14 46 Q24 52 34 46" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
         </svg>`,
 
         r_upper_leg: `<svg viewBox="0 0 50 50">
-            <path d="M8 0 Q0 10 2 22 Q5 35 14 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
-            <path d="M44 0 Q52 10 50 22 Q47 35 38 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
-            <path d="M18 8 Q26 14 34 8" fill="none" stroke="${c}" stroke-width="2" opacity="0.5"/>
-            <line x1="16" y1="48" x2="36" y2="48" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
+            <path d="M6 0 Q-2 12 2 25 Q6 38 16 46" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <path d="M46 0 Q54 12 50 25 Q46 38 36 46" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <path d="M16 46 Q26 52 36 46" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
         </svg>`,
 
-        // ─── LOWER LEGS: Calf muscle bulge at top, dramatically thin at ankle ───
+        // ─── LOWER LEGS: Calf diamond bulge + visible shin bone line down center ───
         l_lower_leg: `<svg viewBox="0 0 50 50">
             <line x1="12" y1="2" x2="36" y2="2" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
-            <path d="M12 0 Q4 8 3 18 Q2 28 15 36 Q20 40 22 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
-            <path d="M36 0 Q44 8 45 18 Q46 28 33 36 Q28 40 27 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
+            <path d="M12 0 Q2 10 3 20 Q4 30 18 38 Q22 42 23 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
+            <path d="M36 0 Q46 10 45 20 Q44 30 30 38 Q27 42 26 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
+            <line x1="24" y1="8" x2="24" y2="42" stroke="${c}" stroke-width="1.5" opacity="0.4"/>
         </svg>`,
 
         r_lower_leg: `<svg viewBox="0 0 50 50">
             <line x1="14" y1="2" x2="38" y2="2" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
-            <path d="M14 0 Q6 8 5 18 Q4 28 17 36 Q22 40 23 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
-            <path d="M38 0 Q46 8 47 18 Q48 28 35 36 Q30 40 28 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
+            <path d="M14 0 Q4 10 5 20 Q6 30 20 38 Q23 42 24 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
+            <path d="M38 0 Q48 10 47 20 Q46 30 32 38 Q28 42 27 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
+            <line x1="26" y1="8" x2="26" y2="42" stroke="${c}" stroke-width="1.5" opacity="0.4"/>
         </svg>`,
 
         // ─── FEET: Wide flat shape with distinct toe bumps ───
@@ -1976,14 +1976,15 @@ function getBodyPartSVG(partType, color) {
             <line x1="32" y1="14" x2="39" y2="40" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
         </svg>`,
         upper_leg: `<svg viewBox="0 0 50 50">
-            <path d="M10 0 Q4 15 7 30 Q11 42 15 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
-            <path d="M42 0 Q48 15 45 30 Q41 42 36 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
-            <line x1="12" y1="48" x2="39" y2="48" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
+            <path d="M6 0 Q-2 12 2 25 Q6 38 16 46" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <path d="M46 0 Q54 12 50 25 Q46 38 36 46" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <path d="M16 46 Q26 52 36 46" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
         </svg>`,
         lower_leg: `<svg viewBox="0 0 50 50">
-            <line x1="10" y1="2" x2="42" y2="2" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
-            <path d="M10 0 Q8 12 13 26 Q18 42 21 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
-            <path d="M42 0 Q47 12 42 26 Q35 42 29 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
+            <line x1="14" y1="2" x2="38" y2="2" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
+            <path d="M14 0 Q4 10 5 20 Q6 30 20 38 Q23 42 24 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
+            <path d="M38 0 Q48 10 47 20 Q46 30 32 38 Q28 42 27 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
+            <line x1="26" y1="8" x2="26" y2="42" stroke="${c}" stroke-width="1.5" opacity="0.4"/>
         </svg>`,
         foot: `<svg viewBox="0 0 50 50">
             <path d="M20 0 L20 28 Q16 34 10 40 Q6 44 10 46 L40 46 Q44 44 38 40 Q30 34 30 20 L30 0" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
