@@ -804,17 +804,17 @@ h1 {
         you should have remembered! Mistake tracking can be turned on/off in the setup.</p>
 
         <h3>Reverse Mode</h3>
-        <p><strong>Reverse</strong> flips the build order: start from the extremities (hands, feet, head)
-        and work <em>inward</em> toward the torso! The torso is still pre-placed as your starting frame,
-        but you must collect the outermost parts first.</p>
+        <p><strong>Reverse</strong> flips everything! Instead of starting with the torso,
+        you start with <strong>1 hand, 1 foot, and 1 upper head</strong> already placed.
+        All 4 torso parts are in the deck &mdash; build <em>inward</em> from the extremities!</p>
         <ul>
-            <li><strong>Arms:</strong> hand &rarr; lower arm &rarr; upper arm</li>
-            <li><strong>Legs:</strong> foot &rarr; lower leg &rarr; upper leg</li>
-            <li><strong>Head:</strong> upper head &rarr; lower head</li>
+            <li><strong>Arms:</strong> hand (placed) &rarr; lower arm &rarr; upper arm</li>
+            <li><strong>Legs:</strong> foot (placed) &rarr; lower leg &rarr; upper leg</li>
+            <li><strong>Head:</strong> upper head (placed) &rarr; lower head</li>
             <li><strong>Torso:</strong> needs adjacent limbs + head completed first!</li>
         </ul>
         <p>In <strong>Mixed</strong> mode, players alternate directions &mdash; one builds outward
-        while the other builds inward. Best in 2-player or 4-player!</p>
+        (starting with torso) while the other builds inward (starting with extremities). Best in 2-player or 4-player!</p>
 
         <button class="close-btn" onclick="closeRules()">Got it!</button>
     </div>
@@ -964,15 +964,31 @@ function startGame(n) {
     players = [];
     for (let i = 0; i < numPlayers; i++) {
         const direction = getDirection(i);
-        const missingTorso = TORSO_PARTS[Math.floor(Math.random() * 4)];
         const body = {};
         for (const slot of ALL_BODY_SLOTS) body[slot] = null;
-        // Pre-place 3 torso parts (grey) — same for both directions
-        for (const t of TORSO_PARTS) {
-            if (t !== missingTorso) {
-                body[t] = { partType: 'torso', color: 'grey', isJoker: false };
+
+        let missingTorso = null;
+        if (direction === 'outward') {
+            // Classic: pre-place 3 torso parts (grey), 1 missing torso goes in deck
+            missingTorso = TORSO_PARTS[Math.floor(Math.random() * 4)];
+            for (const t of TORSO_PARTS) {
+                if (t !== missingTorso) {
+                    body[t] = { partType: 'torso', color: 'grey', isJoker: false };
+                }
             }
+        } else {
+            // Reverse: pre-place 1 hand, 1 foot, 1 upper_head (colored)
+            // All 4 torso parts stay empty and go in the deck
+            const preHandColor = PART_COLORS[Math.floor(Math.random() * PART_COLORS.length)];
+            const preFootColor = PART_COLORS[Math.floor(Math.random() * PART_COLORS.length)];
+            const preHeadColor = PART_COLORS[Math.floor(Math.random() * PART_COLORS.length)];
+            const handSlot = Math.random() < 0.5 ? 'r_hand' : 'l_hand';
+            const footSlot = Math.random() < 0.5 ? 'r_foot' : 'l_foot';
+            body[handSlot] = { partType: 'hand', color: preHandColor, isJoker: false };
+            body[footSlot] = { partType: 'foot', color: preFootColor, isJoker: false };
+            body['upper_head'] = { partType: 'upper_head', color: preHeadColor, isJoker: false };
         }
+
         players.push({
             body,
             buildDirection: direction,
@@ -1010,37 +1026,67 @@ function startGame(n) {
 function generateDeck() {
     const deck = [];
     let id = 0;
+    const card = (partType, color) => ({ id: id++, partType, color, isJoker: false, faceUp: false, removed: false });
 
     for (let p = 0; p < numPlayers; p++) {
-        // The missing torso card (grey, generic) — same for both build directions
-        deck.push({ id: id++, partType: 'torso', color: 'grey', isJoker: false, faceUp: false, removed: false });
+        const player = players[p];
 
-        // Generate body parts with chain-based color assignment for solvability
-        // 2 arm chains (upper_arm → lower_arm → hand)
-        const armChain1 = generateColorChain(3);
-        const armChain2 = generateColorChain(3);
-        // 2 leg chains (upper_leg → lower_leg → foot)
-        const legChain1 = generateColorChain(3);
-        const legChain2 = generateColorChain(3);
-        // 1 head chain (lower_head → upper_head)
-        const headChain = generateColorChain(2);
+        if (player.buildDirection === 'inward') {
+            // Reverse: all 4 torso parts in deck (none pre-placed)
+            for (let t = 0; t < 4; t++) {
+                deck.push(card('torso', 'grey'));
+            }
+            // 2 arm chains, but only 1 hand (other pre-placed on body)
+            const armChain1 = generateColorChain(3);
+            const armChain2 = generateColorChain(3);
+            deck.push(card('upper_arm', armChain1[0]));
+            deck.push(card('lower_arm', armChain1[1]));
+            // hand from chain1 is pre-placed — skip it
+            deck.push(card('upper_arm', armChain2[0]));
+            deck.push(card('lower_arm', armChain2[1]));
+            deck.push(card('hand', armChain2[2]));
 
-        deck.push({ id: id++, partType: 'upper_arm', color: armChain1[0], isJoker: false, faceUp: false, removed: false });
-        deck.push({ id: id++, partType: 'lower_arm', color: armChain1[1], isJoker: false, faceUp: false, removed: false });
-        deck.push({ id: id++, partType: 'hand', color: armChain1[2], isJoker: false, faceUp: false, removed: false });
-        deck.push({ id: id++, partType: 'upper_arm', color: armChain2[0], isJoker: false, faceUp: false, removed: false });
-        deck.push({ id: id++, partType: 'lower_arm', color: armChain2[1], isJoker: false, faceUp: false, removed: false });
-        deck.push({ id: id++, partType: 'hand', color: armChain2[2], isJoker: false, faceUp: false, removed: false });
+            // 2 leg chains, but only 1 foot (other pre-placed on body)
+            const legChain1 = generateColorChain(3);
+            const legChain2 = generateColorChain(3);
+            deck.push(card('upper_leg', legChain1[0]));
+            deck.push(card('lower_leg', legChain1[1]));
+            // foot from chain1 is pre-placed — skip it
+            deck.push(card('upper_leg', legChain2[0]));
+            deck.push(card('lower_leg', legChain2[1]));
+            deck.push(card('foot', legChain2[2]));
 
-        deck.push({ id: id++, partType: 'upper_leg', color: legChain1[0], isJoker: false, faceUp: false, removed: false });
-        deck.push({ id: id++, partType: 'lower_leg', color: legChain1[1], isJoker: false, faceUp: false, removed: false });
-        deck.push({ id: id++, partType: 'foot', color: legChain1[2], isJoker: false, faceUp: false, removed: false });
-        deck.push({ id: id++, partType: 'upper_leg', color: legChain2[0], isJoker: false, faceUp: false, removed: false });
-        deck.push({ id: id++, partType: 'lower_leg', color: legChain2[1], isJoker: false, faceUp: false, removed: false });
-        deck.push({ id: id++, partType: 'foot', color: legChain2[2], isJoker: false, faceUp: false, removed: false });
+            // Head chain: only lower_head (upper_head pre-placed on body)
+            const headChain = generateColorChain(2);
+            deck.push(card('lower_head', headChain[0]));
+            // upper_head pre-placed — skip it
+        } else {
+            // Classic: 1 missing torso in deck, rest pre-placed
+            deck.push(card('torso', 'grey'));
 
-        deck.push({ id: id++, partType: 'lower_head', color: headChain[0], isJoker: false, faceUp: false, removed: false });
-        deck.push({ id: id++, partType: 'upper_head', color: headChain[1], isJoker: false, faceUp: false, removed: false });
+            const armChain1 = generateColorChain(3);
+            const armChain2 = generateColorChain(3);
+            const legChain1 = generateColorChain(3);
+            const legChain2 = generateColorChain(3);
+            const headChain = generateColorChain(2);
+
+            deck.push(card('upper_arm', armChain1[0]));
+            deck.push(card('lower_arm', armChain1[1]));
+            deck.push(card('hand', armChain1[2]));
+            deck.push(card('upper_arm', armChain2[0]));
+            deck.push(card('lower_arm', armChain2[1]));
+            deck.push(card('hand', armChain2[2]));
+
+            deck.push(card('upper_leg', legChain1[0]));
+            deck.push(card('lower_leg', legChain1[1]));
+            deck.push(card('foot', legChain1[2]));
+            deck.push(card('upper_leg', legChain2[0]));
+            deck.push(card('lower_leg', legChain2[1]));
+            deck.push(card('foot', legChain2[2]));
+
+            deck.push(card('lower_head', headChain[0]));
+            deck.push(card('upper_head', headChain[1]));
+        }
     }
 
     // Add jokers
@@ -1910,32 +1956,28 @@ function getBodyPartSVG(partType, color) {
             <line x1="42" y1="14" x2="49" y2="42" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
         </svg>`,
 
-        // ─── UPPER LEGS: Very wide barrel thigh with kneecap bump at bottom ───
+        // ─── UPPER LEGS: Anatomical thigh — wide at hip, tapers to knee, kneecap arc ───
         l_upper_leg: `<svg viewBox="0 0 50 50">
-            <path d="M4 0 Q-4 12 0 25 Q4 38 14 46" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
-            <path d="M44 0 Q52 12 48 25 Q44 38 34 46" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
-            <path d="M14 46 Q24 52 34 46" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <path d="M5 0 C3 12 7 30 14 46" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <path d="M43 0 C45 12 41 30 34 46" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <path d="M14 46 Q24 52 34 46" fill="none" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
         </svg>`,
 
         r_upper_leg: `<svg viewBox="0 0 50 50">
-            <path d="M6 0 Q-2 12 2 25 Q6 38 16 46" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
-            <path d="M46 0 Q54 12 50 25 Q46 38 36 46" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
-            <path d="M16 46 Q26 52 36 46" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <path d="M7 0 C5 12 9 30 16 46" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <path d="M45 0 C47 12 43 30 36 46" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <path d="M16 46 Q26 52 36 46" fill="none" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
         </svg>`,
 
-        // ─── LOWER LEGS: Calf diamond bulge + visible shin bone line down center ───
+        // ─── LOWER LEGS: Anatomical calf — calf muscle bulge, tapers to thin ankle ───
         l_lower_leg: `<svg viewBox="0 0 50 50">
-            <line x1="12" y1="2" x2="36" y2="2" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
-            <path d="M12 0 Q2 10 3 20 Q4 30 18 38 Q22 42 23 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
-            <path d="M36 0 Q46 10 45 20 Q44 30 30 38 Q27 42 26 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
-            <line x1="24" y1="8" x2="24" y2="42" stroke="${c}" stroke-width="1.5" opacity="0.4"/>
+            <path d="M15 0 C8 12 13 30 22 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <path d="M33 0 C34 12 32 30 26 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
         </svg>`,
 
         r_lower_leg: `<svg viewBox="0 0 50 50">
-            <line x1="14" y1="2" x2="38" y2="2" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
-            <path d="M14 0 Q4 10 5 20 Q6 30 20 38 Q23 42 24 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
-            <path d="M38 0 Q48 10 47 20 Q46 30 32 38 Q28 42 27 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
-            <line x1="26" y1="8" x2="26" y2="42" stroke="${c}" stroke-width="1.5" opacity="0.4"/>
+            <path d="M17 0 C16 12 18 30 24 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <path d="M35 0 C42 12 37 30 28 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
         </svg>`,
 
         // ─── FEET: Wide flat shape with distinct toe bumps ───
@@ -1976,15 +2018,13 @@ function getBodyPartSVG(partType, color) {
             <line x1="32" y1="14" x2="39" y2="40" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
         </svg>`,
         upper_leg: `<svg viewBox="0 0 50 50">
-            <path d="M6 0 Q-2 12 2 25 Q6 38 16 46" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
-            <path d="M46 0 Q54 12 50 25 Q46 38 36 46" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
-            <path d="M16 46 Q26 52 36 46" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <path d="M6 0 C4 12 8 30 15 46" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <path d="M44 0 C46 12 42 30 35 46" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <path d="M15 46 Q25 52 35 46" fill="none" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
         </svg>`,
         lower_leg: `<svg viewBox="0 0 50 50">
-            <line x1="14" y1="2" x2="38" y2="2" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
-            <path d="M14 0 Q4 10 5 20 Q6 30 20 38 Q23 42 24 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
-            <path d="M38 0 Q48 10 47 20 Q46 30 32 38 Q28 42 27 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
-            <line x1="26" y1="8" x2="26" y2="42" stroke="${c}" stroke-width="1.5" opacity="0.4"/>
+            <path d="M16 0 C9 12 14 30 23 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <path d="M34 0 C41 12 36 30 27 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
         </svg>`,
         foot: `<svg viewBox="0 0 50 50">
             <path d="M20 0 L20 28 Q16 34 10 40 Q6 44 10 46 L40 46 Q44 44 38 40 Q30 34 30 20 L30 0" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
@@ -2022,7 +2062,7 @@ window.addEventListener('resize', updateCardSize);
 document.getElementById('buildModeSelect').addEventListener('change', function() {
     const hints = {
         classic: 'Classic: build from the middle outward',
-        reverse: 'Reverse: build from extremities inward — the endgame flips!',
+        reverse: 'Reverse: start with hand + foot + head, build inward to torso!',
         mixed: 'Mixed: players alternate directions — one builds out, one builds in'
     };
     document.getElementById('buildModeHint').textContent = hints[this.value] || '';
