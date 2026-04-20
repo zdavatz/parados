@@ -55,8 +55,11 @@
 </head>
 <body>
 
-    <h1>DIVIDED LOYALTIES</h1>
-    
+    <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
+        <h1 style="margin:5px 0;">DIVIDED LOYALTIES</h1>
+        <button class="btn" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">Share on WhatsApp</button>
+    </div>
+
     <div id="game-layout">
         <div style="position: relative;">
             <div id="meta-grid"></div>
@@ -166,6 +169,11 @@
         }
 
         function toggleRules(s) { document.getElementById('rules-modal').style.display = s ? 'flex' : 'none'; }
+
+        function shareOnWhatsApp() {
+            const msg = `Play Divided Loyalties: ${window.location.href}\n\nGet the Parados app:\niOS: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+        }
 
         function handleClick(idx) {
             if (moveState === 'tile') {

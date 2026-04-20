@@ -667,7 +667,10 @@ h1 {
 </head>
 <body>
 
-<h1>FRANKENSTEIN</h1>
+<div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
+    <h1 style="margin:5px 0;">FRANKENSTEIN</h1>
+    <button class="btn-rules" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">Share on WhatsApp</button>
+</div>
 <p class="subtitle">Where's that green elbow?? &mdash; A Memory Game by Walter Prossnitz</p>
 
 <!-- ─── Setup Screen ─── -->
@@ -2076,6 +2079,11 @@ function openRules() {
 function closeRules() {
     rulesModal.style.display = 'none';
     localStorage.setItem('frankenstein_rules_v1', 'true');
+}
+
+function shareOnWhatsApp() {
+    const msg = `Play Frankenstein: ${window.location.href}\n\nGet the Parados app:\niOS: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
 window.onclick = (e) => {

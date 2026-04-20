@@ -590,7 +590,10 @@
 
 <!-- GAME -->
 <header>
-    <h1>MAKA LAINA</h1>
+    <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
+        <h1 style="margin:5px 0;">MAKA LAINA</h1>
+        <button class="action-btn" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">Share on WhatsApp</button>
+    </div>
     <div class="subtitle">The Strategic Endspurt</div>
 </header>
 
@@ -1022,6 +1025,11 @@ function loadCuratedPosition(posId) {
 
 function toggleRules(show) {
     document.getElementById('modal-overlay').style.display = show ? 'flex' : 'none';
+}
+
+function shareOnWhatsApp() {
+    const msg = `Play MAKA LAINA: ${window.location.href}\n\nGet the Parados app:\niOS: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
 function toggleLOS() {

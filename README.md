@@ -6,6 +6,10 @@ Games by Walter Prossnitz
 
 **[Play all games](https://game.ywesee.com/parados/)**
 
+## Share
+
+Every game has a **Share on WhatsApp** button (WhatsApp green `#25D366`) placed to the right of the game title. It opens WhatsApp (or web.whatsapp.com as fallback) in a new tab with a pre-filled message containing the current game URL plus iOS App Store and Google Play links to the Parados app.
+
 ## Games
 
 - **DUK — The Impatient Kangaroo** — The plan: to create a 21st century successor to the super-hit solo puzzle game Rushhour. Many players think that hopping through the outback collecting goodies is more fun than trying to shove your way through traffic? Another advantage — thanks to the program, there's all kinds of different ways to play:-) Three difficulty tiers of handcrafted puzzles (Beginner → Intermediate → Advanced) plus "Take a Chance" random mode with three placement zones: Center 6×6 (12 dishes), Inner 8×8 (20 dishes), and Full board (34+ dishes) for endless replay — with color-balance validation ensuring green and blue dishes are well-distributed across the board. A big advantage over Rushhour: Beginner and Advanced puzzles offer two different starting positions (A/B) — same board, different challenge! Intermediate puzzles have a single fixed starting position. Rules button is prominently placed at the very top of the page (above the title) for easy access. **Replay mode:** Load any exported CSV game log to watch the entire game replayed move by move — with play/pause, step forward/back, speed control, and visual highlights showing each dish move and jump. The initial board state is automatically reconstructed from the CSV data.
