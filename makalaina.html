@@ -344,7 +344,9 @@
 
     function shareOnWhatsApp() {
         const msg = `Play MAKA LAINA: ${window.location.href}\n\nGet the Parados app:\niOS: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados`;
-        window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+        const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+        const w = window.open(url, '_blank');
+        if (!w) { window.location.href = url; }
     }
 
     function toggleLOS() {
