@@ -347,11 +347,6 @@
         const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
         const inIOSApp = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.csvExport);
         if (inIOSApp) { window.location.href = url; return; }
-        const inAndroidApp = typeof AndroidCsvExport !== 'undefined';
-        if (inAndroidApp && navigator.share) {
-            navigator.share({ text: msg }).catch(function() { window.location.href = url; });
-            return;
-        }
         const w = window.open(url, '_blank');
         if (!w) { window.location.href = url; }
     }
