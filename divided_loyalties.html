@@ -249,7 +249,8 @@
         ];
 
         let STARTING_POSITIONS = HARDCODED_POSITIONS;
-        let boards = [];
+        let boards = [];           // array of flat-index arrays, one per board
+        let boardTokens = [];      // parallel array of token strings (for color class)
         let allBoardIdx = [];
 
         function calcCellSize() {
@@ -290,9 +291,18 @@
             // Map each on-board cell to its board (first-write-wins on overlap)
             const cellBoard = {};
             boards.forEach((b, idx) => b.forEach(ci => { if (!(ci in cellBoard)) cellBoard[ci] = idx; }));
-            // Size class per board: 9=large(black), 7-12=medium(dark gray), ≤6=small(light gray)
+            // Size class: prefer S/W/G token prefix, fall back to cell count
+            // 9=large (black), 7–12=medium (grey), ≤6=small (white)
+            const classFromToken = (tok) => {
+                if (!tok) return null;
+                const ch = tok[0].toUpperCase();
+                if (ch === 'S') return 'large';
+                if (ch === 'G') return 'medium';
+                if (ch === 'W') return 'small';
+                return null;
+            };
             const sizeOf = (n) => n === 9 ? 'large' : (n >= 7 ? 'medium' : 'small');
-            const boardSize = boards.map(b => sizeOf(b.length));
+            const boardSize = boards.map((b, idx) => classFromToken(boardTokens[idx]) || sizeOf(b.length));
 
             const total = GRID_SIZE * GRID_SIZE;
             for(let i=0; i<total; i++) {
@@ -332,15 +342,25 @@
 
         function startWith(idx) {
             const pos = STARTING_POSITIONS[idx];
+            // Normalize: each entry becomes {token, cells:[[x,y],…]}. Hardcoded uses plain [x,y][]
+            // arrays; derive a token from cell count for those (9→'S', 7-12→'G', ≤6→'W').
+            const norm = pos.boards.map(b => {
+                if (Array.isArray(b)) {
+                    const n = b.length;
+                    const tok = n === 9 ? 'S' : (n >= 7 ? 'G' : 'W');
+                    return { token: tok, cells: b };
+                }
+                return b;
+            });
             // Compute grid size from max (x,y) across all boards, +2 for off-board placement margin
             let maxX = 0, maxY = 0;
-            pos.boards.forEach(b => b.forEach(([x,y]) => {
+            norm.forEach(b => b.cells.forEach(([x,y]) => {
                 if (x > maxX) maxX = x;
                 if (y > maxY) maxY = y;
             }));
             GRID_SIZE = Math.max(maxX, maxY) + 2;
-            // Convert [x,y] pairs → flat indices for this grid size
-            boards = pos.boards.map(b => b.map(([x,y]) => y * GRID_SIZE + x));
+            boards = norm.map(b => b.cells.map(([x,y]) => y * GRID_SIZE + x));
+            boardTokens = norm.map(b => b.token);
             allBoardIdx = [].concat(...boards);
             grid = Array(GRID_SIZE * GRID_SIZE).fill(null);
             currentPlayer = 'blue';
@@ -498,9 +518,11 @@
                 }
             });
         }
-        // CSV format: position_id, position_name, row, c0, c1, c2, ... — each cell a column.
-        // Letters mark the color class (S=black 3x3, W=white pyramid, G=grey 4x3; any non-'.' letter works).
-        // Boards are found via connected-component flood-fill of same-letter neighbors (4-directional).
+        // CSV format: position_id, position_name, row, c0, c1, c2, ... — each cell its own column.
+        // Cell values: '.' = empty. Any other token is a board id. Each UNIQUE token is its own
+        // separate board — even if two boards touch, their borders stay visible and they score
+        // separately. Convention: S1,S2,S3… = black 3x3; W1,W2,W3… = white pyramid; G1,G2… = grey 4x3.
+        // Color class is derived from the first letter (S/W/G), with cell-count fallback.
         function parsePositionsCSV(text) {
             const lines = text.split(/\r?\n/).map(l => l.replace(/\r/g, '')).filter(l => l && !l.trimStart().startsWith('#'));
             if (lines.length < 2) return null;
@@ -528,41 +550,23 @@
             return order.map(pid => {
                 const pos = positions[pid];
                 const rowNums = Object.keys(pos.rows).map(Number);
-                const gridH = Math.max(...rowNums) + 1;
-                let gridW = 0;
-                rowNums.forEach(y => { if (pos.rows[y].length > gridW) gridW = pos.rows[y].length; });
-                const g = Array.from({length: gridH}, () => Array(gridW).fill('.'));
+                // Collect cells by token; each unique token = one separate board
+                const byToken = {};
+                const tokenOrder = [];
                 rowNums.forEach(y => {
                     const r = pos.rows[y];
-                    for (let x = 0; x < r.length; x++) g[y][x] = r[x] || '.';
-                });
-
-                // Flood-fill connected components of same character (ignoring '.')
-                const visited = Array.from({length: gridH}, () => Array(gridW).fill(false));
-                const boards = [];
-                for (let y = 0; y < gridH; y++) {
-                    for (let x = 0; x < gridW; x++) {
-                        if (visited[y][x]) continue;
-                        const ch = g[y][x];
-                        if (ch === '.' || ch === '') continue;
-                        const board = [];
-                        const queue = [[x, y]];
-                        visited[y][x] = true;
-                        while (queue.length) {
-                            const [cx, cy] = queue.shift();
-                            board.push([cx, cy]);
-                            for (const [dx, dy] of [[-1,0],[1,0],[0,-1],[0,1]]) {
-                                const nx = cx+dx, ny = cy+dy;
-                                if (nx<0||nx>=gridW||ny<0||ny>=gridH) continue;
-                                if (visited[ny][nx] || g[ny][nx] !== ch) continue;
-                                visited[ny][nx] = true;
-                                queue.push([nx, ny]);
-                            }
-                        }
-                        boards.push(board);
+                    for (let x = 0; x < r.length; x++) {
+                        const tok = r[x];
+                        if (!tok || tok === '.') continue;
+                        if (!byToken[tok]) { byToken[tok] = []; tokenOrder.push(tok); }
+                        byToken[tok].push([x, y]);
                     }
-                }
-                return { name: pos.name, sub: '', boards: boards };
+                });
+                return {
+                    name: pos.name,
+                    sub: '',
+                    boards: tokenOrder.map(tok => ({ token: tok, cells: byToken[tok] }))
+                };
             });
         }
 
