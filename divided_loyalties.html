@@ -498,36 +498,72 @@
                 }
             });
         }
+        // CSV format: position_id, position_name, row, c0, c1, c2, ... — each cell a column.
+        // Letters mark the color class (S=black 3x3, W=white pyramid, G=grey 4x3; any non-'.' letter works).
+        // Boards are found via connected-component flood-fill of same-letter neighbors (4-directional).
         function parsePositionsCSV(text) {
-            const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l && !l.startsWith('#'));
+            const lines = text.split(/\r?\n/).map(l => l.replace(/\r/g, '')).filter(l => l && !l.trimStart().startsWith('#'));
             if (lines.length < 2) return null;
             const header = lines[0].split(',').map(s => s.trim().toLowerCase());
-            const idxOf = name => header.indexOf(name);
-            const iPid = idxOf('position_id'), iName = idxOf('position_name'), iBid = idxOf('board_id'), iX = idxOf('x'), iY = idxOf('y');
-            if ([iPid, iName, iBid, iX, iY].some(v => v < 0)) return null;
+            const iPid  = header.indexOf('position_id');
+            const iName = header.indexOf('position_name');
+            const iRow  = header.indexOf('row');
+            if (iPid < 0 || iName < 0 || iRow < 0) return null;
+            const cellStart = iRow + 1;
 
             const positions = {};
             const order = [];
             for (let i = 1; i < lines.length; i++) {
                 const parts = lines[i].split(',').map(s => s.trim());
-                if (parts.length < 5) continue;
-                const pid = parts[iPid];
+                if (parts.length <= cellStart) continue;
+                const pid  = parts[iPid];
                 const pname = parts[iName];
-                const bid = parts[iBid];
-                const x = parseInt(parts[iX]);
-                const y = parseInt(parts[iY]);
-                if (isNaN(x) || isNaN(y)) continue;
-
-                if (!positions[pid]) { positions[pid] = { name: pname, boards: {}, boardOrder: [] }; order.push(pid); }
-                if (!positions[pid].boards[bid]) { positions[pid].boards[bid] = []; positions[pid].boardOrder.push(bid); }
-                positions[pid].boards[bid].push([x, y]);
+                const y = parseInt(parts[iRow]);
+                if (isNaN(y)) continue;
+                const cells = parts.slice(cellStart).map(s => (s === '' ? '.' : s));
+                if (!positions[pid]) { positions[pid] = { name: pname, rows: {} }; order.push(pid); }
+                positions[pid].rows[y] = cells;
             }
 
-            return order.map(pid => ({
-                name: positions[pid].name,
-                sub: '',
-                boards: positions[pid].boardOrder.map(bid => positions[pid].boards[bid])
-            }));
+            return order.map(pid => {
+                const pos = positions[pid];
+                const rowNums = Object.keys(pos.rows).map(Number);
+                const gridH = Math.max(...rowNums) + 1;
+                let gridW = 0;
+                rowNums.forEach(y => { if (pos.rows[y].length > gridW) gridW = pos.rows[y].length; });
+                const g = Array.from({length: gridH}, () => Array(gridW).fill('.'));
+                rowNums.forEach(y => {
+                    const r = pos.rows[y];
+                    for (let x = 0; x < r.length; x++) g[y][x] = r[x] || '.';
+                });
+
+                // Flood-fill connected components of same character (ignoring '.')
+                const visited = Array.from({length: gridH}, () => Array(gridW).fill(false));
+                const boards = [];
+                for (let y = 0; y < gridH; y++) {
+                    for (let x = 0; x < gridW; x++) {
+                        if (visited[y][x]) continue;
+                        const ch = g[y][x];
+                        if (ch === '.' || ch === '') continue;
+                        const board = [];
+                        const queue = [[x, y]];
+                        visited[y][x] = true;
+                        while (queue.length) {
+                            const [cx, cy] = queue.shift();
+                            board.push([cx, cy]);
+                            for (const [dx, dy] of [[-1,0],[1,0],[0,-1],[0,1]]) {
+                                const nx = cx+dx, ny = cy+dy;
+                                if (nx<0||nx>=gridW||ny<0||ny>=gridH) continue;
+                                if (visited[ny][nx] || g[ny][nx] !== ch) continue;
+                                visited[ny][nx] = true;
+                                queue.push([nx, ny]);
+                            }
+                        }
+                        boards.push(board);
+                    }
+                }
+                return { name: pos.name, sub: '', boards: boards };
+            });
         }
 
         async function loadPositions() {
