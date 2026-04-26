@@ -22,7 +22,8 @@
         #meta-grid { display: grid; grid-template-columns: repeat(11, var(--cs)); grid-template-rows: repeat(11, var(--cs)); gap: var(--gap); position: relative; background: rgba(0,0,0,0.12); padding: var(--pad); border-radius: 4px; }
         .cell { width: var(--cs); height: var(--cs); display: flex; align-items: center; justify-content: center; position: relative; }
         .on-board { cursor: pointer; }
-        .off-board { background: transparent; cursor: pointer; border: 1px dashed rgba(255,255,255,0.05); }
+        .off-board { background: transparent; cursor: pointer; }
+        .off-board::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,0.22); }
 
         /* Size-class backgrounds: 3x3 → black, 4x3/4x2 → dark gray, ≤6 → light gray */
         .on-board.large  { background: #1a1a1a; border: 1px solid rgba(255,255,255,0.06); }
@@ -145,8 +146,9 @@
 
             <h3>4. Außenfelder & Boards</h3>
             <ul>
-                [cite_start]<li>Steine dürfen ein Feld außerhalb der Boards platziert werden, wenn sie <em>sofort</em> Teil einer Brücke werden[cite: 52].</li>
+                <li><strong>Punkte (•):</strong> Die kleinen Punkte zeigen Felder außerhalb der Boards. Steine dürfen <em>nur</em> auf solche Punktfelder gesetzt werden, wenn sie damit <em>im selben Zug</em> eine Brücke vervollständigen.</li>
                 [cite_start]<li>Nur ein Stein einer Reihe darf außerhalb liegen[cite: 53].</li>
+                <li>Andres Kuusk (Weltmeister im abstrakten Spiel) nennt diese Regel „an excellent rule":-)</li>
                 [cite_start]<li><strong>Board-Besitz:</strong> Spieler erhalten 1 Punkt pro Board, auf dem sie ein "inneres" Feld einer Brücke kontrollieren[cite: 50, 51].</li>
             </ul>
 
