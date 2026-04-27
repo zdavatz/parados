@@ -516,8 +516,9 @@
             Object.keys(t).forEach(c => {
                 if(t[c]>0) {
                     const s = document.createElement('div'); s.className='inv-slot';
+                    s.style.cursor = 'pointer';
+                    s.onclick = () => { if(moveState==='tile') { selectedColor=c; updateUI(); }};
                     const d = document.createElement('div'); d.className=`inv-tile ${c} ${selectedColor===c?'selected':''}`;
-                    d.onclick = () => { if(moveState==='tile') { selectedColor=c; updateUI(); }};
                     const count = document.createElement('span'); count.innerText = t[c]; count.style.fontSize="0.7em";
                     s.appendChild(d); s.appendChild(count); inv.appendChild(s);
                 }
