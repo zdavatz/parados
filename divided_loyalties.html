@@ -12,7 +12,7 @@
             --cs: 44px;
             --gap: 2px;
             --pad: 10px;
-            --tile-size: calc(var(--cs) - 6px);
+            --tile-size: calc(var(--cs) - 4px);
             --step: calc(var(--cs) + var(--gap));
         }
         * { box-sizing: border-box; }
@@ -25,24 +25,25 @@
         .off-board { background: transparent; cursor: pointer; }
         .off-board::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,0.22); }
 
-        /* Size-class backgrounds: 3x3 → black, 4x3/4x2 → dark gray, ≤6 → light gray */
-        .on-board.large  { background: #1a1a1a; border: 1px solid rgba(255,255,255,0.06); }
-        .on-board.medium { background: #5a5a5a; border: 1px solid rgba(255,255,255,0.10); }
-        .on-board.small  { background: #dcdcdc; border: 1px solid rgba(0,0,0,0.10); }
+        /* All-gray boards (3 shades, no near-black/near-white). Per Walter:
+           3x3 darkest, 3x2 (W) middle, 3x4 (G) lightest — stones carry the color. */
+        .on-board.large  { background: #3a3a3a; border: 1px solid rgba(255,255,255,0.08); }
+        .on-board.small  { background: #6a6a6a; border: 1px solid rgba(255,255,255,0.10); }
+        .on-board.medium { background: #9a9a9a; border: 1px solid rgba(0,0,0,0.12); }
 
-        /* Outer frames: contrast with fill — black→light, light→black */
-        .on-board.large[data-outer~="N"]  { border-top:    2px solid #bfbfbf; }
-        .on-board.large[data-outer~="S"]  { border-bottom: 2px solid #bfbfbf; }
-        .on-board.large[data-outer~="W"]  { border-left:   2px solid #bfbfbf; }
-        .on-board.large[data-outer~="E"]  { border-right:  2px solid #bfbfbf; }
-        .on-board.medium[data-outer~="N"] { border-top:    2px solid #a8a8a8; }
-        .on-board.medium[data-outer~="S"] { border-bottom: 2px solid #a8a8a8; }
-        .on-board.medium[data-outer~="W"] { border-left:   2px solid #a8a8a8; }
-        .on-board.medium[data-outer~="E"] { border-right:  2px solid #a8a8a8; }
-        .on-board.small[data-outer~="N"]  { border-top:    2px solid #111; }
-        .on-board.small[data-outer~="S"]  { border-bottom: 2px solid #111; }
-        .on-board.small[data-outer~="W"]  { border-left:   2px solid #111; }
-        .on-board.small[data-outer~="E"]  { border-right:  2px solid #111; }
+        /* Outer frames: subtle, contrast direction depends on fill */
+        .on-board.large[data-outer~="N"]  { border-top:    2px solid rgba(255,255,255,0.35); }
+        .on-board.large[data-outer~="S"]  { border-bottom: 2px solid rgba(255,255,255,0.35); }
+        .on-board.large[data-outer~="W"]  { border-left:   2px solid rgba(255,255,255,0.35); }
+        .on-board.large[data-outer~="E"]  { border-right:  2px solid rgba(255,255,255,0.35); }
+        .on-board.small[data-outer~="N"]  { border-top:    2px solid rgba(255,255,255,0.25); }
+        .on-board.small[data-outer~="S"]  { border-bottom: 2px solid rgba(255,255,255,0.25); }
+        .on-board.small[data-outer~="W"]  { border-left:   2px solid rgba(255,255,255,0.25); }
+        .on-board.small[data-outer~="E"]  { border-right:  2px solid rgba(255,255,255,0.25); }
+        .on-board.medium[data-outer~="N"] { border-top:    2px solid rgba(0,0,0,0.30); }
+        .on-board.medium[data-outer~="S"] { border-bottom: 2px solid rgba(0,0,0,0.30); }
+        .on-board.medium[data-outer~="W"] { border-left:   2px solid rgba(0,0,0,0.30); }
+        .on-board.medium[data-outer~="E"] { border-right:  2px solid rgba(0,0,0,0.30); }
         .tile { width: var(--tile-size); height: var(--tile-size); border-radius: 3px; z-index: 15; box-shadow: 0 4px 8px rgba(0,0,0,0.6), inset 0 2px 3px rgba(255,255,255,0.3); animation: placeTile 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes placeTile { from { transform: scale(1.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .tile.blue { background: var(--blue); } .tile.yellow { background: var(--yellow); }
@@ -275,7 +276,7 @@
                 const x1 = (b.s % GRID_SIZE) * step + cellSize / 2, y1 = Math.floor(b.s / GRID_SIZE) * step + cellSize / 2;
                 const x2 = (b.e % GRID_SIZE) * step + cellSize / 2, y2 = Math.floor(b.e / GRID_SIZE) * step + cellSize / 2;
                 const angle = Math.atan2(y2 - y1, x2 - x1);
-                const off = cellSize * 0.43;
+                const off = cellSize * 0.50;
                 b.coords = { x1: x1 + Math.cos(angle) * off, y1: y1 + Math.sin(angle) * off, x2: x2 - Math.cos(angle) * off, y2: y2 - Math.sin(angle) * off };
                 drawBridge(b.coords, b.player, b.id);
             }
@@ -442,7 +443,7 @@
             const step = cellSize + gapSize;
             const x1 = (s%GRID_SIZE)*step+cellSize/2, y1 = Math.floor(s/GRID_SIZE)*step+cellSize/2, x2 = (e%GRID_SIZE)*step+cellSize/2, y2 = Math.floor(e/GRID_SIZE)*step+cellSize/2;
             const angle = Math.atan2(y2-y1, x2-x1);
-            const off = cellSize * 0.43;
+            const off = cellSize * 0.50;
             const c = { x1: x1 + Math.cos(angle)*off, y1: y1 + Math.sin(angle)*off, x2: x2 - Math.cos(angle)*off, y2: y2 - Math.sin(angle)*off };
 
             const collision = checkCollision(c);
@@ -473,7 +474,7 @@
             const svg = document.getElementById('bridge-layer');
             const l = document.createElementNS("http://www.w3.org/2000/svg", "line");
             l.setAttribute("x1", c.x1); l.setAttribute("y1", c.y1); l.setAttribute("x2", c.x2); l.setAttribute("y2", c.y2);
-            l.setAttribute("stroke", type==='red'?'#F44336':(type==='blue'?'#2196F3':'#FFEB3B'));
+            l.setAttribute("stroke", type==='red'?'#D32F2F':(type==='blue'?'#1976D2':'#FDD835'));
             l.setAttribute("stroke-width", "10"); l.classList.add('bridge-line'); l.id = 'line-' + id;
             svg.appendChild(l);
         }
