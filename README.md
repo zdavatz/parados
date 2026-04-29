@@ -8,7 +8,7 @@ Games by Walter Prossnitz
 
 ## Share
 
-Every game has a **Share on WhatsApp** button (WhatsApp green `#25D366`) placed to the right of the game title. It opens WhatsApp (or web.whatsapp.com as fallback) in a new tab with a pre-filled message containing the current game URL plus iOS App Store and Google Play links to the Parados app.
+Every game has a **Share on WhatsApp** button (WhatsApp green `#25D366`) placed to the right of the game title. It opens WhatsApp (or web.whatsapp.com as fallback) in a new tab with a pre-filled message containing the current game URL plus iOS App Store and Google Play links to the Parados app. When the game is played inside the iOS/Android app the page is loaded from a local `file://` path, so the share message rewrites the URL to the public `https://game.ywesee.com/parados/<filename>` so recipients always get a working link.
 
 ## Games
 
