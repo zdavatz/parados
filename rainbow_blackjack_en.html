@@ -1510,7 +1510,8 @@ function closeRules() {
 }
 
 function shareOnWhatsApp() {
-    const msg = `Play Rainbow Blackjack: ${window.location.href}\n\nGet the Parados app:\niOS: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados`;
+    const shareUrl = window.location.protocol === "file:" ? "https://game.ywesee.com/parados/" + (window.location.pathname.split("/").pop() || "index.html") : window.location.href;
+    const msg = `Play Rainbow Blackjack: ${shareUrl}\n\nGet the Parados app:\niOS: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados`;
     const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
     const inIOSApp = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.csvExport);
     if (inIOSApp) { window.location.href = url; return; }
