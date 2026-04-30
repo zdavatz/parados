@@ -19,11 +19,13 @@
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #f5f5f5; display: flex; flex-direction: column; align-items: center; margin: 0; padding: 10px; min-height: 100vh; }
         h1 { font-size: 1.5em; margin: 5px 0; }
         #game-layout { display: flex; align-items: flex-start; flex-wrap: wrap; justify-content: center; gap: 15px; width: 100%; }
-        #meta-grid { display: grid; grid-template-columns: repeat(11, var(--cs)); grid-template-rows: repeat(11, var(--cs)); gap: var(--gap); position: relative; background: rgba(0,0,0,0.12); padding: var(--pad); border-radius: 4px; }
+        #meta-grid { display: grid; grid-template-columns: repeat(11, var(--cs)); grid-template-rows: repeat(11, var(--cs)); gap: var(--gap); position: relative; background: #fff; padding: var(--pad); border-radius: 4px; }
         .cell { width: var(--cs); height: var(--cs); display: flex; align-items: center; justify-content: center; position: relative; }
         .on-board { cursor: pointer; }
+        /* Off-board cells default to nothing — no grid, no dot. The placement dot
+           appears only on cells the position designer (Walter) explicitly marked. */
         .off-board { background: transparent; cursor: pointer; }
-        .off-board::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,0.22); }
+        .off-board.has-dot::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: rgba(0,0,0,0.45); }
 
         /* All-gray boards (3 shades, no near-black/near-white). Per Walter:
            3x3 darkest, 3x2 (W) middle, 3x4 (G) lightest — stones carry the color. */
@@ -131,7 +133,7 @@
                     <select id="editor-size-h" style="padding:6px; font-size:0.95em; border:1px solid #ccc; border-radius:4px;" onchange="setEditorGridDim('h', this.value)"></select>
                 </label>
             </div>
-            <div style="font-size:0.85em; color:#555; margin-bottom:8px;">Wähle ein Board (S = 3×3 dunkel, W = Pyramide mittel, G = 3×4 hell), dann tippe Felder an. Mehrere Boards desselben Typs (z.B. S1, S2, …) bleiben getrennt. Breite und Höhe können unterschiedlich sein (z.B. 15×9).</div>
+            <div style="font-size:0.85em; color:#555; margin-bottom:8px;">Wähle ein Board (S = 3×3 dunkel, W = Pyramide mittel, G = 3×4 hell), dann tippe Felder an. Mehrere Boards desselben Typs (z.B. S1, S2, …) bleiben getrennt. Breite und Höhe können unterschiedlich sein (z.B. 15×9). Mit dem <strong>• Punkt</strong>-Pinsel markierst du Felder, auf denen Steine gesetzt werden dürfen, wenn sie eine Brücke vervollständigen — sonst bleibt das Feld leer.</div>
             <div id="editor-brush-bar" style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px;"></div>
             <div style="background:#fff; padding:10px; border-radius:6px; display:flex; justify-content:center; overflow:auto; border:1px solid #ccc;">
                 <div id="editor-grid" style="display:grid; gap:2px; background:transparent; padding:4px; border-radius:4px;"></div>
@@ -301,6 +303,7 @@
         let boards = [];           // array of flat-index arrays, one per board
         let boardTokens = [];      // parallel array of token strings (for color class)
         let allBoardIdx = [];
+        let playDots = new Set();  // flat-indices of off-board cells that show a placement dot
 
         function calcCellSize() {
             const vw = window.innerWidth - 20;
@@ -367,6 +370,7 @@
                     c.setAttribute('data-outer', outers.join(' '));
                 } else {
                     c.className = 'cell off-board';
+                    if (playDots.has(i)) c.classList.add('has-dot');
                 }
                 c.onclick = () => handleClick(i);
                 container.appendChild(c);
@@ -450,17 +454,23 @@
                 }
                 return b;
             });
-            // Compute grid size from max (x,y) across all boards, +2 for off-board placement margin
+            const positionDots = pos.dots || [];
+            // Compute grid size from max (x,y) across all boards AND dots; +2 margin
             let maxX = 0, maxY = 0;
             norm.forEach(b => b.cells.forEach(([x,y]) => {
                 if (x > maxX) maxX = x;
                 if (y > maxY) maxY = y;
             }));
+            positionDots.forEach(([x,y]) => {
+                if (x > maxX) maxX = x;
+                if (y > maxY) maxY = y;
+            });
             GRID_W = maxX + 2;
             GRID_H = maxY + 2;
             boards = norm.map(b => b.cells.map(([x,y]) => y * GRID_W + x));
             boardTokens = norm.map(b => b.token);
             allBoardIdx = [].concat(...boards);
+            playDots = new Set(positionDots.map(([x,y]) => y * GRID_W + x));
             grid = Array(GRID_W * GRID_H).fill(null);
             currentPlayer = 'blue';
             selectedColor = null;
@@ -651,14 +661,17 @@
             return order.map(pid => {
                 const pos = positions[pid];
                 const rowNums = Object.keys(pos.rows).map(Number);
-                // Collect cells by token; each unique token = one separate board
+                // Collect cells by token; each unique token = one separate board.
+                // 'o' / 'O' = placement dot (where stones may go when completing a bridge).
                 const byToken = {};
                 const tokenOrder = [];
+                const dots = [];
                 rowNums.forEach(y => {
                     const r = pos.rows[y];
                     for (let x = 0; x < r.length; x++) {
                         const tok = r[x];
                         if (!tok || tok === '.') continue;
+                        if (tok === 'o' || tok === 'O') { dots.push([x, y]); continue; }
                         if (!byToken[tok]) { byToken[tok] = []; tokenOrder.push(tok); }
                         byToken[tok].push([x, y]);
                     }
@@ -666,7 +679,8 @@
                 return {
                     name: pos.name,
                     sub: '',
-                    boards: tokenOrder.map(tok => ({ token: tok, cells: byToken[tok] }))
+                    boards: tokenOrder.map(tok => ({ token: tok, cells: byToken[tok] })),
+                    dots
                 };
             });
         }
@@ -706,6 +720,8 @@
                     const cells = Array.isArray(b) ? b : b.cells;
                     cells.forEach(([x,y]) => { if (x > maxX) maxX = x; if (y > maxY) maxY = y; });
                 });
+                const existingDots = existingPos.dots || [];
+                existingDots.forEach(([x,y]) => { if (x > maxX) maxX = x; if (y > maxY) maxY = y; });
                 // Open the editor snug to the position's bounds (+2-cell margin).
                 // Walter can grow it via the Breite/Höhe dropdowns.
                 editorGridW = maxX + 2;
@@ -723,6 +739,7 @@
                     }
                     cells.forEach(([x,y]) => { editorPaint[y * editorGridW + x] = tok; });
                 });
+                existingDots.forEach(([x,y]) => { editorPaint[y * editorGridW + x] = 'DOT'; });
                 editorPositionName = existingPos.name;
                 editingCustomId = existingPos.customId || null;
             } else {
@@ -811,6 +828,13 @@
                 btn.onclick = () => { editorBrush = tok; renderBrushBar(); };
                 bar.appendChild(btn);
             });
+            // Punkt brush: marks cells where stones may be placed off-board when
+            // completing a bridge (Walter's manual placement, replaces auto-dots).
+            const dotBtn = document.createElement('button');
+            dotBtn.style.cssText = `background:#fff; color:#000; border:3px solid ${editorBrush==='DOT'?'#FFEB3B':'rgba(0,0,0,0.2)'}; padding:6px 10px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.85em; display:inline-flex; align-items:center; gap:5px;`;
+            dotBtn.innerHTML = '<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#000;"></span> Punkt';
+            dotBtn.onclick = () => { editorBrush = 'DOT'; renderBrushBar(); };
+            bar.appendChild(dotBtn);
             const eraser = document.createElement('button');
             eraser.style.cssText = `background:#fff; color:#000; border:3px solid ${editorBrush==='erase'?'#FFEB3B':'rgba(0,0,0,0.2)'}; padding:6px 10px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.85em;`;
             eraser.textContent = '✕ Radieren';
@@ -830,18 +854,27 @@
             const fontSize = Math.max(8, Math.floor(ecs * 0.32));
             for (let i = 0; i < editorGridW * editorGridH; i++) {
                 const c = document.createElement('div');
-                c.style.cssText = `width:${ecs}px; height:${ecs}px; cursor:pointer; display:flex; align-items:center; justify-content:center;`;
+                // Faint grid border in the editor so Walter can see the cells he's painting on.
+                // Empty cells have no fill — only this thin outline; on the play grid the
+                // border is gone entirely so empty space is just white.
+                c.style.cssText = `width:${ecs}px; height:${ecs}px; cursor:pointer; display:flex; align-items:center; justify-content:center; border:1px solid rgba(0,0,0,0.10);`;
                 const tok = editorPaint[i];
-                if (tok) {
+                if (tok === 'DOT') {
+                    // Placement dot — Walter marks where stones may go off-board
+                    c.style.background = 'transparent';
+                    const dotSize = Math.max(6, Math.floor(ecs * 0.22));
+                    c.innerHTML = `<span style="display:inline-block; width:${dotSize}px; height:${dotSize}px; border-radius:50%; background:#000;"></span>`;
+                } else if (tok) {
                     const ch = tok[0];
                     const bg = ch === 'S' ? '#3a3a3a' : (ch === 'W' ? '#6a6a6a' : '#9a9a9a');
                     const fg = ch === 'G' ? '#000' : '#fff';
                     c.style.background = bg;
+                    c.style.border = '1px solid rgba(0,0,0,0.20)';
                     c.innerHTML = `<span style="font-size:${fontSize}px; color:${fg}; font-weight:bold;">${tok}</span>`;
                 } else {
-                    // Placement dot — dark on the editor's white panel so it's visible
+                    // Empty cell — blank white, no auto-dot. Walter places dots manually.
                     c.style.background = 'transparent';
-                    c.innerHTML = '<span style="display:inline-block; width:5px; height:5px; border-radius:50%; background:rgba(0,0,0,0.35);"></span>';
+                    c.innerHTML = '';
                 }
                 c.onclick = () => editorClick(i);
                 g.appendChild(c);
@@ -852,13 +885,24 @@
             const byToken = {};
             const order = [];
             Object.keys(editorPaint).forEach(idx => {
+                const tok = editorPaint[idx];
+                if (tok === 'DOT') return;  // dots collected separately via paintToDots()
                 const i = parseInt(idx);
                 const x = i % editorGridW, y = Math.floor(i / editorGridW);
-                const tok = editorPaint[idx];
                 if (!byToken[tok]) { byToken[tok] = []; order.push(tok); }
                 byToken[tok].push([x, y]);
             });
             return order.map(tok => ({ token: tok, cells: byToken[tok] }));
+        }
+
+        function paintToDots() {
+            const dots = [];
+            Object.keys(editorPaint).forEach(idx => {
+                if (editorPaint[idx] !== 'DOT') return;
+                const i = parseInt(idx);
+                dots.push([i % editorGridW, Math.floor(i / editorGridW)]);
+            });
+            return dots;
         }
 
         function saveCustomPosition() {
@@ -874,7 +918,8 @@
                 customId: editingCustomId || ('c' + Date.now()),
                 name: name,
                 sub: 'Eigene Stellung',
-                boards: paintToBoards()
+                boards: paintToBoards(),
+                dots: paintToDots()
             };
             const customs = loadCustomPositions();
             const idx = customs.findIndex(p => p.customId === newPos.customId);
@@ -903,7 +948,10 @@
             let csv = headers.join(',') + '\n';
             for (let y = 0; y <= maxY; y++) {
                 const row = [pid, name, y];
-                for (let x = 0; x < numCols; x++) row.push(paint[y * gridW + x] || '.');
+                for (let x = 0; x < numCols; x++) {
+                    const v = paint[y * gridW + x];
+                    row.push(v === 'DOT' ? 'o' : (v || '.'));
+                }
                 csv += row.join(',') + '\n';
             }
             return csv;
@@ -917,6 +965,8 @@
                 const cells = Array.isArray(b) ? b : b.cells;
                 cells.forEach(([x,y]) => { if (x > maxX) maxX = x; if (y > maxY) maxY = y; });
             });
+            const dots = pos.dots || [];
+            dots.forEach(([x,y]) => { if (x > maxX) maxX = x; if (y > maxY) maxY = y; });
             const gridW = maxX + 2;
             const gridH = maxY + 2;
             const paint = {};
@@ -932,6 +982,7 @@
                 }
                 cells.forEach(([x,y]) => { paint[y * gridW + x] = tok; });
             });
+            dots.forEach(([x,y]) => { paint[y * gridW + x] = 'DOT'; });
             return { paint, gridW, gridH };
         }
 
