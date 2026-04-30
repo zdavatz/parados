@@ -122,6 +122,10 @@
             <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
                 <h2 style="margin:0; font-size:1.2em;">Editor — Eigene Startstellung</h2>
                 <input id="editor-name" type="text" placeholder="Name der Stellung" style="flex:1; min-width:160px; padding:8px; font-size:1em; border:1px solid #ccc; border-radius:4px;">
+                <label style="font-size:0.9em; color:#444; display:flex; align-items:center; gap:6px;">
+                    Grösse:
+                    <select id="editor-size" style="padding:6px; font-size:0.95em; border:1px solid #ccc; border-radius:4px;" onchange="setEditorGridSize(this.value)"></select>
+                </label>
             </div>
             <div style="font-size:0.85em; color:#555; margin-bottom:8px;">Wähle ein Board (S = 3×3 dunkel, W = Pyramide mittel, G = 3×4 hell), dann tippe Felder an. Mehrere Boards desselben Typs (z.B. S1, S2, …) bleiben getrennt.</div>
             <div id="editor-brush-bar" style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px;"></div>
@@ -665,10 +669,11 @@
         // ---------- Position editor (custom positions stored in localStorage) ----------
         let editorPaint = {};       // { [index]: token }  e.g. { 12: 'S1', 13: 'S1', ... }
         let editorBrush = 'S1';
-        let editorGridSize = 13;
+        let editorGridSize = 17;
         let editorPositionName = '';
         let editingCustomId = null;
         const EDITOR_TOKENS = ['S1','S2','S3','S4','S5','W1','W2','W3','W4','W5','G1','G2','G3','G4'];
+        const EDITOR_SIZES = [13, 15, 17, 19, 21, 23, 25];
 
         function loadCustomPositions() {
             try {
@@ -694,7 +699,7 @@
                     const cells = Array.isArray(b) ? b : b.cells;
                     cells.forEach(([x,y]) => { if (x > maxX) maxX = x; if (y > maxY) maxY = y; });
                 });
-                editorGridSize = Math.max(13, Math.max(maxX, maxY) + 2);
+                editorGridSize = Math.max(17, Math.max(maxX, maxY) + 2);
                 // Synthesize numeric tokens for hardcoded positions (which only have 'S'/'W'/'G' single-letter tokens)
                 const usedByPrefix = { S:0, W:0, G:0 };
                 existingPos.boards.forEach(b => {
@@ -711,7 +716,7 @@
                 editorPositionName = existingPos.name;
                 editingCustomId = existingPos.customId || null;
             } else {
-                editorGridSize = 13;
+                editorGridSize = 17;
                 editorPositionName = '';
                 editingCustomId = null;
             }
@@ -719,7 +724,51 @@
             document.getElementById('setup-overlay').style.display = 'none';
             document.getElementById('editor-overlay').style.display = 'block';
             document.getElementById('editor-name').value = editorPositionName;
+            rebuildSizeSelector();
             renderBrushBar();
+            renderEditor();
+        }
+
+        function rebuildSizeSelector() {
+            const sel = document.getElementById('editor-size');
+            if (!sel) return;
+            sel.innerHTML = '';
+            const sizes = EDITOR_SIZES.slice();
+            if (!sizes.includes(editorGridSize)) sizes.push(editorGridSize);
+            sizes.sort((a,b) => a-b);
+            sizes.forEach(s => {
+                const o = document.createElement('option');
+                o.value = s;
+                o.textContent = `${s}×${s}`;
+                if (s === editorGridSize) o.selected = true;
+                sel.appendChild(o);
+            });
+        }
+
+        function setEditorGridSize(newSize) {
+            newSize = parseInt(newSize);
+            if (!newSize || newSize === editorGridSize) return;
+            // If shrinking and that would drop painted cells, ask for confirm
+            const wouldDrop = Object.keys(editorPaint).some(idx => {
+                const i = parseInt(idx);
+                const x = i % editorGridSize, y = Math.floor(i / editorGridSize);
+                return x >= newSize || y >= newSize;
+            });
+            if (wouldDrop && !confirm('Beim Verkleinern würden Felder ausserhalb des neuen Rasters verloren gehen. Trotzdem verkleinern?')) {
+                rebuildSizeSelector();
+                return;
+            }
+            const oldPaint = editorPaint;
+            const oldSize = editorGridSize;
+            editorPaint = {};
+            Object.keys(oldPaint).forEach(idx => {
+                const i = parseInt(idx);
+                const x = i % oldSize, y = Math.floor(i / oldSize);
+                if (x < newSize && y < newSize) {
+                    editorPaint[y * newSize + x] = oldPaint[idx];
+                }
+            });
+            editorGridSize = newSize;
             renderEditor();
         }
 
@@ -757,7 +806,9 @@
         function renderEditor() {
             const g = document.getElementById('editor-grid');
             g.innerHTML = '';
-            const ecs = Math.max(20, Math.min(38, Math.floor((Math.min(window.innerWidth, 820) - 80) / editorGridSize)));
+            // Lower-bound shrunk to 16 so a 25×25 grid still fits a ~400px phone.
+            // The container has overflow:auto so anything wider than the viewport is scrollable.
+            const ecs = Math.max(16, Math.min(38, Math.floor((Math.min(window.innerWidth, 820) - 80) / editorGridSize)));
             g.style.gridTemplateColumns = `repeat(${editorGridSize}, ${ecs}px)`;
             g.style.gridTemplateRows = `repeat(${editorGridSize}, ${ecs}px)`;
             const fontSize = Math.max(8, Math.floor(ecs * 0.32));
@@ -772,9 +823,9 @@
                     c.style.background = bg;
                     c.innerHTML = `<span style="font-size:${fontSize}px; color:${fg}; font-weight:bold;">${tok}</span>`;
                 } else {
-                    c.style.background = 'rgba(255,255,255,0.04)';
-                    c.style.outline = '1px dashed rgba(255,255,255,0.18)';
-                    c.style.outlineOffset = '-1px';
+                    // Placement dot, matching the play grid's .off-board ::before
+                    c.style.background = 'transparent';
+                    c.innerHTML = '<span style="display:inline-block; width:5px; height:5px; border-radius:50%; background:rgba(255,255,255,0.22);"></span>';
                 }
                 c.onclick = () => editorClick(i);
                 g.appendChild(c);
