@@ -59,9 +59,14 @@
         .flash-red { animation: flashRed 0.7s; }
         @keyframes flashRed { 0% { stroke: white; stroke-width: 20; } 50% { stroke: #ff1744; stroke-width: 25; } 100% { stroke: #555; stroke-width: 10; } }
         .btn { background: #6d4c41; color: white; border: none; padding: 12px; border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 8px; font-size: 0.95em; }
-        .inv-slot { background: rgba(0,0,0,0.2); padding: 6px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; }
+        .inv-slot { background: rgba(0,0,0,0.2); padding: 6px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
         .inv-tile { width: 28px; height: 28px; border-radius: 2px; cursor: pointer; border: 2px solid transparent; }
+        .inv-tile.blue { background: var(--blue); } .inv-tile.yellow { background: var(--yellow); }
+        .inv-tile.red { background: var(--red); } .inv-tile.green { background: var(--green); }
+        .inv-tile.purple { background: var(--purple); } .inv-tile.orange { background: var(--orange); }
         .inv-tile.selected { border-color: white; transform: scale(1.1); }
+        .inv-name { font-size: 0.65em; opacity: 0.85; }
+        .inv-count { font-size: 0.85em; font-weight: bold; }
 
         /* Setup overlay */
         #setup-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 3000; justify-content: center; align-items: center; }
@@ -204,6 +209,7 @@
 
     <script>
         let GRID_W = 11, GRID_H = 11;  // recomputed per position from CSV (max(x)+2, max(y)+2)
+        const COLOR_NAMES_DE = { blue:'Blau', yellow:'Gelb', purple:'Lila', orange:'Orange', green:'Grün', red:'Rot' };
         let currentPlayer = 'blue', selectedColor = null, lastPlaced = null, bridgePlaced = false, moveState = 'tile';
         let grid = Array(GRID_W * GRID_H).fill(null), blueInv = {blue:12, purple:9, green:6, red:6, orange:3}, yellowInv = {yellow:12, orange:9, green:6, red:6, purple:3};
         let activeBridges = [], bridgeSelection = [], bridgeScore = {blue:0, yellow:0};
@@ -616,8 +622,9 @@
                     s.style.cursor = 'pointer';
                     s.onclick = () => { if(moveState==='tile') { selectedColor=c; updateUI(); }};
                     const d = document.createElement('div'); d.className=`inv-tile ${c} ${selectedColor===c?'selected':''}`;
-                    const count = document.createElement('span'); count.innerText = t[c]; count.style.fontSize="0.7em";
-                    s.appendChild(d); s.appendChild(count); inv.appendChild(s);
+                    const count = document.createElement('span'); count.className='inv-count'; count.innerText = t[c];
+                    const name = document.createElement('span'); name.className='inv-name'; name.innerText = COLOR_NAMES_DE[c];
+                    s.appendChild(d); s.appendChild(count); s.appendChild(name); inv.appendChild(s);
                 }
             });
         }
