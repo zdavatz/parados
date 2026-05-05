@@ -1,4 +1,4 @@
-position_id,position_name,row,c0,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11
+position_id,position_name,row,c0,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,c15,c16
 1,Windrad,0,.,.,S1,S1,S1,W1,W1,W1,.,.,.
 1,Windrad,1,.,.,S1,S1,S1,.,W1,W1,.,.,.
 1,Windrad,2,.,.,S1,S1,S1,.,.,W1,S2,S2,S2
@@ -106,3 +106,76 @@ position_id,position_name,row,c0,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11
 10,Grid 4,5,W3,W3,G2,G2,G2,.,W4,W4,S2,S2,S2,.
 10,Grid 4,6,.,W3,G2,G2,G2,W4,W4,W4,S2,S2,S2,.
 10,Grid 4,7,.,.,G2,G2,G2,.,.,.,S2,S2,S2,.
+11,Stairs,0,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+11,Stairs,1,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+11,Stairs,2,.,.,.,.,.,.,.,.,.,.,.,o,o,o,.,.,.
+11,Stairs,3,.,.,.,.,.,.,.,.,.,.,o,S1,S1,S1,o,.,.
+11,Stairs,4,.,.,.,.,.,.,.,.,.,.,o,S1,S1,S1,o,.,.
+11,Stairs,5,.,.,.,.,.,.,.,.,.,o,o,S1,S1,S1,o,.,.
+11,Stairs,6,.,.,.,.,.,.,.,.,o,S1,S1,o,W1,o,.,.,.
+11,Stairs,7,.,.,.,.,.,.,.,o,S1,S1,S1,o,W1,W1,o,.,.
+11,Stairs,8,.,.,.,.,.,o,o,o,S1,S1,S1,o,W1,W1,W1,o,.
+11,Stairs,9,.,.,.,.,o,S1,S1,S1,o,G1,o,.,o,G1,o,.,.
+11,Stairs,10,.,.,.,.,o,S1,S1,S1,o,G1,G1,o,o,G1,G1,o,.
+11,Stairs,11,.,.,o,o,o,S1,S1,S1,o,G1,G1,o,o,G1,G1,G1,o
+11,Stairs,12,.,o,S1,S1,S1,o,G1,G1,o,o,W1,W1,o,o,W1,W1,o
+11,Stairs,13,.,o,S1,S1,S1,o,G1,G1,o,o,W1,W1,o,o,W1,W1,o
+11,Stairs,14,.,o,S1,S1,S1,o,G1,G1,o,o,W1,W1,o,o,W1,W1,o
+11,Stairs,15,.,.,o,o,o,.,o,o,.,.,o,o,.,.,o,o,.
+12,Octopus,0,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+12,Octopus,1,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+12,Octopus,2,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+12,Octopus,3,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+12,Octopus,4,.,.,.,o,o,o,.,.,o,o,o,o,.,o,o,.
+12,Octopus,5,.,.,o,S1,S1,S1,o,o,S1,S1,S1,S1,o,S1,S1,o
+12,Octopus,6,.,.,o,S1,o,S1,o,o,S1,o,o,o,o,o,S1,o
+12,Octopus,7,.,.,o,S1,o,G1,G1,G1,S1,G1,G1,G1,S1,S1,S1,o
+12,Octopus,8,.,.,o,o,o,G1,G1,G1,.,G1,G1,G1,o,o,o,.
+12,Octopus,9,.,o,S1,S1,S1,G1,G1,G1,S1,G1,G1,G1,o,S1,o,.
+12,Octopus,10,.,o,S1,o,o,o,o,o,S1,o,o,S1,o,S1,o,.
+12,Octopus,11,.,o,S1,S1,o,S1,S1,S1,S1,o,o,S1,S1,S1,o,.
+12,Octopus,12,.,.,o,o,.,o,o,o,o,.,.,o,o,o,.,.
+13,Wind wheel,0,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+13,Wind wheel,1,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+13,Wind wheel,2,.,.,.,.,.,o,o,o,.,.,.,.,.,.,.
+13,Wind wheel,3,.,.,.,.,o,S1,S1,S1,o,o,o,o,.,.,.
+13,Wind wheel,4,.,.,.,.,o,o,S1,S1,o,G2,G2,G2,o,o,.
+13,Wind wheel,5,.,.,.,o,G1,G3,G1,S1,o,G2,G2,G2,o,S2,o
+13,Wind wheel,6,.,.,.,o,G1,G1,G1,o,o,G2,G2,G2,S2,S2,o
+13,Wind wheel,7,.,.,.,o,G1,G1,G1,W1,W1,W1,o,S2,S2,S2,o
+13,Wind wheel,8,.,.,.,o,o,o,o,W1,W1,W1,o,o,o,o,.
+13,Wind wheel,9,.,.,o,S4,S4,S4,o,W1,W1,W1,G3,G3,G3,o,.
+13,Wind wheel,10,.,.,o,S4,S4,G4,G4,G4,o,o,G3,G3,G3,o,.
+13,Wind wheel,11,.,.,o,S4,o,G4,G4,G4,o,S3,G3,G3,G3,o,.
+13,Wind wheel,12,.,.,.,o,o,G4,G4,G4,o,S3,S3,o,o,.,.
+13,Wind wheel,13,.,.,.,.,.,o,o,o,o,S3,S3,S3,o,.,.
+13,Wind wheel,14,.,.,.,.,.,.,.,.,.,o,o,o,.,.,.
+14,Gentle kiss,0,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+14,Gentle kiss,1,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+14,Gentle kiss,2,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+14,Gentle kiss,3,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+14,Gentle kiss,4,.,.,.,o,o,o,.,.,.,o,o,o,.,.,.,.
+14,Gentle kiss,5,.,.,o,S2,S2,S2,o,o,o,W2,W2,W2,o,.,.,.
+14,Gentle kiss,6,.,.,o,S2,S2,S2,G1,G1,G1,W2,W2,W2,G4,o,.,.
+14,Gentle kiss,7,.,.,o,S2,S2,S2,G1,G1,o,W2,W2,W2,G4,G4,o,.
+14,Gentle kiss,8,.,.,.,o,o,o,G1,o,o,W2,W2,W2,G4,G4,G4,o
+14,Gentle kiss,9,.,.,o,G3,G3,G3,W1,W1,W1,o,o,G2,o,o,o,.
+14,Gentle kiss,10,.,.,.,o,G3,G3,W1,W1,W1,o,G2,G2,S1,S1,S1,o
+14,Gentle kiss,11,.,.,.,.,o,G3,W1,W1,W1,G2,G2,G2,S1,S1,S1,o
+14,Gentle kiss,12,.,.,.,.,.,o,W1,W1,W1,o,o,o,S1,S1,S1,o
+14,Gentle kiss,13,.,.,.,.,.,.,o,o,o,.,.,.,o,o,o,.
+15,Utopia,0,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+15,Utopia,1,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+15,Utopia,2,.,.,.,.,.,o,o,o,.,.,o,.,.,.,.
+15,Utopia,3,.,.,.,.,o,S1,S1,S1,o,o,S2,o,o,.,.
+15,Utopia,4,.,.,.,.,o,S1,S1,o,o,S2,S2,G2,G2,o,.
+15,Utopia,5,.,.,.,o,o,S1,o,o,S2,S2,S2,G2,G2,o,.
+15,Utopia,6,.,.,o,W1,W1,W1,W1,o,o,o,o,G2,G2,o,.
+15,Utopia,7,.,.,o,W1,W1,W1,W1,G1,G1,G1,o,G2,G2,o,.
+15,Utopia,8,.,.,o,W1,W1,W1,W1,G1,G1,G1,W2,W2,W2,W2,o
+15,Utopia,9,.,.,.,o,G2,G2,o,G1,G1,G1,W2,W2,W2,W2,o
+15,Utopia,10,.,.,.,o,G2,G2,o,o,o,o,W2,W2,W2,W2,o
+15,Utopia,11,.,.,.,o,G2,G2,S3,S3,S3,o,o,S4,o,o,.
+15,Utopia,12,.,.,.,o,G2,G2,S3,S3,o,o,S4,S4,o,.,.
+15,Utopia,13,.,.,.,.,o,o,S3,o,o,S4,S4,S4,o,.,.
+15,Utopia,14,.,.,.,.,.,.,o,.,.,o,o,o,.,.,.
