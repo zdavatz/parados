@@ -25,7 +25,13 @@
         /* Off-board cells default to nothing — no grid, no dot. The placement dot
            appears only on cells the position designer (Walter) explicitly marked. */
         .off-board { background: transparent; cursor: pointer; }
-        .off-board.has-dot::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: rgba(0,0,0,0.45); }
+        .off-board.has-dot::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: rgba(0,0,0,0.45); transition: all 0.2s; }
+        .off-board.has-dot.valid-placement { background: rgba(100, 255, 218, 0.18); box-shadow: inset 0 0 10px rgba(100, 255, 218, 0.4); border-radius: 4px; animation: dotPulse 1.4s ease-in-out infinite; }
+        .off-board.has-dot.valid-placement::before { width: 14px; height: 14px; background: rgba(100, 255, 218, 0.95); box-shadow: 0 0 6px rgba(100, 255, 218, 0.9); }
+        @keyframes dotPulse {
+            0%, 100% { box-shadow: inset 0 0 8px rgba(100, 255, 218, 0.35); }
+            50%      { box-shadow: inset 0 0 16px rgba(100, 255, 218, 0.85); }
+        }
 
         /* All-gray boards (3 shades, no near-black/near-white). Per Walter:
            3x3 darkest, 3x2 (W) middle, 3x4 (G) lightest — stones carry the color. */
@@ -529,24 +535,25 @@
             if (!w) { window.location.href = url; }
         }
 
+        // Loyalty sets — a bridge is valid if all stones lie in the current player's set
+        // (= scoring bridge) OR all lie in the red set (= defensive cut).
+        const SETS = { blue: ['blue','purple','green'], yellow: ['yellow','orange','green'], red: ['red','purple','orange'] };
+
         function handleClick(idx) {
-            if (moveState === 'tile') {
-                if (grid[idx] || !selectedColor) return;
-                grid[idx] = selectedColor;
-                lastPlaced = idx;
-                renderTile(idx, selectedColor);
-                currentPlayer === 'blue' ? blueInv[selectedColor]-- : yellowInv[selectedColor]--;
-                moveState = 'bridge';
-                selectedColor = null;
-                updateUI();
-            } else {
-                if (!grid[idx]) return;
-                bridgeSelection.push(idx);
-                if (bridgeSelection.length === 2) {
-                    processBridge(bridgeSelection[0], bridgeSelection[1]);
-                    bridgeSelection = [];
-                }
+            if (grid[idx] || !selectedColor) return;
+            const cell = document.getElementById('meta-grid').children[idx];
+            // Off-board placement: only on dot cells, only if it forms a bridge.
+            if (cell.classList.contains('off-board')) {
+                if (!cell.classList.contains('has-dot')) return;
+                if (!wouldFormBridge(idx, selectedColor)) return;
             }
+            grid[idx] = selectedColor;
+            lastPlaced = idx;
+            renderTile(idx, selectedColor);
+            currentPlayer === 'blue' ? blueInv[selectedColor]-- : yellowInv[selectedColor]--;
+            selectedColor = null;
+            autoBridge();
+            updateUI();
         }
 
         function getCoord(i) { return {x: i%GRID_W, y: Math.floor(i/GRID_W)}; }
@@ -559,40 +566,121 @@
             return r;
         }
 
-        function processBridge(s, e) {
-            const row = getRow(s, e);
-            if (!row || row.length < 3 || row.length > 4 || !row.includes(lastPlaced)) return;
-            if (activeBridges.some(b => b.row.includes(lastPlaced))) return;
+        // Build a row of `len` indices starting at flat index `start` in direction `dir = [dx,dy]`.
+        // Returns the index array, or null if it would run off the grid.
+        function getRowCells(start, dir, len) {
+            const x0 = start % GRID_W, y0 = Math.floor(start / GRID_W);
+            const cells = [];
+            for (let i = 0; i < len; i++) {
+                const x = x0 + i * dir[0];
+                const y = y0 + i * dir[1];
+                if (x < 0 || x >= GRID_W || y < 0 || y >= GRID_H) return null;
+                cells.push(y * GRID_W + x);
+            }
+            return cells;
+        }
 
+        // Does this row (filled with stones) form a valid bridge for `player`?
+        // Returns { isRed, isScoring } or null. Enforces no two adjacent same colors
+        // and the "max 1 stone off-board" rule.
+        function classifyRow(row, player) {
             const colors = row.map(i => grid[i]);
-            if (colors.includes(null)) return;
-            const sets = { blue: ['blue','purple','green'], yellow: ['yellow','orange','green'], red: ['red','purple','orange'] };
-            
-            const isRed = colors.every(c => sets.red.includes(c));
-            const isScoring = colors.every(c => sets[currentPlayer].includes(c));
+            if (colors.includes(null)) return null;
+            for (let i = 0; i < colors.length - 1; i++) if (colors[i] === colors[i+1]) return null;
+            const offBoard = row.filter(i => !allBoardIdx.includes(i)).length;
+            if (offBoard > 1) return null;
+            const isRed = colors.every(c => SETS.red.includes(c));
+            const isScoring = colors.every(c => SETS[player].includes(c));
+            if (!isRed && !isScoring) return null;
+            return { isRed, isScoring };
+        }
 
-            if (!isRed && !isScoring) return;
-            for(let i=0; i<colors.length-1; i++) if(colors[i]===colors[i+1]) return;
+        // Find the best valid 3- or 4-row containing `idx` for `player`.
+        // Prefers 4 over 3, scoring over red (defensive). Returns
+        // { row, isRed, isScoring } or null.
+        function findBridgeContaining(idx, player) {
+            const dirs = [[1,0],[0,1],[1,1],[1,-1]];
+            let best = null;
+            for (const dir of dirs) {
+                for (const len of [4, 3]) {
+                    for (let off = 0; off < len; off++) {
+                        const x0 = (idx % GRID_W) - off * dir[0];
+                        const y0 = Math.floor(idx / GRID_W) - off * dir[1];
+                        if (x0 < 0 || y0 < 0 || x0 >= GRID_W || y0 >= GRID_H) continue;
+                        const start = y0 * GRID_W + x0;
+                        const row = getRowCells(start, dir, len);
+                        if (!row || !row.includes(idx)) continue;
+                        const cls = classifyRow(row, player);
+                        if (!cls) continue;
+                        // Don't re-create an existing bridge over the same cells (in either order)
+                        const sameAsExisting = activeBridges.some(b =>
+                            b.row.length === row.length &&
+                            (b.row.every((c,i) => c === row[i]) || b.row.every((c,i) => c === row[row.length-1-i]))
+                        );
+                        if (sameAsExisting) continue;
+                        const score = (len === 4 ? 100 : 50) + (cls.isScoring ? 10 : 0);
+                        if (!best || score > best.score) best = { row, isRed: cls.isRed, isScoring: cls.isScoring, score };
+                    }
+                }
+            }
+            return best;
+        }
 
+        // Would placing `color` at empty cell `idx` form a valid bridge for the current player?
+        // Used both to validate dot placement and to highlight valid dots.
+        function wouldFormBridge(idx, color) {
+            if (grid[idx] !== null) return false;
+            grid[idx] = color;
+            const r = findBridgeContaining(idx, currentPlayer);
+            grid[idx] = null;
+            return !!r;
+        }
+
+        // After a stone is placed at `lastPlaced`, automatically draw the best
+        // bridge that contains it (if any). Replaces the old manual 2-click flow.
+        function autoBridge() {
+            if (lastPlaced === null) return;
+            if (activeBridges.some(b => b.row.includes(lastPlaced))) return;
+            const result = findBridgeContaining(lastPlaced, currentPlayer);
+            if (!result) return;
+            const row = result.row;
+            const s = row[0], e = row[row.length - 1];
             const step = cellSize + gapSize;
-            const x1 = (s%GRID_W)*step+cellSize/2, y1 = Math.floor(s/GRID_W)*step+cellSize/2, x2 = (e%GRID_W)*step+cellSize/2, y2 = Math.floor(e/GRID_W)*step+cellSize/2;
+            const x1 = (s%GRID_W)*step+cellSize/2, y1 = Math.floor(s/GRID_W)*step+cellSize/2;
+            const x2 = (e%GRID_W)*step+cellSize/2, y2 = Math.floor(e/GRID_W)*step+cellSize/2;
             const angle = Math.atan2(y2-y1, x2-x1);
             const off = cellSize * 0.50;
             const c = { x1: x1 + Math.cos(angle)*off, y1: y1 + Math.sin(angle)*off, x2: x2 - Math.cos(angle)*off, y2: y2 - Math.sin(angle)*off };
-
             const collision = checkCollision(c);
-            if (collision && !isRed) return;
-
-            if (isRed) {
+            if (result.isRed) {
                 if (collision) destroyBridge(collision.id);
                 drawBridge(c, 'red', Date.now());
+                bridgePlaced = true;
             } else {
+                if (collision) return;  // a scoring bridge can't cross an existing red cut
                 bridgeScore[currentPlayer] += (row.length === 3 ? 1 : 2);
                 const bId = Date.now();
                 activeBridges.push({id: bId, row, player: currentPlayer, coords: c, s, e});
                 drawBridge(c, currentPlayer, bId);
+                bridgePlaced = true;
             }
-            bridgePlaced = true; updateScore();
+            updateScore();
+        }
+
+        // Highlight every dot cell where placing the currently-selected color would
+        // complete a bridge — like Kangy's landing spots. Cleared when no color is selected.
+        function updateDotHighlights() {
+            const meta = document.getElementById('meta-grid');
+            const total = GRID_W * GRID_H;
+            for (let i = 0; i < total; i++) {
+                const cell = meta.children[i];
+                if (!cell) continue;
+                if (selectedColor && cell.classList.contains('has-dot') && wouldFormBridge(i, selectedColor)) {
+                    cell.classList.add('valid-placement');
+                } else {
+                    cell.classList.remove('valid-placement');
+                }
+            }
         }
 
         function checkCollision(c) {
@@ -669,6 +757,7 @@
                     s.appendChild(d); s.appendChild(count); s.appendChild(name); inv.appendChild(s);
                 }
             });
+            updateDotHighlights();
         }
         // CSV format: position_id, position_name, row, c0, c1, c2, ... — each cell its own column.
         // Cell values: '.' = empty. Any other token is a board id. Each UNIQUE token is its own
