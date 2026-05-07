@@ -125,6 +125,7 @@
         .cell {
             width: var(--cell-size); height: var(--cell-size); background-color: rgba(255,255,255,0.15);
             border-radius: 4px; display: flex; justify-content: center; align-items: center; cursor: pointer; position: relative; user-select: none;
+            touch-action: manipulation;
         }
         .cell:hover { background-color: rgba(255,255,255,0.3); }
 
@@ -274,6 +275,7 @@
 
             <h3>Важливо!</h3>
             <p>Перед КОЖНИМ стрибком ти можеш (і повинен!) пересунути рівно одну будь-яку миску на одне поле в будь-якому напрямку (також по діагоналі).</p>
+            <p>💡 <b>Підказка:</b> Подвійний клік (або подвійний тап) по мисці, яку хочеш пересунути — після цього достатньо одного кліку по цільовій клітинці. Кнопка "🖐️ Пересунути миску" також працює як альтернатива.</p>
             <p>Перемога без цих ходів неможлива... Досвідчені гравці часто пересувають миски задовго до того, як Кенгі дістанеться до тієї частини Аутбеку.</p>
 
             <h3>Тактичні поради</h3>
@@ -781,6 +783,7 @@
                 }
 
                 cell.onclick = () => handleCellClick(x, y);
+                cell.ondblclick = () => handleCellDblClick(x, y);
 
                 if (gameState === 'PLAYING') {
                     if (isMovingDish && selectedDishPos && selectedDishPos.x === x && selectedDishPos.y === y) {
@@ -878,6 +881,17 @@
                 }
             }
         }
+    }
+
+    function handleCellDblClick(x, y) {
+        if (gameState !== 'PLAYING') return;
+        if (!dishMoveAvailable) return;
+        const c = board[y][x];
+        if (c !== 'G' && c !== 'B') return;
+        isMovingDish = true;
+        selectedDishPos = { x, y };
+        renderBoard();
+        updateUI();
     }
 
     // --- ЛОГІКА ХОДІВ ТА СТРИБКІВ ---

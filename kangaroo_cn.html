@@ -125,6 +125,7 @@
         .cell {
             width: var(--cell-size); height: var(--cell-size); background-color: rgba(255,255,255,0.15);
             border-radius: 4px; display: flex; justify-content: center; align-items: center; cursor: pointer; position: relative; user-select: none;
+            touch-action: manipulation;
         }
         .cell:hover { background-color: rgba(255,255,255,0.3); }
 
@@ -274,6 +275,7 @@
 
             <h3>重要提示！(Important!)</h3>
             <p>在每次跳跃之前，你可以（也应该！）将任意一个盘子向任意方向（包括对角线）移动一格。</p>
+            <p>💡 <b>小贴士：</b>双击（或双触）你想要移动的盘子，然后只需单击目标格子即可完成移动。"🖐️ 移动盘子" 按钮仍可作为替代方式使用。</p>
             <p>不进行这些移动是不可能获胜的……经验丰富的玩家通常会在 Kangy 到达内陆某个区域之前很久，就开始移动那里的盘子。</p>
 
             <h3>战术提示 (Tactical tips)</h3>
@@ -779,6 +781,7 @@
                 }
 
                 cell.onclick = () => handleCellClick(x, y);
+                cell.ondblclick = () => handleCellDblClick(x, y);
 
                 if (gameState === 'PLAYING') {
                     if (isMovingDish && selectedDishPos && selectedDishPos.x === x && selectedDishPos.y === y) {
@@ -876,6 +879,17 @@
                 }
             }
         }
+    }
+
+    function handleCellDblClick(x, y) {
+        if (gameState !== 'PLAYING') return;
+        if (!dishMoveAvailable) return;
+        const c = board[y][x];
+        if (c !== 'G' && c !== 'B') return;
+        isMovingDish = true;
+        selectedDishPos = { x, y };
+        renderBoard();
+        updateUI();
     }
 
     // --- MOVE & JUMP LOGIC ---
