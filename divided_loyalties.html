@@ -57,13 +57,14 @@
         .tile.blue { background: var(--blue); } .tile.yellow { background: var(--yellow); }
         .tile.red { background: var(--red); } .tile.green { background: var(--green); }
         .tile.purple { background: var(--purple); } .tile.orange { background: var(--orange); }
+        .tile.bridge-pending { outline: 3px solid #64ffda; outline-offset: 1px; box-shadow: 0 0 0 2px rgba(100,255,218,0.45), 0 4px 8px rgba(0,0,0,0.6); }
         #ui-panel { width: 100%; max-width: 340px; padding: 15px; background: var(--panel); border-radius: 8px; border: 1px solid #3d5245; }
         .current-player { font-size: 1.1em; margin-bottom: 12px; padding: 10px; border-radius: 4px; text-align: center; font-weight: bold; }
         .blue-turn { background: #1565C0; color: white; } .yellow-turn { background: #fbc02d; color: #333; }
         #bridge-layer { position: absolute; top: var(--pad); left: var(--pad); width: calc(100% - 2 * var(--pad)); height: calc(100% - 2 * var(--pad)); pointer-events: none; z-index: 20; }
         .bridge-line { stroke-linecap: butt; transition: stroke 0.5s; }
         .flash-red { animation: flashRed 0.7s; }
-        @keyframes flashRed { 0% { stroke: white; stroke-width: 20; } 50% { stroke: #ff1744; stroke-width: 25; } 100% { stroke: #555; stroke-width: 10; } }
+        @keyframes flashRed { 0% { stroke: white; stroke-width: 12; } 50% { stroke: #ff1744; stroke-width: 15; } 100% { stroke: #555; stroke-width: 6; } }
         .btn { background: #6d4c41; color: white; border: none; padding: 12px; border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 8px; font-size: 0.95em; }
         .inv-slot { background: rgba(0,0,0,0.2); padding: 6px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
         .inv-tile { width: 28px; height: 28px; border-radius: 2px; cursor: pointer; border: 2px solid transparent; }
@@ -191,6 +192,7 @@
                 [cite_start]<li>Reihen aus 4 Steinen ergeben 2 Punkte (4er-Brücke)[cite: 38].</li>
                 [cite_start]<li><strong>Wichtig:</strong> Zwei gleiche Farben dürfen nicht direkt hintereinander liegen[cite: 26].</li>
                 [cite_start]<li>Eine Brücke muss im selben Zug platziert werden wie der Stein, der die Reihe vervollständigt[cite: 33].</li>
+                <li><strong>So setzt du eine Brücke:</strong> <em>Doppelklick</em> (oder Doppel-Tipp) auf den ersten Stein der Reihe, danach <em>Doppelklick</em> auf den letzten Stein. Wenn die Reihe gültig ist (3 oder 4 Steine, alle in deiner Farbgruppe oder alle rot, keine zwei gleichen Farben hintereinander), wird die Brücke gezogen. Ein zweiter Doppelklick auf denselben Stein hebt die Auswahl wieder auf.</li>
             </ul>
 
             <h3>3. Rote Brücken & Schneiden ("Cut")</h3>
@@ -408,6 +410,7 @@
                     if (playDots.has(i)) c.classList.add('has-dot');
                 }
                 c.onclick = () => handleClick(i);
+                c.ondblclick = () => handleStoneDblClick(i);
                 container.appendChild(c);
             }
             updateUI();
@@ -552,7 +555,7 @@
             renderTile(idx, selectedColor);
             currentPlayer === 'blue' ? blueInv[selectedColor]-- : yellowInv[selectedColor]--;
             selectedColor = null;
-            autoBridge();
+            bridgeSelection = [];
             updateUI();
         }
 
@@ -636,15 +639,51 @@
             return !!r;
         }
 
-        // After a stone is placed at `lastPlaced`, automatically draw the best
-        // bridge that contains it (if any). Replaces the old manual 2-click flow.
-        function autoBridge() {
-            if (lastPlaced === null) return;
-            if (activeBridges.some(b => b.row.includes(lastPlaced))) return;
-            const result = findBridgeContaining(lastPlaced, currentPlayer);
-            if (!result) return;
-            const row = result.row;
-            const s = row[0], e = row[row.length - 1];
+        // Manual bridge: player double-clicks the first stone (endpoint A), then
+        // double-clicks the last stone (endpoint B). Walter's request — auto-bridge
+        // was too magical; the player should decide.
+        function handleStoneDblClick(idx) {
+            if (grid[idx] === null || grid[idx] === undefined) return;
+            if (bridgeSelection.length === 0) {
+                bridgeSelection = [idx];
+                renderBridgePending();
+                return;
+            }
+            if (bridgeSelection[0] === idx) {
+                bridgeSelection = [];
+                renderBridgePending();
+                return;
+            }
+            const s = bridgeSelection[0], e = idx;
+            bridgeSelection = [];
+            renderBridgePending();
+            tryFormBridge(s, e);
+        }
+
+        function renderBridgePending() {
+            const meta = document.getElementById('meta-grid');
+            const total = GRID_W * GRID_H;
+            for (let i = 0; i < total; i++) {
+                const cell = meta.children[i];
+                if (!cell) continue;
+                const tile = cell.firstChild;
+                if (!tile) continue;
+                if (bridgeSelection.includes(i)) tile.classList.add('bridge-pending');
+                else tile.classList.remove('bridge-pending');
+            }
+        }
+
+        function tryFormBridge(s, e) {
+            const row = getRow(s, e);
+            if (!row) return;
+            if (row.length !== 3 && row.length !== 4) return;
+            const cls = classifyRow(row, currentPlayer);
+            if (!cls) return;
+            const sameAsExisting = activeBridges.some(b =>
+                b.row.length === row.length &&
+                (b.row.every((c,i) => c === row[i]) || b.row.every((c,i) => c === row[row.length-1-i]))
+            );
+            if (sameAsExisting) return;
             const step = cellSize + gapSize;
             const x1 = (s%GRID_W)*step+cellSize/2, y1 = Math.floor(s/GRID_W)*step+cellSize/2;
             const x2 = (e%GRID_W)*step+cellSize/2, y2 = Math.floor(e/GRID_W)*step+cellSize/2;
@@ -652,7 +691,7 @@
             const off = cellSize * 0.50;
             const c = { x1: x1 + Math.cos(angle)*off, y1: y1 + Math.sin(angle)*off, x2: x2 - Math.cos(angle)*off, y2: y2 - Math.sin(angle)*off };
             const collision = checkCollision(c);
-            if (result.isRed) {
+            if (cls.isRed) {
                 if (collision) destroyBridge(collision.id);
                 drawBridge(c, 'red', Date.now());
                 bridgePlaced = true;
@@ -697,7 +736,7 @@
             const l = document.createElementNS("http://www.w3.org/2000/svg", "line");
             l.setAttribute("x1", c.x1); l.setAttribute("y1", c.y1); l.setAttribute("x2", c.x2); l.setAttribute("y2", c.y2);
             l.setAttribute("stroke", type==='red'?'#D32F2F':(type==='blue'?'#1976D2':'#FDD835'));
-            l.setAttribute("stroke-width", "10"); l.classList.add('bridge-line'); l.id = 'line-' + id;
+            l.setAttribute("stroke-width", "6"); l.classList.add('bridge-line'); l.id = 'line-' + id;
             svg.appendChild(l);
         }
 
