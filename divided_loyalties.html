@@ -202,6 +202,7 @@
                 [cite_start]<li>Wenn eine rote Brücke eine blaue/gelbe kreuzt, verliert diese ihren Wert[cite: 41].</li>
                 [cite_start]<li><strong>Geometrie:</strong> Brücken können nur an den <em>inneren</em> Feldern geschnitten werden; die Endfelder sind immun[cite: 42].</li>
                 [cite_start]<li>Diagonalen können sich zwischen End- und Innenfeld kreuzen[cite: 42].</li>
+                <li><strong>Geschnittene Brücken bleiben liegen:</strong> Eine durchgeschnittene Brücke wird grau und gestrichelt dargestellt — sie verliert sowohl die Brücken- als auch die Regionen-Punkte, bleibt aber physisch im Spiel und blockiert weiterhin alles, was über sie hinweg gebaut werden soll (egal ob wertende oder rote Brücke).</li>
             </ul>
 
             <h3>4. Außenfelder & Boards</h3>
@@ -361,7 +362,7 @@
                 const angle = Math.atan2(y2 - y1, x2 - x1);
                 const off = cellSize * 0.50;
                 b.coords = { x1: x1 + Math.cos(angle) * off, y1: y1 + Math.sin(angle) * off, x2: x2 - Math.cos(angle) * off, y2: y2 - Math.sin(angle) * off };
-                drawBridge(b.coords, b.player, b.id);
+                drawBridge(b.coords, b.player, b.id, b.cut);
             }
         }
 
@@ -693,14 +694,16 @@
             const c = { x1: x1 + Math.cos(angle)*off, y1: y1 + Math.sin(angle)*off, x2: x2 - Math.cos(angle)*off, y2: y2 - Math.sin(angle)*off };
             const collision = checkCollision(c);
             if (cls.isRed) {
-                if (collision) destroyBridge(collision.id);
+                if (collision) {
+                    if (collision.cut) return;  // can't cross an already-cut bridge
+                    destroyBridge(collision.id);
+                }
                 drawBridge(c, 'red', Date.now());
                 bridgePlaced = true;
             } else {
-                if (collision) return;  // a scoring bridge can't cross an existing red cut
-                bridgeScore[currentPlayer] += (row.length === 3 ? 1 : 2);
+                if (collision) return;  // a scoring bridge can't cross any existing line (active, cut, or red)
                 const bId = Date.now();
-                activeBridges.push({id: bId, row, player: currentPlayer, coords: c, s, e});
+                activeBridges.push({id: bId, row, player: currentPlayer, coords: c, s, e, cut: false});
                 drawBridge(c, currentPlayer, bId);
                 bridgePlaced = true;
             }
@@ -732,24 +735,31 @@
             return null;
         }
 
-        function drawBridge(c, type, id) {
+        function drawBridge(c, type, id, isCut) {
             const svg = document.getElementById('bridge-layer');
             const l = document.createElementNS("http://www.w3.org/2000/svg", "line");
             l.setAttribute("x1", c.x1); l.setAttribute("y1", c.y1); l.setAttribute("x2", c.x2); l.setAttribute("y2", c.y2);
-            l.setAttribute("stroke", type==='red'?'#D32F2F':(type==='blue'?'#1976D2':'#FDD835'));
+            if (isCut) {
+                l.setAttribute("stroke", "#555");
+                l.setAttribute("stroke-dasharray", "5");
+            } else {
+                l.setAttribute("stroke", type==='red'?'#D32F2F':(type==='blue'?'#1976D2':'#FDD835'));
+            }
             l.setAttribute("stroke-width", "6"); l.classList.add('bridge-line'); l.id = 'line-' + id;
             svg.appendChild(l);
         }
 
+        // Cut a bridge: it stays in activeBridges (so checkCollision still sees it
+        // and blocks anything from being built across it — Walter's clarification),
+        // but is marked cut:true so recomputeScores skips it for both bridge and
+        // region points. The line element survives the SVG; it animates flash-red
+        // and settles to gray dashed.
         function destroyBridge(id) {
-            const bIdx = activeBridges.findIndex(b => b.id === id);
-            if (bIdx > -1) {
-                const b = activeBridges[bIdx];
-                bridgeScore[b.player] -= (b.row.length === 3 ? 1 : 2);
-                activeBridges.splice(bIdx, 1);
-                const l = document.getElementById('line-' + id);
-                if (l) { l.classList.add('flash-red'); setTimeout(() => { l.setAttribute("stroke", "#555"); l.setAttribute("stroke-dasharray", "5"); }, 600); }
-            }
+            const b = activeBridges.find(b => b.id === id);
+            if (!b || b.cut) return;
+            b.cut = true;
+            const l = document.getElementById('line-' + id);
+            if (l) { l.classList.add('flash-red'); setTimeout(() => { l.setAttribute("stroke", "#555"); l.setAttribute("stroke-dasharray", "5"); }, 600); }
         }
 
         function endTurn() {
@@ -780,15 +790,18 @@
             return null;
         }
 
-        // Region bonus (Walter's spec, 2026-05-08): each scoring bridge whose **inner**
-        // cells (= cells that are completely covered by the bridge line, i.e. excluding
-        // the two endpoints) include a cell in a region/board earns +1 region-point —
-        // but only the FIRST such bridge per (player × region) counts. We recompute from
-        // scratch on every change so cuts/destroys are handled automatically.
-        function recomputeRegionScore() {
+        // Recompute both bridge and region points from scratch. Cut bridges (`b.cut === true`)
+        // contribute nothing — both their bridge-points (1 or 2) and their region claim
+        // disappear (Walter, 2026-05-08). Region bonus: the FIRST non-cut bridge per
+        // (player × region/token) whose inner cells (= row.slice(1,-1), excluding the two
+        // endpoints which the bridge line only half-covers) include a cell in that region.
+        function recomputeScores() {
+            bridgeScore = { blue: 0, yellow: 0 };
             regionScore = { blue: 0, yellow: 0 };
             const claimed = { blue: new Set(), yellow: new Set() };
             for (const b of activeBridges) {
+                if (b.cut) continue;
+                bridgeScore[b.player] += (b.row.length === 3 ? 1 : 2);
                 const inner = b.row.slice(1, -1);
                 for (const cellIdx of inner) {
                     const token = getBoardTokenForCell(cellIdx);
@@ -802,7 +815,7 @@
         }
 
         function updateScore() {
-            recomputeRegionScore();
+            recomputeScores();
             document.getElementById('blue-score').innerText = bridgeScore.blue;
             document.getElementById('yellow-score').innerText = bridgeScore.yellow;
             document.getElementById('blue-region-score').innerText = regionScore.blue;
