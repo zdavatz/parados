@@ -121,9 +121,9 @@
         <div id="ui-panel">
             <button class="btn" onclick="toggleRules(true)">📜 AUSFÜHRLICHE REGELN</button>
             <div id="turn-indicator" class="current-player blue-turn" style="margin-top:15px;">BLAU AM ZUG</div>
-            <div style="display:flex; justify-content:space-between; font-weight:bold;">
-                <span>BLAU: <span id="blue-score">0</span></span>
-                <span>GELB: <span id="yellow-score">0</span></span>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-weight:bold; font-size:0.9em;">
+                <div style="text-align:center;">BLAU<div style="font-weight:normal; font-size:0.85em; margin-top:2px;">Brücken <span id="blue-score">0</span> · Regionen <span id="blue-region-score">0</span></div></div>
+                <div style="text-align:center;">GELB<div style="font-weight:normal; font-size:0.85em; margin-top:2px;">Brücken <span id="yellow-score">0</span> · Regionen <span id="yellow-region-score">0</span></div></div>
             </div>
             <div id="inventory-container" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0;"></div>
             <button class="btn" style="background: #455a64;" onclick="endTurn()">ZUG ABSCHLIESSEN</button>
@@ -188,8 +188,9 @@
 
             <h3>2. Brückenbau & Wertung</h3>
             <ul>
-                [cite_start]<li>Reihen aus 3 Steinen ergeben 1 Punkt (3er-Brücke)[cite: 37].</li>
-                [cite_start]<li>Reihen aus 4 Steinen ergeben 2 Punkte (4er-Brücke)[cite: 38].</li>
+                [cite_start]<li><strong>Brückenpunkte:</strong> Reihen aus 3 Steinen ergeben 1 Punkt (3er-Brücke)[cite: 37], Reihen aus 4 Steinen 2 Punkte (4er-Brücke)[cite: 38].</li>
+                <li><strong>Region-Bonus:</strong> Jede Brücke, die für dich die <em>erste</em> in einer Region (Board wie S1, G4 …) ist, gibt 1 zusätzlichen Punkt — aber nur wenn die Brücke ein <em>inneres</em> Feld dieses Boards komplett überdeckt (Endfelder zählen nicht, da sie nur halb unter der Linie liegen).</li>
+                <li><strong>Getrennte Anzeige:</strong> Brücken- und Regionen-Punkte werden separat dargestellt — am Ende addierst du sie selbst.</li>
                 [cite_start]<li><strong>Wichtig:</strong> Zwei gleiche Farben dürfen nicht direkt hintereinander liegen[cite: 26].</li>
                 [cite_start]<li>Eine Brücke muss im selben Zug platziert werden wie der Stein, der die Reihe vervollständigt[cite: 33].</li>
                 <li><strong>So setzt du eine Brücke:</strong> <em>Doppelklick</em> (oder Doppel-Tipp) auf den ersten Stein der Reihe, danach <em>Doppelklick</em> auf den letzten Stein. Wenn die Reihe gültig ist (3 oder 4 Steine, alle in deiner Farbgruppe oder alle rot, keine zwei gleichen Farben hintereinander), wird die Brücke gezogen. Ein zweiter Doppelklick auf denselben Stein hebt die Auswahl wieder auf.</li>
@@ -208,7 +209,6 @@
                 <li><strong>Punkte (•):</strong> Die kleinen Punkte zeigen Felder außerhalb der Boards. Steine dürfen <em>nur</em> auf solche Punktfelder gesetzt werden, wenn sie damit <em>im selben Zug</em> eine Brücke vervollständigen.</li>
                 [cite_start]<li>Nur ein Stein einer Reihe darf außerhalb liegen[cite: 53].</li>
                 <li>Andres Kuusk (Weltmeister im abstrakten Spiel) nennt diese Regel „an excellent rule":-)</li>
-                [cite_start]<li><strong>Board-Besitz:</strong> Spieler erhalten 1 Punkt pro Board, auf dem sie ein "inneres" Feld einer Brücke kontrollieren[cite: 50, 51].</li>
             </ul>
 
             <h3>5. Drei Sätze (Vorrat)</h3>
@@ -236,7 +236,7 @@
         let currentPlayer = 'blue', selectedColor = null, lastPlaced = null, bridgePlaced = false, moveState = 'tile';
         let grid = Array(GRID_W * GRID_H).fill(null), blueInv = {...BLUE_BATCH}, yellowInv = {...YELLOW_BATCH};
         let blueBatch = 1, yellowBatch = 1;
-        let activeBridges = [], bridgeSelection = [], bridgeScore = {blue:0, yellow:0};
+        let activeBridges = [], bridgeSelection = [], bridgeScore = {blue:0, yellow:0}, regionScore = {blue:0, yellow:0};
         let cellSize = 44, gapSize = 2, padSize = 10;
 
         // Embedded copy of divided_loyalties_starting_positions.csv — this is what
@@ -521,6 +521,7 @@
             activeBridges = [];
             bridgeSelection = [];
             bridgeScore = {blue:0, yellow:0};
+            regionScore = {blue:0, yellow:0};
             document.getElementById('meta-grid').innerHTML = '';
             document.getElementById('bridge-layer').innerHTML = '';
             document.getElementById('setup-overlay').style.display = 'none';
@@ -773,7 +774,40 @@
             document.getElementById('meta-grid').children[i].appendChild(t);
         }
 
-        function updateScore() { document.getElementById('blue-score').innerText = bridgeScore.blue; document.getElementById('yellow-score').innerText = bridgeScore.yellow; }
+        // Map a cell flat-index to its region/board token, or null if the cell is off-board.
+        function getBoardTokenForCell(cellIdx) {
+            for (let i = 0; i < boards.length; i++) if (boards[i].includes(cellIdx)) return boardTokens[i];
+            return null;
+        }
+
+        // Region bonus (Walter's spec, 2026-05-08): each scoring bridge whose **inner**
+        // cells (= cells that are completely covered by the bridge line, i.e. excluding
+        // the two endpoints) include a cell in a region/board earns +1 region-point —
+        // but only the FIRST such bridge per (player × region) counts. We recompute from
+        // scratch on every change so cuts/destroys are handled automatically.
+        function recomputeRegionScore() {
+            regionScore = { blue: 0, yellow: 0 };
+            const claimed = { blue: new Set(), yellow: new Set() };
+            for (const b of activeBridges) {
+                const inner = b.row.slice(1, -1);
+                for (const cellIdx of inner) {
+                    const token = getBoardTokenForCell(cellIdx);
+                    if (!token) continue;
+                    if (!claimed[b.player].has(token)) {
+                        claimed[b.player].add(token);
+                        regionScore[b.player]++;
+                    }
+                }
+            }
+        }
+
+        function updateScore() {
+            recomputeRegionScore();
+            document.getElementById('blue-score').innerText = bridgeScore.blue;
+            document.getElementById('yellow-score').innerText = bridgeScore.yellow;
+            document.getElementById('blue-region-score').innerText = regionScore.blue;
+            document.getElementById('yellow-region-score').innerText = regionScore.yellow;
+        }
 
         function updateUI() {
             const turn = document.getElementById('turn-indicator');
