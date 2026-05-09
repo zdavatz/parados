@@ -25,7 +25,8 @@
         /* Off-board cells default to nothing — no grid, no dot. The placement dot
            appears only on cells the position designer (Walter) explicitly marked. */
         .off-board { background: transparent; cursor: pointer; }
-        .off-board.has-dot::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: rgba(0,0,0,0.45); transition: all 0.2s; }
+        .off-board.has-dot::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: rgba(0,0,0,0.45); transition: all 0.2s; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+        .off-board.has-dot:has(.tile)::before { display: none; }
         .off-board.has-dot.valid-placement { background: rgba(100, 255, 218, 0.18); box-shadow: inset 0 0 10px rgba(100, 255, 218, 0.4); border-radius: 4px; animation: dotPulse 1.4s ease-in-out infinite; }
         .off-board.has-dot.valid-placement::before { width: 14px; height: 14px; background: rgba(100, 255, 218, 0.95); box-shadow: 0 0 6px rgba(100, 255, 218, 0.9); }
         @keyframes dotPulse {
@@ -194,6 +195,7 @@
                 [cite_start]<li><strong>Wichtig:</strong> Zwei gleiche Farben dürfen nicht direkt hintereinander liegen[cite: 26].</li>
                 [cite_start]<li>Eine Brücke muss im selben Zug platziert werden wie der Stein, der die Reihe vervollständigt[cite: 33].</li>
                 <li><strong>So setzt du eine Brücke:</strong> <em>Doppelklick</em> (oder Doppel-Tipp) auf den ersten Stein der Reihe, danach <em>Doppelklick</em> auf den letzten Stein. Wenn die Reihe gültig ist (3 oder 4 Steine, alle in deiner Farbgruppe oder alle rot, keine zwei gleichen Farben hintereinander), wird die Brücke gezogen. Ein zweiter Doppelklick auf denselben Stein hebt die Auswahl wieder auf.</li>
+                <li><strong>Setzt du auf einen Punkt (Außenfeld), wird die Brücke automatisch gezogen</strong> — denn Außenplatzierungen sind ohnehin nur erlaubt, wenn sie im selben Zug eine Brücke schließen.</li>
             </ul>
 
             <h3>3. Rote Brücken & Schneiden ("Cut")</h3>
@@ -548,7 +550,8 @@
             if (grid[idx] || !selectedColor) return;
             const cell = document.getElementById('meta-grid').children[idx];
             // Off-board placement: only on dot cells, only if it forms a bridge.
-            if (cell.classList.contains('off-board')) {
+            const offBoardPlacement = cell.classList.contains('off-board');
+            if (offBoardPlacement) {
                 if (!cell.classList.contains('has-dot')) return;
                 if (!wouldFormBridge(idx, selectedColor)) return;
             }
@@ -558,6 +561,12 @@
             currentPlayer === 'blue' ? blueInv[selectedColor]-- : yellowInv[selectedColor]--;
             selectedColor = null;
             bridgeSelection = [];
+            // Off-board placements MUST form a bridge by rule, so auto-form it (Walter, 2026-05-09).
+            // Manual double-click stays for on-board placements where the player wants to delay.
+            if (offBoardPlacement) {
+                const found = findBridgeContaining(idx, currentPlayer);
+                if (found) tryFormBridge(found.row[0], found.row[found.row.length - 1]);
+            }
             updateUI();
         }
 
@@ -745,7 +754,7 @@
             } else {
                 l.setAttribute("stroke", type==='red'?'#D32F2F':(type==='blue'?'#1976D2':'#FDD835'));
             }
-            l.setAttribute("stroke-width", "6"); l.classList.add('bridge-line'); l.id = 'line-' + id;
+            l.setAttribute("stroke-width", isCut ? "6" : "4"); l.classList.add('bridge-line'); l.id = 'line-' + id;
             svg.appendChild(l);
         }
 
@@ -759,7 +768,7 @@
             if (!b || b.cut) return;
             b.cut = true;
             const l = document.getElementById('line-' + id);
-            if (l) { l.classList.add('flash-red'); setTimeout(() => { l.setAttribute("stroke", "#555"); l.setAttribute("stroke-dasharray", "5"); }, 600); }
+            if (l) { l.classList.add('flash-red'); setTimeout(() => { l.setAttribute("stroke", "#555"); l.setAttribute("stroke-dasharray", "5"); l.setAttribute("stroke-width", "6"); }, 600); }
         }
 
         function endTurn() {
