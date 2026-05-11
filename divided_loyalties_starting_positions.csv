@@ -87,3 +87,18 @@ position_id,position_name,row,c0,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,
 6,E M 3 W,12,.,.,o,S3,S3,o,G4,o,G4,o,G4,o,S4,S4,o
 6,E M 3 W,13,.,.,o,S3,S3,o,G4,G4,G4,G4,G4,o,S4,S4,o
 6,E M 3 W,14,.,.,.,o,o,.,o,o,o,o,o,.,o,o,.
+7,Swiss Cross,0,.,.,.,.,.,.,.,.,.,.,.,.,.
+7,Swiss Cross,1,.,.,.,.,.,.,.,.,.,.,.,.,.
+7,Swiss Cross,2,.,.,.,.,o,.,o,.,.,.,.,.,.
+7,Swiss Cross,3,.,.,.,o,G1,o,G1,o,o,.,.,.,.
+7,Swiss Cross,4,.,.,o,G1,G1,o,G1,G1,W1,o,.,.,.
+7,Swiss Cross,5,.,.,.,o,G1,W4,G1,W1,W1,W1,o,.,.
+7,Swiss Cross,6,.,.,.,o,W4,W4,W4,o,W1,o,G2,o,.
+7,Swiss Cross,7,.,.,.,.,o,W4,o,S1,o,G2,G2,G2,o
+7,Swiss Cross,8,.,.,.,o,G2,o,S1,S1,S1,o,G2,o,.
+7,Swiss Cross,9,.,.,o,G2,G2,G2,o,S1,o,W3,o,.,.
+7,Swiss Cross,10,.,.,.,o,G2,o,W1,o,W3,W3,W3,o,.
+7,Swiss Cross,11,.,.,.,.,o,W1,W1,W1,G1,W3,G1,o,.
+7,Swiss Cross,12,.,.,.,.,.,o,W1,G1,G1,o,G1,G1,o
+7,Swiss Cross,13,.,.,.,.,.,.,o,o,G1,o,G1,o,.
+7,Swiss Cross,14,.,.,.,.,.,.,.,.,o,.,o,.,.
