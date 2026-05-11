@@ -739,16 +739,16 @@
                 if (e && e.name === 'AbortError') return;
                 console.warn('share failed:', e);
             }
-            // Fallback: download + WhatsApp text
+            // Fallback: download the JSON. We deliberately do NOT redirect the page
+            // to wa.me here — Walter (2026-05-11): "when I tried to save it on WhatsApp,
+            // it disappeared" — the old wa.me redirect navigated away from the game.
+            // The game stays visible; the user attaches the downloaded file manually.
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url; a.download = filename;
             document.body.appendChild(a); a.click(); a.remove();
             setTimeout(() => URL.revokeObjectURL(url), 5000);
-            const msg = `Gespeichertes Spiel — Divided Loyalties: ${currentPosition.name}\n\n(JSON-Datei „${filename}" wurde heruntergeladen — bitte als Anhang anfügen.)`;
-            const wa = `https://wa.me/?text=${encodeURIComponent(msg)}`;
-            const w = window.open(wa, '_blank');
-            if (!w) { window.location.href = wa; }
+            alert(`Spielstand „${filename}" wurde heruntergeladen.\n\nÖffne WhatsApp manuell und füge die Datei als Anhang hinzu — das Spiel bleibt hier erhalten.`);
         }
 
         function triggerImportGame() {
