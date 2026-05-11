@@ -747,7 +747,10 @@
                 if (navigator.canShare) {
                     const file = new File([blob], filename, { type: 'application/json' });
                     if (navigator.canShare({ files: [file] })) {
-                        await navigator.share({ files: [file], title: `Divided Loyalties: ${currentPosition.name}`, text: `Gespeichertes Spiel — Divided Loyalties: ${currentPosition.name}` });
+                        // No `text:` — Android WhatsApp tends to drop the file when both
+                        // text and file are present (Walter, 2026-05-11). Keep only a
+                        // short title hint for the share sheet.
+                        await navigator.share({ files: [file], title: `Divided Loyalties: ${currentPosition.name}` });
                         return;
                     }
                 }
@@ -1507,10 +1510,14 @@
                 if (navigator.canShare) {
                     const file = new File([blob], filename, { type: 'text/csv' });
                     if (navigator.canShare({ files: [file] })) {
+                        // Walter (2026-05-11): "Wenn ich Picasso sende, kommt Frankenstein"
+                        // — WhatsApp dropped the CSV file and showed an old draft's text.
+                        // No `text:` here: WhatsApp can no longer fall back to a text-only
+                        // path when it doesn't like the CSV attachment; we keep only a
+                        // short title hint for the share sheet.
                         await navigator.share({
                             files: [file],
-                            title: `Divided Loyalties: ${name}`,
-                            text: `Neue Startstellung für Divided Loyalties: ${name}`
+                            title: `Divided Loyalties: ${name}`
                         });
                         return;
                     }
