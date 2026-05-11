@@ -128,7 +128,14 @@
             </div>
             <div id="inventory-container" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0;"></div>
             <button class="btn" style="background: #455a64;" onclick="endTurn()">ZUG ABSCHLIESSEN</button>
+            <button class="btn" id="undo-btn" style="background: #5d4037;" onclick="undo()">↶ ZUG ZURÜCK</button>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px;">
+                <button class="btn" style="background: #00695c; margin-top:0;" onclick="exportGameJSON()" title="Spielstand als Datei speichern">💾 Sichern</button>
+                <button class="btn" style="background: #00695c; margin-top:0;" onclick="triggerImportGame()" title="Spielstand aus Datei laden">📂 Laden</button>
+            </div>
+            <button class="btn" style="background: #25D366; margin-top:6px;" onclick="shareGameJSONViaWhatsApp()">📤 Per WhatsApp senden</button>
             <button class="btn" style="background: #3d5245;" onclick="showSetup()">NEUES SPIEL</button>
+            <input type="file" id="import-game-input" accept=".json,application/json" style="display:none;" onchange="handleImportGameFile(event)">
         </div>
     </div>
 
@@ -223,6 +230,14 @@
                 <li>Endspiel-Tipp: Die Übergänge bei Zug 12 und Zug 24 verändern die Taktik deutlich — was nach dem letzten Satz noch im Vorrat ist, entscheidet oft die Partie.</li>
             </ul>
 
+            <h3>6. Zug zurücknehmen & Spiel speichern</h3>
+            <ul>
+                <li><strong>↶ Zug zurück:</strong> Jeder Klick auf diesen Knopf macht eine Aktion rückgängig — Stein zurück ins Inventar, Brücke entfernt, Spieler wieder dran. Beliebig oft hintereinander bis zum Spielbeginn.</li>
+                <li><strong>Auto-Save:</strong> Das laufende Spiel wird automatisch im Browser gespeichert. Wenn du die Seite schließt und später wieder öffnest, erscheint „▶ Letztes Spiel fortsetzen" oben im Startmenü.</li>
+                <li><strong>💾 Sichern / 📂 Laden:</strong> Spielstand als JSON-Datei herunterladen oder eine zuvor gesicherte Datei wieder einspielen.</li>
+                <li><strong>📤 Per WhatsApp senden:</strong> Den aktuellen Spielstand als Datei verschicken — z.B. um eine Stellung mit Walter zu diskutieren.</li>
+            </ul>
+
             <button class="btn" onclick="toggleRules(false)">SCHLIESSEN</button>
         </div>
     </div>
@@ -241,6 +256,8 @@
         let blueBatch = 1, yellowBatch = 1;
         let activeBridges = [], bridgeSelection = [], bridgeScore = {blue:0, yellow:0}, regionScore = {blue:0, yellow:0};
         let cellSize = 44, gapSize = 2, padSize = 10;
+        let undoStack = [];           // TUK-style history: snapshot before each user-input mutation
+        let currentPosition = null;   // the {name, boards, dots, ...} the current game started from
 
         // Embedded copy of divided_loyalties_starting_positions.csv — this is what
         // ships inside iOS/Android/Rust app bundles where fetch('…csv') over file://
@@ -424,6 +441,25 @@
         function showSetup() {
             const g = document.getElementById('position-grid');
             g.innerHTML = '';
+            if (hasSavedGame()) {
+                const wrap = document.createElement('div');
+                wrap.style.gridColumn = '1 / -1';
+                wrap.style.display = 'flex';
+                wrap.style.gap = '8px';
+                const cont = document.createElement('button');
+                cont.className = 'position-btn';
+                cont.style.flex = '1';
+                cont.style.background = '#00695c';
+                cont.innerHTML = '▶ Letztes Spiel fortsetzen<span class="sub">Aus deinem letzten Stand weiterspielen</span>';
+                cont.onclick = () => { if (loadGameFromStorage()) document.getElementById('setup-overlay').style.display = 'none'; };
+                const drop = document.createElement('button');
+                drop.textContent = '🗑';
+                drop.title = 'Gespeicherten Stand verwerfen';
+                drop.style.cssText = 'background:#8d6e63; color:white; border:none; padding:0 14px; border-radius:8px; cursor:pointer; font-size:1.1em;';
+                drop.onclick = () => { if (confirm('Gespeicherten Stand wirklich verwerfen?')) { clearSavedGame(); showSetup(); } };
+                wrap.appendChild(cont); wrap.appendChild(drop);
+                g.appendChild(wrap);
+            }
             const customs = loadCustomPositions();
             const all = STARTING_POSITIONS.concat(customs);
             all.forEach((p, i) => {
@@ -485,6 +521,8 @@
         }
 
         function startWithPosition(pos) {
+            currentPosition = pos;
+            undoStack = [];
             // Normalize: each entry becomes {token, cells:[[x,y],…]}. Hardcoded uses plain [x,y][]
             // arrays; derive a token from cell count for those (9→'S', 7-12→'G', ≤6→'W').
             const norm = pos.boards.map(b => {
@@ -530,6 +568,7 @@
             document.getElementById('setup-overlay').style.display = 'none';
             init();
             updateScore();
+            saveGame();
         }
 
         function shareOnWhatsApp() {
@@ -546,6 +585,196 @@
         // (= scoring bridge) OR all lie in the red set (= defensive cut).
         const SETS = { blue: ['blue','purple','green'], yellow: ['yellow','orange','green'], red: ['red','purple','orange'] };
 
+        // --- UNDO + SAVE -----------------------------------------------------
+        // Snapshot the full mutable game state. Called BEFORE each user-input
+        // mutation (handleClick, second-leg of handleStoneDblClick, endTurn).
+        // tryFormBridge does NOT snapshot — its caller does.
+        function snapshot() {
+            undoStack.push({
+                grid: [...grid],
+                blueInv: {...blueInv},
+                yellowInv: {...yellowInv},
+                currentPlayer, selectedColor, lastPlaced, bridgePlaced, moveState,
+                blueBatch, yellowBatch,
+                bridgeSelection: [...bridgeSelection],
+                bridgeScore: {...bridgeScore}, regionScore: {...regionScore},
+                activeBridges: JSON.parse(JSON.stringify(activeBridges)),
+            });
+        }
+
+        function undo() {
+            if (undoStack.length === 0) return;
+            const s = undoStack.pop();
+            grid = s.grid;
+            blueInv = s.blueInv; yellowInv = s.yellowInv;
+            currentPlayer = s.currentPlayer; selectedColor = s.selectedColor;
+            lastPlaced = s.lastPlaced; bridgePlaced = s.bridgePlaced; moveState = s.moveState;
+            blueBatch = s.blueBatch; yellowBatch = s.yellowBatch;
+            bridgeSelection = s.bridgeSelection;
+            bridgeScore = s.bridgeScore; regionScore = s.regionScore;
+            activeBridges = s.activeBridges;
+            rerenderAllTiles();
+            redrawBridges();
+            renderBridgePending();
+            updateUI();
+            updateScore();
+            saveGame();
+        }
+
+        function rerenderAllTiles() {
+            const meta = document.getElementById('meta-grid');
+            const total = GRID_W * GRID_H;
+            for (let i = 0; i < total; i++) {
+                const cell = meta.children[i];
+                if (!cell) continue;
+                cell.innerHTML = '';
+                if (grid[i]) {
+                    const t = document.createElement('div');
+                    t.className = `tile ${grid[i]}`;
+                    cell.appendChild(t);
+                }
+            }
+        }
+
+        const SAVEGAME_KEY = 'dl_savegame';
+
+        function saveGame() {
+            if (!currentPosition) return;
+            try {
+                const state = {
+                    version: 1,
+                    position: currentPosition,
+                    grid, blueInv, yellowInv,
+                    currentPlayer, selectedColor, lastPlaced, bridgePlaced, moveState,
+                    blueBatch, yellowBatch,
+                    activeBridges, bridgeScore, regionScore,
+                };
+                localStorage.setItem(SAVEGAME_KEY, JSON.stringify(state));
+            } catch (e) { console.warn('saveGame failed:', e); }
+        }
+
+        function hasSavedGame() {
+            return !!localStorage.getItem(SAVEGAME_KEY);
+        }
+
+        function clearSavedGame() {
+            localStorage.removeItem(SAVEGAME_KEY);
+        }
+
+        // Apply a saved state on top of an already-set-up position. Caller must have
+        // run startWithPosition(state.position) first so the grid + boards exist.
+        function applySavedState(state) {
+            grid = state.grid;
+            blueInv = state.blueInv; yellowInv = state.yellowInv;
+            currentPlayer = state.currentPlayer; selectedColor = state.selectedColor;
+            lastPlaced = state.lastPlaced; bridgePlaced = state.bridgePlaced;
+            moveState = state.moveState;
+            blueBatch = state.blueBatch; yellowBatch = state.yellowBatch;
+            activeBridges = state.activeBridges || [];
+            bridgeScore = state.bridgeScore || {blue:0,yellow:0};
+            regionScore = state.regionScore || {blue:0,yellow:0};
+            rerenderAllTiles();
+            redrawBridges();
+            updateUI();
+            updateScore();
+        }
+
+        function loadGameFromStorage() {
+            const raw = localStorage.getItem(SAVEGAME_KEY);
+            if (!raw) return false;
+            try {
+                const state = JSON.parse(raw);
+                if (!state || !state.position) return false;
+                startWithPosition(state.position, /*skipReset=*/false);
+                applySavedState(state);
+                undoStack = [];  // fresh undo stack — saved game starts a new session
+                return true;
+            } catch (e) { console.error('loadGameFromStorage failed:', e); return false; }
+        }
+
+        function exportGameJSON() {
+            if (!currentPosition) { alert('Kein laufendes Spiel zum Exportieren.'); return; }
+            const state = {
+                version: 1,
+                position: currentPosition,
+                grid, blueInv, yellowInv,
+                currentPlayer, selectedColor, lastPlaced, bridgePlaced, moveState,
+                blueBatch, yellowBatch,
+                activeBridges, bridgeScore, regionScore,
+            };
+            const now = new Date();
+            const pad = n => String(n).padStart(2, '0');
+            const stamp = `${pad(now.getDate())}.${pad(now.getMonth()+1)}.${now.getFullYear()}_${pad(now.getHours())}${pad(now.getMinutes())}`;
+            const safe = (currentPosition.name || 'game').replace(/[^\w\-äöüÄÖÜß]+/g, '_');
+            const filename = `divided_loyalties_${safe}_${stamp}.json`;
+            const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = filename;
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 5000);
+        }
+
+        async function shareGameJSONViaWhatsApp() {
+            if (!currentPosition) { alert('Kein laufendes Spiel zum Teilen.'); return; }
+            const state = {
+                version: 1, position: currentPosition,
+                grid, blueInv, yellowInv,
+                currentPlayer, selectedColor, lastPlaced, bridgePlaced, moveState,
+                blueBatch, yellowBatch,
+                activeBridges, bridgeScore, regionScore,
+            };
+            const safe = (currentPosition.name || 'game').replace(/[^\w\-äöüÄÖÜß]+/g, '_');
+            const filename = `divided_loyalties_${safe}.json`;
+            const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+            try {
+                if (navigator.canShare) {
+                    const file = new File([blob], filename, { type: 'application/json' });
+                    if (navigator.canShare({ files: [file] })) {
+                        await navigator.share({ files: [file], title: `Divided Loyalties: ${currentPosition.name}`, text: `Gespeichertes Spiel — Divided Loyalties: ${currentPosition.name}` });
+                        return;
+                    }
+                }
+            } catch (e) {
+                if (e && e.name === 'AbortError') return;
+                console.warn('share failed:', e);
+            }
+            // Fallback: download + WhatsApp text
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = filename;
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 5000);
+            const msg = `Gespeichertes Spiel — Divided Loyalties: ${currentPosition.name}\n\n(JSON-Datei „${filename}" wurde heruntergeladen — bitte als Anhang anfügen.)`;
+            const wa = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+            const w = window.open(wa, '_blank');
+            if (!w) { window.location.href = wa; }
+        }
+
+        function triggerImportGame() {
+            document.getElementById('import-game-input').click();
+        }
+
+        function handleImportGameFile(ev) {
+            const file = ev.target.files && ev.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                try {
+                    const state = JSON.parse(e.target.result);
+                    if (!state || !state.position) throw new Error('Ungültiges Format');
+                    startWithPosition(state.position);
+                    applySavedState(state);
+                    undoStack = [];
+                    saveGame();
+                } catch (err) {
+                    alert('Konnte Spielstand nicht laden: ' + err.message);
+                }
+                ev.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+
         function handleClick(idx) {
             if (grid[idx] || !selectedColor) return;
             const cell = document.getElementById('meta-grid').children[idx];
@@ -555,6 +784,7 @@
                 if (!cell.classList.contains('has-dot')) return;
                 if (!wouldFormBridge(idx, selectedColor)) return;
             }
+            snapshot();
             grid[idx] = selectedColor;
             lastPlaced = idx;
             renderTile(idx, selectedColor);
@@ -568,6 +798,7 @@
                 if (found) tryFormBridge(found.row[0], found.row[found.row.length - 1]);
             }
             updateUI();
+            saveGame();
         }
 
         function getCoord(i) { return {x: i%GRID_W, y: Math.floor(i/GRID_W)}; }
@@ -668,7 +899,9 @@
             const s = bridgeSelection[0], e = idx;
             bridgeSelection = [];
             renderBridgePending();
+            snapshot();
             tryFormBridge(s, e);
+            saveGame();
         }
 
         function renderBridgePending() {
@@ -772,6 +1005,7 @@
         }
 
         function endTurn() {
+            snapshot();
             if (lastPlaced!==null && !allBoardIdx.includes(lastPlaced) && !bridgePlaced) {
                 const c = grid[lastPlaced];
                 currentPlayer==='blue'?blueInv[c]++:yellowInv[c]++;
@@ -780,6 +1014,7 @@
             currentPlayer = currentPlayer==='blue'?'yellow':'blue';
             maybeRefillBatch();
             moveState='tile'; lastPlaced=null; bridgePlaced=false; bridgeSelection=[]; updateUI();
+            saveGame();
         }
 
         function totalInv(inv) { return Object.values(inv).reduce((a,b)=>a+b, 0); }
@@ -853,6 +1088,12 @@
                 }
             });
             updateDotHighlights();
+            const ub = document.getElementById('undo-btn');
+            if (ub) {
+                ub.disabled = undoStack.length === 0;
+                ub.style.opacity = ub.disabled ? '0.5' : '1';
+                ub.style.cursor = ub.disabled ? 'default' : 'pointer';
+            }
         }
         // CSV format: position_id, position_name, row, c0, c1, c2, ... — each cell its own column.
         // Cell values: '.' = empty. Any other token is a board id. Each UNIQUE token is its own
