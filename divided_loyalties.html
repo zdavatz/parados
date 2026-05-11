@@ -201,6 +201,7 @@
                 <li><strong>Getrennte Anzeige:</strong> Brücken- und Regionen-Punkte werden separat dargestellt — am Ende addierst du sie selbst.</li>
                 [cite_start]<li><strong>Wichtig:</strong> Zwei gleiche Farben dürfen nicht direkt hintereinander liegen[cite: 26].</li>
                 [cite_start]<li>Eine Brücke muss im selben Zug platziert werden wie der Stein, der die Reihe vervollständigt[cite: 33].</li>
+                <li><strong>3er kann nicht zur 4er erweitert werden:</strong> Sobald du eine 3er-Brücke gesetzt hast, kannst du sie nicht später durch einen vierten Stein zu einer 4er ausbauen. „<em>Lauter Gemeinheiten in diesem Spiel!</em>" — Walter. Setzt du dagegen erstmal nur den vierten Stein an die Reihe (ohne 3er-Brücke), bleibt dir die Option auf eine direkte 4er-Brücke offen — du musst dann aber riskieren, dass der Gegner zwischendurch schneidet.</li>
                 <li><strong>So setzt du eine Brücke:</strong> <em>Doppelklick</em> (oder Doppel-Tipp) auf den ersten Stein der Reihe, danach <em>Doppelklick</em> auf den letzten Stein. Wenn die Reihe gültig ist (3 oder 4 Steine, alle in deiner Farbgruppe oder alle rot, keine zwei gleichen Farben hintereinander), wird die Brücke gezogen. Ein zweiter Doppelklick auf denselben Stein hebt die Auswahl wieder auf.</li>
                 <li><strong>Setzt du auf einen Punkt (Außenfeld), wird die Brücke automatisch gezogen</strong> — denn Außenplatzierungen sind ohnehin nur erlaubt, wenn sie im selben Zug eine Brücke schließen.</li>
             </ul>
@@ -225,7 +226,7 @@
             <ul>
                 <li>Jeder Spieler bekommt seine 36 Steine nicht auf einmal, sondern in <strong>drei Sätzen zu je 12</strong>.</li>
                 <li><strong>Blau:</strong> 4 Blau, 3 Lila, 2 Grün, 2 Rot, 1 Orange — pro Satz.</li>
-                <li><strong>Gelb:</strong> 4 Gelb, 3 Orange, 2 Grün, 2 Rot, 1 Lila — pro Satz.</li>
+                <li><strong>Gelb:</strong> 4 Gelb, 2 Orange, 2 Grün, 2 Rot, 2 Lila — pro Satz.</li>
                 <li>Sobald ein Spieler seine 12 Steine alle gesetzt hat, erhält er automatisch den nächsten Satz. Anzeige „Satz 1/3 → 2/3 → 3/3 (letzter)" beim Spielerzug.</li>
                 <li>Endspiel-Tipp: Die Übergänge bei Zug 12 und Zug 24 verändern die Taktik deutlich — was nach dem letzten Satz noch im Vorrat ist, entscheidet oft die Partie.</li>
             </ul>
@@ -249,7 +250,7 @@
         // an auto-refill in endTurn until batch === TOTAL_BATCHES. Same total (36) as before, just delayed —
         // creates inflection points around moves 12 and 24 that change the late-game tactics.
         const BLUE_BATCH = {blue:4, purple:3, green:2, red:2, orange:1};
-        const YELLOW_BATCH = {yellow:4, orange:3, green:2, red:2, purple:1};
+        const YELLOW_BATCH = {yellow:4, orange:2, green:2, red:2, purple:2};
         const TOTAL_BATCHES = 3;
         let currentPlayer = 'blue', selectedColor = null, lastPlaced = null, bridgePlaced = false, moveState = 'tile';
         let grid = Array(GRID_W * GRID_H).fill(null), blueInv = {...BLUE_BATCH}, yellowInv = {...YELLOW_BATCH};
@@ -863,6 +864,13 @@
                             (b.row.every((c,i) => c === row[i]) || b.row.every((c,i) => c === row[row.length-1-i]))
                         );
                         if (sameAsExisting) continue;
+                        // Don't propose extending an active 3-bridge to a 4-bridge (Walter's rule).
+                        const wouldExtend = activeBridges.some(b => {
+                            if (b.cut) return false;
+                            if (b.row.length >= row.length) return false;
+                            return b.row.every(c => row.includes(c));
+                        });
+                        if (wouldExtend) continue;
                         const score = (len === 4 ? 100 : 50) + (cls.isScoring ? 10 : 0);
                         if (!best || score > best.score) best = { row, isRed: cls.isRed, isScoring: cls.isScoring, score };
                     }
@@ -928,6 +936,16 @@
                 (b.row.every((c,i) => c === row[i]) || b.row.every((c,i) => c === row[row.length-1-i]))
             );
             if (sameAsExisting) return;
+            // Walter's rule: a 3-bridge cannot be extended to a 4-bridge — the
+            // strategic tension is that committing to a 3 means your opponent doesn't
+            // have to worry about a 4. Reject if any active (non-cut) bridge's stones
+            // are fully contained in the new row.
+            const wouldExtendExisting = activeBridges.some(b => {
+                if (b.cut) return false;
+                if (b.row.length >= row.length) return false;
+                return b.row.every(c => row.includes(c));
+            });
+            if (wouldExtendExisting) return;
             const step = cellSize + gapSize;
             const x1 = (s%GRID_W)*step+cellSize/2, y1 = Math.floor(s/GRID_W)*step+cellSize/2;
             const x2 = (e%GRID_W)*step+cellSize/2, y2 = Math.floor(e/GRID_W)*step+cellSize/2;
