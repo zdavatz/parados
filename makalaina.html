@@ -98,6 +98,45 @@
             <button class="btn" style="width:auto; padding:8px 16px; background:#3498db; color:white;" onclick="loadCuratedPosition(9)">9</button>
             <button class="btn" style="width:auto; padding:8px 16px; background:#3498db; color:white;" onclick="loadCuratedPosition(10)">10</button>
         </div>
+        <div style="margin-top:14px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+            <button class="btn" style="width:auto; padding:8px 16px; background:#9b59b6; color:white;" onclick="mlOpenEditor(null)">✏️ Editor — Custom Position</button>
+        </div>
+        <div id="ml-custom-list" style="margin-top:12px;"></div>
+    </div>
+    <div id="ml-editor-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.92); z-index:2500; overflow-y:auto; padding:15px 8px;">
+        <div style="max-width:760px; margin:0 auto; background:#fff; border-radius:8px; padding:15px;">
+            <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:10px;">
+                <h2 style="margin:0; font-size:1.2em;">Editor — Custom MAKA LAINA Position</h2>
+                <input id="ml-editor-name" type="text" placeholder="Position name" style="flex:1; min-width:160px; padding:8px; font-size:1em; border:1px solid #ccc; border-radius:4px;">
+            </div>
+            <p style="margin:0 0 8px; color:#555; font-size:0.9em;">
+                Pick a brush, then click cells on the 12×12 board. Each board can hold exactly one Black and one White collector. Empty cells stay empty.
+            </p>
+            <div id="ml-editor-brush-bar" style="display:flex; flex-direction:column; gap:5px; margin-bottom:10px;"></div>
+            <div style="overflow:auto; margin-bottom:10px;">
+                <div id="ml-editor-grid" style="display:grid; gap:1px; background:#2c3e50; padding:2px; border-radius:4px; width:max-content; margin:0 auto;"></div>
+            </div>
+            <div id="ml-editor-summary" style="font-size:0.85em; color:#555; text-align:center; margin-bottom:10px;"></div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:center;">
+                <button class="btn" style="width:auto; background:#27ae60; color:white;" onclick="mlSaveCustomPosition()">💾 Save (browser)</button>
+                <button class="btn" style="width:auto; background:#3498db; color:white;" onclick="mlPlayFromEditor()">▶ Test play</button>
+                <button class="btn" style="width:auto; background:#6d4c41; color:white;" onclick="mlExportEditorCSV()">📋 Export CSV</button>
+                <button class="btn" style="width:auto; background:#25D366; color:white;" onclick="mlShareEditorCSV()">📤 Share via WhatsApp</button>
+                <button class="btn" style="width:auto; background:#455a64; color:white;" onclick="mlCloseEditor()">✕ Close</button>
+            </div>
+        </div>
+    </div>
+    <div id="ml-csv-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:2600; justify-content:center; align-items:center;">
+        <div style="background:#fff; width:92%; max-width:640px; padding:20px; border-radius:10px;">
+            <h3 style="margin:0 0 10px;">CSV — Custom Position</h3>
+            <p style="margin:0 0 8px; color:#555; font-size:0.9em;">Copy this into <code>makalaina_starting_positions.csv</code> (or save it as its own file).</p>
+            <textarea id="ml-csv-output" readonly style="width:100%; height:240px; font-family:monospace; font-size:0.85em; padding:8px; border:1px solid #ccc; border-radius:4px;"></textarea>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; margin-top:10px;">
+                <button class="btn" style="width:auto; background:#3498db; color:white;" onclick="mlCopyCSVToClipboard()">📋 Copy</button>
+                <button class="btn" style="width:auto; background:#27ae60; color:white;" onclick="mlDownloadCSV()">💾 Download</button>
+                <button class="btn" style="width:auto; background:#455a64; color:white;" onclick="document.getElementById('ml-csv-modal').style.display='none'">✕ Close</button>
+            </div>
+        </div>
     </div>
     <div id="starter-panel" style="display:none; margin-bottom:15px; text-align:center; background:white; padding:15px 20px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
         <p style="font-weight:bold; margin:0 0 10px; color:#2c3e50;">Who starts?</p>
@@ -323,8 +362,15 @@
         const pos = CURATED_POSITIONS[posId];
         if (!pos) return;
         currentPosition = posId;
+        applyPositionData(pos);
+    }
+
+    function applyPositionData(pos) {
         setPositionTitle(pos.name);
         document.getElementById('setup-panel').style.display = 'none';
+
+        // Reset board state — needed when re-applying after Reset / from editor
+        for (let i = 0; i < 144; i++) cells[i] = null;
 
         // Create all 54 discs
         const allDiscs = [];
@@ -360,6 +406,13 @@
         gameState = 'CHOOSE_STARTER';
         document.getElementById('starter-panel').style.display = 'block';
         updateUI(); render();
+    }
+
+    function loadCustomPosition(customId) {
+        const pos = mlLoadCustomPositions().find(p => p.customId === customId);
+        if (!pos) return;
+        currentPosition = customId;
+        applyPositionData(pos);
     }
 
     function chooseStarter(player) {
@@ -941,6 +994,344 @@
     window.addEventListener('resize', calcCellSize);
 
     createBoard(); render();
+
+    // ---------- Custom-position editor ----------
+    // Token shape: 'CB' / 'CW' for collectors, '<COLOR><NUM>' for primary discs
+    // (R/B/Y × 1-6), '<COLOR>' for secondaries (G/O/P). Paint is keyed by y*12+x.
+    let mlEditorPaint = {};
+    let mlEditorBrush = 'CB';
+    let mlEditorName = '';
+    let mlEditingCustomId = null;
+
+    const ML_COLOR_FOR = { R:'red', B:'blue', Y:'yellow', G:'green', O:'orange', P:'purple' };
+    const ML_PRIMARY_LETTERS = ['R','B','Y'];
+    const ML_SECONDARY_LETTERS = ['G','O','P'];
+
+    function mlLoadCustomPositions() {
+        try { return JSON.parse(localStorage.getItem('ml_custom_positions') || '[]'); }
+        catch (e) { return []; }
+    }
+    function mlSaveCustomPositionsArr(arr) {
+        try { localStorage.setItem('ml_custom_positions', JSON.stringify(arr)); }
+        catch (e) { alert('Save failed: ' + e.message); }
+    }
+    function mlDeleteCustomPosition(customId) {
+        mlSaveCustomPositionsArr(mlLoadCustomPositions().filter(p => p.customId !== customId));
+        mlRefreshCustomList();
+    }
+
+    function mlOpenEditor(existingPos) {
+        mlEditorPaint = {};
+        if (existingPos) {
+            mlEditorPaint[existingPos.b[1] * 12 + existingPos.b[0]] = 'CB';
+            mlEditorPaint[existingPos.w[1] * 12 + existingPos.w[0]] = 'CW';
+            existingPos.d.forEach(([x, y, color, num]) => {
+                const letter = Object.keys(ML_COLOR_FOR).find(k => ML_COLOR_FOR[k] === color);
+                if (!letter) return;
+                mlEditorPaint[y * 12 + x] = letter + (num === '' || num == null ? '' : num);
+            });
+            mlEditorName = existingPos.name || '';
+            mlEditingCustomId = existingPos.customId || null;
+        } else {
+            mlEditorName = '';
+            mlEditingCustomId = null;
+        }
+        mlEditorBrush = 'CB';
+        document.getElementById('ml-editor-name').value = mlEditorName;
+        document.getElementById('ml-editor-overlay').style.display = 'block';
+        mlRenderBrushBar();
+        mlRenderEditor();
+    }
+
+    function mlCloseEditor() {
+        document.getElementById('ml-editor-overlay').style.display = 'none';
+    }
+
+    function mlEditorClick(idx) {
+        if (mlEditorBrush === 'erase') {
+            delete mlEditorPaint[idx];
+        } else if (mlEditorBrush === 'CB' || mlEditorBrush === 'CW') {
+            // Only one of each collector — remove any existing instance first.
+            Object.keys(mlEditorPaint).forEach(k => {
+                if (mlEditorPaint[k] === mlEditorBrush) delete mlEditorPaint[k];
+            });
+            mlEditorPaint[idx] = mlEditorBrush;
+        } else {
+            mlEditorPaint[idx] = mlEditorBrush;
+        }
+        mlRenderEditor();
+    }
+
+    function mlBrushSwatch(tok, sel) {
+        const border = sel ? '#FFEB3B' : 'rgba(0,0,0,0.25)';
+        if (tok === 'CB') return `<span style="display:inline-block; width:22px; height:22px; background:#000; border:3px solid gold; outline:3px solid ${border}; border-radius:3px;"></span>`;
+        if (tok === 'CW') return `<span style="display:inline-block; width:22px; height:22px; background:#fff; border:3px solid gold; outline:3px solid ${border}; border-radius:3px;"></span>`;
+        const letter = tok[0];
+        const num = tok.slice(1);
+        const bg = COLOR_HEX[ML_COLOR_FOR[letter]];
+        return `<span style="display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; background:${bg}; color:#fff; border-radius:50%; font-weight:bold; font-size:0.85em; text-shadow:1px 1px 2px #000; outline:3px solid ${border};">${num}</span>`;
+    }
+
+    function mlRenderBrushBar() {
+        const bar = document.getElementById('ml-editor-brush-bar');
+        bar.innerHTML = '';
+        const mkRow = (label, tokens, extras) => {
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex; align-items:center; gap:4px; flex-wrap:wrap;';
+            if (label) {
+                const lab = document.createElement('span');
+                lab.textContent = label;
+                lab.style.cssText = 'min-width:60px; font-size:0.85em; color:#555;';
+                row.appendChild(lab);
+            }
+            tokens.forEach(tok => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.style.cssText = 'padding:4px 6px; background:#fff; border:1px solid #ccc; border-radius:4px; cursor:pointer; line-height:0;';
+                btn.innerHTML = mlBrushSwatch(tok, mlEditorBrush === tok);
+                btn.onclick = () => { mlEditorBrush = tok; mlRenderBrushBar(); };
+                row.appendChild(btn);
+            });
+            (extras || []).forEach(el => row.appendChild(el));
+            bar.appendChild(row);
+        };
+
+        // Collectors + eraser row
+        const eraser = document.createElement('button');
+        eraser.type = 'button';
+        eraser.textContent = '✕ Erase';
+        eraser.style.cssText = `margin-left:auto; padding:6px 10px; background:#fff; color:#000; border:3px solid ${mlEditorBrush==='erase'?'#FFEB3B':'rgba(0,0,0,0.25)'}; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.85em;`;
+        eraser.onclick = () => { mlEditorBrush = 'erase'; mlRenderBrushBar(); };
+        mkRow('Collectors', ['CB','CW'], [eraser]);
+
+        // One row per primary color (1-6)
+        ML_PRIMARY_LETTERS.forEach(L => {
+            const toks = [1,2,3,4,5,6].map(n => L + n);
+            mkRow(ML_COLOR_FOR[L].charAt(0).toUpperCase() + ML_COLOR_FOR[L].slice(1), toks);
+        });
+        // Secondaries
+        mkRow('Secondary', ML_SECONDARY_LETTERS);
+    }
+
+    function mlRenderEditor() {
+        const g = document.getElementById('ml-editor-grid');
+        g.innerHTML = '';
+        const ecs = Math.max(20, Math.min(38, Math.floor((Math.min(window.innerWidth, 760) - 60) / 12)));
+        g.style.gridTemplateColumns = `repeat(12, ${ecs}px)`;
+        g.style.gridTemplateRows = `repeat(12, ${ecs}px)`;
+        const numFont = Math.max(9, Math.floor(ecs * 0.42));
+        for (let i = 0; i < 144; i++) {
+            const c = document.createElement('div');
+            c.style.cssText = `width:${ecs}px; height:${ecs}px; background:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative;`;
+            const tok = mlEditorPaint[i];
+            if (tok === 'CB' || tok === 'CW') {
+                const inner = document.createElement('div');
+                const bg = tok === 'CB' ? '#000' : '#fff';
+                inner.style.cssText = `width:${ecs - 6}px; height:${ecs - 6}px; background:${bg}; border:3px solid gold; border-radius:4px;`;
+                c.appendChild(inner);
+            } else if (tok) {
+                const letter = tok[0];
+                const num = tok.slice(1);
+                const bg = COLOR_HEX[ML_COLOR_FOR[letter]];
+                const disc = document.createElement('div');
+                disc.style.cssText = `width:${ecs - 8}px; height:${ecs - 8}px; background:${bg}; border-radius:50%; color:#fff; font-weight:bold; font-size:${numFont}px; text-shadow:1px 1px 2px #000; display:flex; align-items:center; justify-content:center; border:1px solid rgba(0,0,0,0.1);`;
+                disc.textContent = num;
+                c.appendChild(disc);
+            }
+            c.onclick = () => mlEditorClick(i);
+            g.appendChild(c);
+        }
+        mlUpdateEditorSummary();
+    }
+
+    function mlUpdateEditorSummary() {
+        const sum = document.getElementById('ml-editor-summary');
+        let cb = 0, cw = 0, discs = 0;
+        Object.values(mlEditorPaint).forEach(t => {
+            if (t === 'CB') cb++;
+            else if (t === 'CW') cw++;
+            else discs++;
+        });
+        sum.textContent = `Black collectors: ${cb} · White collectors: ${cw} · Discs: ${discs} (canonical 24)`;
+    }
+
+    function mlPaintToPosition(name) {
+        let b = null, w = null;
+        const d = [];
+        Object.keys(mlEditorPaint).forEach(k => {
+            const idx = parseInt(k);
+            const x = idx % 12, y = Math.floor(idx / 12);
+            const tok = mlEditorPaint[k];
+            if (tok === 'CB') b = [x, y];
+            else if (tok === 'CW') w = [x, y];
+            else {
+                const color = ML_COLOR_FOR[tok[0]];
+                const num = tok.length > 1 ? parseInt(tok.slice(1)) : '';
+                d.push([x, y, color, num]);
+            }
+        });
+        return { name: name || mlEditorName, b, w, d };
+    }
+
+    function mlValidateEditor() {
+        let cb = 0, cw = 0;
+        Object.values(mlEditorPaint).forEach(t => { if (t === 'CB') cb++; else if (t === 'CW') cw++; });
+        if (cb !== 1 || cw !== 1) {
+            alert('Place exactly one Black and one White collector.');
+            return false;
+        }
+        return true;
+    }
+
+    function mlSaveCustomPosition() {
+        if (!mlValidateEditor()) return;
+        const nameInput = document.getElementById('ml-editor-name');
+        let name = (nameInput.value || '').trim();
+        if (!name) name = (prompt('Name of position:', 'My Position') || '').trim();
+        if (!name) return;
+        mlEditorName = name;
+        const pos = mlPaintToPosition(name);
+        pos.customId = mlEditingCustomId || ('c' + Date.now());
+        const customs = mlLoadCustomPositions();
+        const idx = customs.findIndex(p => p.customId === pos.customId);
+        if (idx >= 0) customs[idx] = pos; else customs.push(pos);
+        mlSaveCustomPositionsArr(customs);
+        mlEditingCustomId = pos.customId;
+        nameInput.value = name;
+        alert(`"${name}" saved.`);
+        mlRefreshCustomList();
+    }
+
+    function mlPlayFromEditor() {
+        if (!mlValidateEditor()) return;
+        const name = (document.getElementById('ml-editor-name').value || '').trim() || 'Custom';
+        mlEditorName = name;
+        const pos = mlPaintToPosition(name);
+        mlCloseEditor();
+        currentPosition = 'custom';
+        applyPositionData(pos);
+    }
+
+    // CSV in the same vertical / long format as makalaina_starting_positions.csv
+    function mlBuildCSV(pos, positionId) {
+        const pid = positionId || 1;
+        const lines = ['position_id,element,x,y,color,number'];
+        const csvName = (pos.name || 'Custom').replace(/,/g, ' ');
+        // collectors first, mirroring file convention
+        lines.push(`${pid},collector_black,${pos.b[0]},${pos.b[1]},,`);
+        lines.push(`${pid},collector_white,${pos.w[0]},${pos.w[1]},,`);
+        pos.d.forEach(([x, y, color, num]) => {
+            lines.push(`${pid},disc,${x},${y},${color},${num === '' || num == null ? '' : num}`);
+        });
+        return { csv: lines.join('\n') + '\n', name: csvName };
+    }
+
+    function mlExportEditorCSV() {
+        if (!mlValidateEditor()) return;
+        const name = (document.getElementById('ml-editor-name').value || '').trim() || 'Custom';
+        mlEditorName = name;
+        const pos = mlPaintToPosition(name);
+        const nextId = CURATED_POSITIONS.length; // 1-indexed array, length = next available id
+        const { csv } = mlBuildCSV(pos, nextId);
+        document.getElementById('ml-csv-output').value = csv;
+        document.getElementById('ml-csv-modal').style.display = 'flex';
+        document.getElementById('ml-csv-modal').dataset.filename = `makalaina_${name.replace(/[^\w\-]+/g, '_')}.csv`;
+    }
+
+    function mlCopyCSVToClipboard() {
+        const ta = document.getElementById('ml-csv-output');
+        ta.select();
+        try { document.execCommand('copy'); alert('CSV copied to clipboard.'); }
+        catch (e) { alert('Copy failed; select + Ctrl/Cmd-C.'); }
+    }
+
+    function mlDownloadCSV() {
+        const csv = document.getElementById('ml-csv-output').value;
+        const filename = document.getElementById('ml-csv-modal').dataset.filename || 'makalaina_custom.csv';
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+    }
+
+    async function mlShareEditorCSV() {
+        if (!mlValidateEditor()) return;
+        const name = (document.getElementById('ml-editor-name').value || '').trim() || 'Custom';
+        mlEditorName = name;
+        const pos = mlPaintToPosition(name);
+        const { csv } = mlBuildCSV(pos, CURATED_POSITIONS.length);
+        const safe = name.replace(/[^\w\-]+/g, '_');
+        const filename = `makalaina_${safe}.csv`;
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        try {
+            if (navigator.canShare) {
+                const file = new File([blob], filename, { type: 'text/csv' });
+                if (navigator.canShare({ files: [file] })) {
+                    // No `text:` alongside `files:` — Android WhatsApp drops the file
+                    // when both are present (same lesson as Divided Loyalties share).
+                    await navigator.share({ files: [file], title: `MAKA LAINA: ${name}` });
+                    return;
+                }
+            }
+        } catch (e) {
+            if (e && e.name === 'AbortError') return;
+            console.warn('navigator.share failed, falling back:', e);
+        }
+        // Fallback: download only — never wa.me on Android WebView (ERR_UNKNOWN_URL_SCHEME).
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+        alert(`Saved ${filename}. Attach it to your WhatsApp message manually.`);
+    }
+
+    function mlRefreshCustomList() {
+        const host = document.getElementById('ml-custom-list');
+        if (!host) return;
+        const customs = mlLoadCustomPositions();
+        host.innerHTML = '';
+        if (!customs.length) return;
+        const title = document.createElement('p');
+        title.style.cssText = 'font-weight:bold; margin:6px 0; color:#2c3e50; font-size:0.95em;';
+        title.textContent = 'Your custom positions:';
+        host.appendChild(title);
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex; gap:8px; justify-content:center; flex-wrap:wrap;';
+        customs.forEach(p => {
+            const wrap = document.createElement('div');
+            wrap.style.cssText = 'display:flex; gap:2px; align-items:stretch;';
+            const playBtn = document.createElement('button');
+            playBtn.className = 'btn';
+            playBtn.style.cssText = 'width:auto; padding:8px 12px; background:#8e44ad; color:white; margin:0;';
+            playBtn.textContent = '★ ' + p.name;
+            playBtn.onclick = () => loadCustomPosition(p.customId);
+            const editBtn = document.createElement('button');
+            editBtn.className = 'btn';
+            editBtn.style.cssText = 'width:auto; padding:8px 10px; background:#7f8c8d; color:white; margin:0;';
+            editBtn.title = 'Edit';
+            editBtn.textContent = '✏️';
+            editBtn.onclick = (e) => { e.stopPropagation(); mlOpenEditor(p); };
+            const delBtn = document.createElement('button');
+            delBtn.className = 'btn';
+            delBtn.style.cssText = 'width:auto; padding:8px 10px; background:#c0392b; color:white; margin:0;';
+            delBtn.title = 'Delete';
+            delBtn.textContent = '🗑';
+            delBtn.onclick = (e) => {
+                e.stopPropagation();
+                if (confirm(`Delete "${p.name}"?`)) mlDeleteCustomPosition(p.customId);
+            };
+            wrap.appendChild(playBtn);
+            wrap.appendChild(editBtn);
+            wrap.appendChild(delBtn);
+            row.appendChild(wrap);
+        });
+        host.appendChild(row);
+    }
+
+    mlRefreshCustomList();
 
     const fromHash = findPositionByHash(location.hash);
     if (fromHash) loadCuratedPosition(fromHash);
