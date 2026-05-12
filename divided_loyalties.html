@@ -492,13 +492,21 @@
                 const editBtn = document.createElement('button');
                 editBtn.textContent = '✏';
                 editBtn.title = isCustom ? 'Bearbeiten' : 'Als Vorlage öffnen';
-                editBtn.style.cssText = 'position:absolute; top:6px; right:' + (isCustom ? '34px' : '6px') + '; background:rgba(255,255,255,0.25); color:white; border:none; padding:3px 7px; border-radius:3px; cursor:pointer; font-size:0.9em; line-height:1;';
+                editBtn.style.cssText = 'position:absolute; top:6px; right:34px; background:rgba(255,255,255,0.25); color:white; border:none; padding:3px 7px; border-radius:3px; cursor:pointer; font-size:0.9em; line-height:1;';
                 editBtn.onclick = (e) => {
                     e.stopPropagation();
                     if (isCustom) { openEditor(p); }
                     else { openEditor({ name: p.name + ' (Kopie)', sub: 'Eigene Stellung', boards: p.boards, customId: null }); }
                 };
                 wrapper.appendChild(editBtn);
+                if (!isCustom) {
+                    const linkBtn = document.createElement('button');
+                    linkBtn.textContent = '🔗';
+                    linkBtn.title = 'Direktlink kopieren';
+                    linkBtn.style.cssText = 'position:absolute; top:6px; right:6px; background:rgba(255,255,255,0.25); color:white; border:none; padding:3px 6px; border-radius:3px; cursor:pointer; font-size:0.85em; line-height:1;';
+                    linkBtn.onclick = (e) => { e.stopPropagation(); copyPositionLink(p); };
+                    wrapper.appendChild(linkBtn);
+                }
                 if (isCustom) {
                     // shift edit btn left to make room for share btn
                     editBtn.style.right = '62px';
@@ -588,8 +596,12 @@
         }
 
         function shareOnWhatsApp() {
-            const shareUrl = /^(file|parados):$/.test(window.location.protocol) ? "https://game.ywesee.com/parados/" + (window.location.pathname.split("/").pop() || "index.html") : window.location.href;
-            const msg = `Play Divided Loyalties: ${shareUrl}\n\nGet the Parados app:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
+            let shareUrl = /^(file|parados):$/.test(window.location.protocol) ? "https://game.ywesee.com/parados/" + (window.location.pathname.split("/").pop() || "index.html") : window.location.href.split('#')[0];
+            if (currentPosition && !currentPosition.customId) {
+                shareUrl += '#' + slugifyName(currentPosition.name);
+            }
+            const posLabel = currentPosition && !currentPosition.customId ? ` — ${currentPosition.name}` : '';
+            const msg = `Play Divided Loyalties${posLabel}: ${shareUrl}\n\nGet the Parados app:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
             if (navigator.share) { navigator.share({ text: msg }).catch(() => {}); return; }
             const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
             const inIOSApp = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.csvExport);
@@ -1579,9 +1591,61 @@
             return HARDCODED_POSITIONS;
         }
 
+        function slugifyName(s) {
+            return String(s || '').toLowerCase()
+                .normalize('NFD').replace(/[̀-ͯ]/g, '')
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '');
+        }
+
+        function getPositionLink(pos) {
+            const url = new URL(window.location.href);
+            url.hash = slugifyName(pos.name);
+            return url.href;
+        }
+
+        function findPositionByHash(hash) {
+            const raw = decodeURIComponent(hash || '').replace(/^#/, '').trim();
+            if (!raw) return null;
+            if (/^\d+$/.test(raw)) {
+                const idx = parseInt(raw, 10) - 1;
+                if (idx >= 0 && idx < STARTING_POSITIONS.length) return STARTING_POSITIONS[idx];
+            }
+            const slug = slugifyName(raw);
+            return STARTING_POSITIONS.find(p => slugifyName(p.name) === slug) || null;
+        }
+
+        function copyPositionLink(pos) {
+            const link = getPositionLink(pos);
+            const fallback = () => {
+                const ta = document.createElement('textarea');
+                ta.value = link; document.body.appendChild(ta); ta.select();
+                try { document.execCommand('copy'); } catch (e) {}
+                document.body.removeChild(ta);
+            };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(link).then(
+                    () => alert('Direktlink kopiert:\n' + link),
+                    () => { fallback(); alert('Direktlink kopiert:\n' + link); }
+                );
+            } else { fallback(); alert('Direktlink kopiert:\n' + link); }
+        }
+
         async function startup() {
             STARTING_POSITIONS = await loadPositions();
-            showSetup();
+            const fromHash = findPositionByHash(location.hash);
+            if (fromHash) {
+                startWithPosition(fromHash);
+            } else {
+                showSetup();
+            }
+            window.addEventListener('hashchange', () => {
+                const p = findPositionByHash(location.hash);
+                if (p) {
+                    document.getElementById('setup-overlay').style.display = 'none';
+                    startWithPosition(p);
+                }
+            });
         }
 
         startup();
