@@ -293,7 +293,7 @@
      */
     const LEVEL_DATABASE = [
         {
-            id: 'tut1',
+            id: 'first-steps',
             group: '初级',
             name: '第1关：初出茅庐',
             cols: 10, rows: 10,
@@ -313,7 +313,7 @@
             startHintB: {x: 6, y: 6}
         },
         {
-            id: 'tut2',
+            id: 'the-block',
             group: '初级',
             name: '第2关：方块阵',
             cols: 10, rows: 10,
@@ -333,7 +333,7 @@
             startHintB: {x: 6, y: 5}
         },
         {
-            id: 'tut3',
+            id: 'shifting',
             group: '初级',
             name: '第3关：移动练习',
             cols: 10, rows: 10,
@@ -353,7 +353,7 @@
             startHintB: {x: 2, y: 5}
         },
         {
-            id: 'mid1',
+            id: 'staircase',
             group: '中级',
             name: '关卡 1: 阶梯',
             cols: 10, rows: 10,
@@ -372,7 +372,7 @@
             startHint: {x: 5, y: 8}
         },
         {
-            id: 'mid2',
+            id: 'scattered',
             group: '中级',
             name: '关卡 2: 分散',
             cols: 10, rows: 10,
@@ -391,7 +391,7 @@
             startHint: {x: 1, y: 1}
         },
         {
-            id: 'mid3',
+            id: 'slant',
             group: '中级',
             name: '关卡 3: 对角',
             cols: 10, rows: 10,
@@ -410,7 +410,7 @@
             startHint: {x: 8, y: 8}
         },
         {
-            id: 'adv1',
+            id: 'the-cross',
             group: '高级',
             name: '第1关：十字路口',
             cols: 10, rows: 10,
@@ -1104,7 +1104,7 @@
     function findLevelByHash(hash) {
         const raw = decodeURIComponent(hash || '').replace(/^#/, '').trim().toLowerCase();
         if (!raw) return null;
-        const m = raw.match(/^([a-z0-9]+?)([ab])?$/);
+        const m = raw.match(/^([a-z0-9-]+?)([ab])?$/);
         if (!m) return null;
         const key = m[1];
         const variant = (m[2] || 'a').toUpperCase();

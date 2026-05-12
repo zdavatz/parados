@@ -295,7 +295,7 @@
      */
     const LEVEL_DATABASE = [
         {
-            id: 'tut1',
+            id: 'first-steps',
             group: 'Beginner',
             name: 'Level 1: First Steps',
             cols: 10, rows: 10,
@@ -315,7 +315,7 @@
             startHintB: {x: 6, y: 6}
         },
         {
-            id: 'tut2',
+            id: 'the-block',
             group: 'Beginner',
             name: 'Level 2: The Block',
             cols: 10, rows: 10,
@@ -335,7 +335,7 @@
             startHintB: {x: 6, y: 5}
         },
         {
-            id: 'tut3',
+            id: 'shifting',
             group: 'Beginner',
             name: 'Level 3: Practice Moving',
             cols: 10, rows: 10,
@@ -355,7 +355,7 @@
             startHintB: {x: 2, y: 5}
         },
         {
-            id: 'mid1',
+            id: 'staircase',
             group: 'Intermediate',
             name: 'Level 1: Staircase',
             cols: 10, rows: 10,
@@ -374,7 +374,7 @@
             startHint: {x: 5, y: 8}
         },
         {
-            id: 'mid2',
+            id: 'scattered',
             group: 'Intermediate',
             name: 'Level 2: Scattered',
             cols: 10, rows: 10,
@@ -393,7 +393,7 @@
             startHint: {x: 1, y: 1}
         },
         {
-            id: 'mid3',
+            id: 'slant',
             group: 'Intermediate',
             name: 'Level 3: Diagonal',
             cols: 10, rows: 10,
@@ -412,7 +412,7 @@
             startHint: {x: 8, y: 8}
         },
         {
-            id: 'adv1',
+            id: 'the-cross',
             group: 'Advanced',
             name: 'Level 1: The Cross',
             cols: 10, rows: 10,
@@ -1108,7 +1108,7 @@
     function findLevelByHash(hash) {
         const raw = decodeURIComponent(hash || '').replace(/^#/, '').trim().toLowerCase();
         if (!raw) return null;
-        const m = raw.match(/^([a-z0-9]+?)([ab])?$/);
+        const m = raw.match(/^([a-z0-9-]+?)([ab])?$/);
         if (!m) return null;
         const key = m[1];
         const variant = (m[2] || 'a').toUpperCase();
