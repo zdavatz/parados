@@ -8,7 +8,17 @@ Games by Walter Prossnitz
 
 ## Share
 
-Every game has a **Share on WhatsApp** button (WhatsApp green `#25D366`) placed to the right of the game title. It opens the OS share sheet (`navigator.share`) with a pre-filled message containing the current game URL plus iOS App Store and Google Play links to the Parados app — the user picks WhatsApp from the share sheet and the message is handed over to it natively. Older browsers without the Web Share API fall back to opening `https://wa.me/?text=…` in a new tab. **Android fix (2026-05-12):** prior versions opened `wa.me` directly, which then redirected to `whatsapp://send/` inside the Android WebView — WebView doesn't dispatch app URL schemes to the OS, so it errored with `ERR_UNKNOWN_URL_SCHEME`. The `navigator.share` short-circuit bypasses the redirect entirely. When the game is played inside the iOS/Android app the page is loaded from a local `file://` path, so the share message rewrites the URL to the public `https://game.ywesee.com/parados/<filename>` so recipients always get a working link.
+Every game has a **Share on WhatsApp** button (WhatsApp green `#25D366`) placed to the right of the game title. It opens the OS share sheet (`navigator.share`) with a pre-filled message containing the current game URL plus iOS App Store and Google Play links to the Parados app — the user picks WhatsApp from the share sheet and the message is handed over to it natively. Older browsers without the Web Share API fall back to opening `https://wa.me/?text=…` in a new tab. **Android fix (2026-05-12):** prior versions opened `wa.me` directly, which then redirected to `whatsapp://send/` inside the Android WebView — WebView doesn't dispatch app URL schemes to the OS, so it errored with `ERR_UNKNOWN_URL_SCHEME`. The `navigator.share` short-circuit bypasses the redirect entirely. When the game is played inside the iOS/Android app the page is loaded from a local `file://` path, so the share message rewrites the URL to the public `https://game.ywesee.com/parados/<filename>` so recipients always get a working link. **DUK / TIK / kangaroo share messages are localized per variant** — DE "Spiele DUK — Das ungeduldige Känguru — Stufe X: …", EN "Play TIK — The Impatient Kangaroo — Level X: …", plus JP / CN / UA each in their own language.
+
+## Direct-entry links (URL hash anchors)
+
+`divided_loyalties.html`, `makalaina.html` (+ `_remote`), and `kangaroo.html` (+ 4 language variants) accept a URL hash that auto-launches a specific starting position. Setup is skipped on match and the H1 inline subtitle reads e.g. `DIVIDED LOYALTIES — Octopus`. The Share-on-WhatsApp button appends the active position's slug to the link it sends, so recipients land directly on the same position.
+
+- **Divided Loyalties:** `#up-the-stairs`, `#octopus`, `#wind-wheel`, `#gentle-kiss`, `#utopia`, `#e-m-3-w`, `#swiss-cross` (+ numeric `#1`–`#7`)
+- **MAKA LAINA:** `#red-tide`, `#diagonal`, `#open-field`, `#sunflower`, `#compass`, `#blue-column`, `#sunset`, `#wildfire`, `#encounter`, `#mirror` (+ numeric `#1`–`#10`)
+- **DUK / TIK kangaroo:** `#first-steps`, `#the-block`, `#shifting`, `#staircase`, `#scattered`, `#slant`, `#the-cross` — slugs are identical across all 5 language variants (DE/EN/JP/CN/UA), so `kangaroo_jp.html#the-cross` and `kangaroo_en.html#the-cross` land on the same level. Numeric `#1`–`#7` works as shorthand; trailing `b` selects start variant B (e.g. `#the-crossb`).
+
+Full clickable PDF reference: [`docs/parados_anchor_links.pdf`](docs/parados_anchor_links.pdf).
 
 ## Games
 

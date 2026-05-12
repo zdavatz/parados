@@ -78,9 +78,13 @@ For file shares (CSV / saved game JSON), use `navigator.share({ files:[file], ti
 
 `divided_loyalties.html`, `makalaina.html` (+ `_remote`), and `kangaroo.html` (+ 4 language variants) accept a URL hash that auto-launches a specific starting position on load and on `hashchange`. The pattern: `findPositionByHash(hash)` resolves either a slug or a numeric index, and `setPositionTitle(label)` updates an inline `<span id="position-title">` in the H1 plus `document.title`. `shareOnWhatsApp` appends the active position's slug to `shareUrl` and includes the position name in the message body.
 
-**Cross-language slugs:** kangaroo levels use `levelId` (`tut1`/`mid2`/`adv1`) — stable English IDs, so `kangaroo_jp.html#mid2` and `kangaroo_en.html#mid2` resolve to the same level. Numeric `#1`-`#7` works as shorthand by `LEVEL_DATABASE` index. Trailing `b` selects start variant B (`#adv1b`). **Don't switch slugs to localized names** — that would break cross-variant link sharing.
+**Cross-language slugs:** kangaroo levels use English mnemonic slugs (`first-steps`, `the-block`, `shifting`, `staircase`, `scattered`, `slant`, `the-cross`) stored in `LEVEL_DATABASE[*].id` — identical across all 5 language variants, so `kangaroo_jp.html#the-cross` and `kangaroo_en.html#the-cross` resolve to the same level. Numeric `#1`-`#7` works as shorthand by `LEVEL_DATABASE` index. Trailing `b` selects start variant B (`#the-crossb`). The `findLevelByHash` regex `[a-z0-9-]+?` allows dashes inside the slug. **Don't switch slugs to localized names** — that would break cross-variant link sharing.
 
-makalaina uses numeric `#1`-`#10` (positions have no names). makalaina_remote syncs `currentPosition` over the PeerJS `state_sync` payload so the joiner's title matches the host's.
+makalaina has thematic slugs from the `name` field on each `CURATED_POSITIONS` entry (`red-tide`, `diagonal`, `open-field`, `sunflower`, `compass`, `blue-column`, `sunset`, `wildfire`, `encounter`, `mirror`). Numeric `#1`-`#10` still works as shorthand. makalaina_remote syncs `currentPosition` over the PeerJS `state_sync` payload so the joiner's title matches the host's.
+
+**Localized share messages:** kangaroo's `shareOnWhatsApp` message is localized per variant. DE uses "Spiele DUK — Das ungeduldige Känguru — Stufe X: …" + "Hol dir die Parados-App:"; EN uses "Play TIK — The Impatient Kangaroo — Level X: …" + "Get the Parados app:" (note: EN H1 is rebranded `TIK 🦘`, not DUK); JP, CN, UA each have their own localized verb and full game name. `setPositionTitle`'s `document.title` prefix is localized too (e.g. `せっかちなカンガルー — …` in JP).
+
+**Anchor links reference:** `docs/parados_anchor_links.pdf` lists every direct-entry URL across all games with clickable hyperlinks (52 anchors total). Regenerate via LibreOffice from the source HTML — URLs must be wrapped in explicit `<a href>` tags or the `writer_pdf` filter won't emit `/URI` annotations and the links render as plain text.
 
 ## Server-side
 
