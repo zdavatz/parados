@@ -151,7 +151,6 @@
                 <button class="btn" style="background: #00695c; margin-top:0;" onclick="exportGameJSON()" title="Spielstand als Datei speichern">💾 Sichern</button>
                 <button class="btn" style="background: #00695c; margin-top:0;" onclick="triggerImportGame()" title="Spielstand aus Datei laden">📂 Laden</button>
             </div>
-            <button class="btn" style="background: #25D366; margin-top:6px;" onclick="shareGameJSONViaWhatsApp()">📤 Per WhatsApp senden</button>
             <button class="btn" style="background: #3d5245;" onclick="showSetup()">NEUES SPIEL</button>
             <input type="file" id="import-game-input" accept=".json,application/json" style="display:none;" onchange="handleImportGameFile(event)">
         </div>
@@ -254,7 +253,7 @@
                 <li><strong>↶ Zug zurück:</strong> Jeder Klick auf diesen Knopf macht eine Aktion rückgängig — Stein zurück ins Inventar, Brücke entfernt, Spieler wieder dran. Beliebig oft hintereinander bis zum Spielbeginn.</li>
                 <li><strong>Auto-Save:</strong> Das laufende Spiel wird automatisch im Browser gespeichert. Wenn du die Seite schließt und später wieder öffnest, erscheint „▶ Letztes Spiel fortsetzen" oben im Startmenü.</li>
                 <li><strong>💾 Sichern / 📂 Laden:</strong> Spielstand als JSON-Datei herunterladen oder eine zuvor gesicherte Datei wieder einspielen.</li>
-                <li><strong>📤 Per WhatsApp senden:</strong> Den aktuellen Spielstand als Datei verschicken — z.B. um eine Stellung mit Walter zu diskutieren.</li>
+                <li><strong>Share on WhatsApp (oben):</strong> Schickt einen Link zur aktuellen Stellung. Mit der Option „Aktuellen Spielstand mitsenden" wird zusätzlich eine Datei angehängt, damit der Empfänger das Spiel laden und fortsetzen kann.</li>
             </ul>
 
             <button class="btn" onclick="toggleRules(false)">SCHLIESSEN</button>
