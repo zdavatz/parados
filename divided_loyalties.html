@@ -112,8 +112,8 @@
             <label id="share-include-row" style="display:flex; align-items:flex-start; gap:10px; padding:12px; background:#f5f3e8; border-radius:6px; cursor:pointer; margin:14px 0;">
                 <input type="checkbox" id="share-include-state" style="width:18px; height:18px; margin-top:3px;">
                 <div>
-                    <strong>Aktuellen Spielstand mitsenden</strong>
-                    <div style="font-size:0.85em; color:#5d4037; margin-top:4px;">Hängt eine JSON-Datei an, damit der Empfänger das Spiel laden und fortsetzen kann.</div>
+                    <strong>Stellung als CSV mitsenden</strong>
+                    <div style="font-size:0.85em; color:#5d4037; margin-top:4px;">Hängt die Startstellung als CSV-Datei an die WhatsApp-Nachricht an, damit der Empfänger dieselbe Stellung laden kann.</div>
                 </div>
             </label>
             <div style="display:flex; gap:10px; justify-content:flex-end;">
@@ -253,7 +253,7 @@
                 <li><strong>↶ Zug zurück:</strong> Jeder Klick auf diesen Knopf macht eine Aktion rückgängig — Stein zurück ins Inventar, Brücke entfernt, Spieler wieder dran. Beliebig oft hintereinander bis zum Spielbeginn.</li>
                 <li><strong>Auto-Save:</strong> Das laufende Spiel wird automatisch im Browser gespeichert. Wenn du die Seite schließt und später wieder öffnest, erscheint „▶ Letztes Spiel fortsetzen" oben im Startmenü.</li>
                 <li><strong>💾 Sichern / 📂 Laden:</strong> Spielstand als JSON-Datei herunterladen oder eine zuvor gesicherte Datei wieder einspielen.</li>
-                <li><strong>Share on WhatsApp (oben):</strong> Schickt einen Link zur aktuellen Stellung. Mit der Option „Aktuellen Spielstand mitsenden" wird zusätzlich eine Datei angehängt, damit der Empfänger das Spiel laden und fortsetzen kann.</li>
+                <li><strong>Share on WhatsApp (oben):</strong> Schickt einen Link zur aktuellen Stellung. Mit der Option „Stellung als CSV mitsenden" wird zusätzlich die Startstellung als CSV-Datei angehängt, damit der Empfänger dieselbe Stellung laden kann.</li>
             </ul>
 
             <button class="btn" onclick="toggleRules(false)">SCHLIESSEN</button>
@@ -636,8 +636,15 @@
         function submitShareDialog() {
             const include = document.getElementById('share-include-state').checked && !!currentPosition;
             closeShareDialog();
-            if (include) shareGameJSONViaWhatsApp();
+            if (include) shareCurrentPositionAsCSV();
             else shareOnWhatsApp();
+        }
+
+        async function shareCurrentPositionAsCSV() {
+            if (!currentPosition) { shareOnWhatsApp(); return; }
+            const { paint, gridW } = positionToPaint(currentPosition);
+            const csv = buildPositionCSV(paint, gridW, currentPosition.name);
+            await shareCSVViaWhatsApp(currentPosition.name, csv);
         }
 
         function shareOnWhatsApp() {
