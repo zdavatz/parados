@@ -207,7 +207,7 @@
     </div>
 
     <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
-        <h1 style="margin:5px 0;">DUK 🦘</h1>
+        <h1 style="margin:5px 0;">DUK 🦘<span id="position-title" style="color:#7f8c8d; font-weight:normal;"></span></h1>
         <button class="btn" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">Share on WhatsApp</button>
     </div>
     <div class="subtitle">Das Ungeduldige Känguru</div>
@@ -607,6 +607,7 @@
 
         stopReplayPlay();
         currentMode = mode;
+        setPositionTitle('');
         document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.config-panel').forEach(p => p.classList.remove('active'));
 
@@ -657,6 +658,7 @@
             const lvlIndex = document.getElementById('levelSelect').value;
             const lvl = LEVEL_DATABASE[lvlIndex];
             currentLevelData = lvl;
+            setPositionTitle(lvl.name);
             // Show/hide A/B toggle based on whether level has two start positions
             const hasVariants = !!lvl.startHintB;
             document.querySelector('.variant-toggle').style.display = hasVariants ? 'inline-flex' : 'none';
@@ -676,6 +678,7 @@
             if (gameState === 'PLAYING') logAction("START", -1, -1, kangyPos.x, kangyPos.y, "Auto Kangy placed");
 
         } else if (currentMode === 'RANDOM') {
+            setPositionTitle('');
             const sizeVal = document.getElementById('boardSize').value.split('x');
             COLS = parseInt(sizeVal[0]); ROWS = parseInt(sizeVal[1]);
             board = Array(ROWS).fill(null).map(() => Array(COLS).fill(null));
@@ -1156,9 +1159,44 @@
         localStorage.setItem('kangy_master_v2', 'true');
     }
 
+    function setPositionTitle(label) {
+        const pt = document.getElementById('position-title');
+        if (pt) pt.textContent = label ? ' — ' + label : '';
+        document.title = label ? 'DUK — ' + label : 'DUK';
+    }
+
+    // Hash format:
+    //   #tut1 / #mid2 / #adv1   → level by id
+    //   #1..#7                   → level by 1-based index in LEVEL_DATABASE
+    //   trailing 'b'             → start variant B (e.g. #adv1b, #1b)
+    function findLevelByHash(hash) {
+        const raw = decodeURIComponent(hash || '').replace(/^#/, '').trim().toLowerCase();
+        if (!raw) return null;
+        const m = raw.match(/^([a-z0-9]+?)([ab])?$/);
+        if (!m) return null;
+        const key = m[1];
+        const variant = (m[2] || 'a').toUpperCase();
+        if (/^\d+$/.test(key)) {
+            const i = parseInt(key, 10) - 1;
+            if (i >= 0 && i < LEVEL_DATABASE.length) return { index: i, variant };
+        }
+        const idx = LEVEL_DATABASE.findIndex(l => l.id === key);
+        if (idx >= 0) return { index: idx, variant };
+        return null;
+    }
+
+    function currentLevelHash() {
+        if (currentMode !== 'LEVEL' || !currentLevelData) return '';
+        const v = (selectedVariant === 'B' && currentLevelData.startHintB) ? 'b' : '';
+        return currentLevelData.id + v;
+    }
+
     function shareOnWhatsApp() {
-        const shareUrl = /^(file|parados):$/.test(window.location.protocol) ? "https://game.ywesee.com/parados/" + (window.location.pathname.split("/").pop() || "index.html") : window.location.href;
-        const msg = `Play DUK — The Impatient Kangaroo: ${shareUrl}\n\nGet the Parados app:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
+        let shareUrl = /^(file|parados):$/.test(window.location.protocol) ? "https://game.ywesee.com/parados/" + (window.location.pathname.split("/").pop() || "index.html") : window.location.href.split('#')[0];
+        const slug = currentLevelHash();
+        if (slug) shareUrl += '#' + slug;
+        const posLabel = currentMode === 'LEVEL' && currentLevelData ? ` — ${currentLevelData.name}` : '';
+        const msg = `Play DUK — The Impatient Kangaroo${posLabel}: ${shareUrl}\n\nGet the Parados app:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
         if (navigator.share) { navigator.share({ text: msg }).catch(() => {}); return; }
         const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
         const inIOSApp = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.csvExport);
@@ -1486,7 +1524,26 @@
 
     // START
     populateLevelSelect();
-    initGame();
+
+    function applyHashLevel() {
+        const m = findLevelByHash(location.hash);
+        if (!m) return false;
+        const sel = document.getElementById('levelSelect');
+        sel.value = m.index;
+        selectedVariant = m.variant;
+        const lvl = LEVEL_DATABASE[m.index];
+        if (lvl.startHintB) {
+            document.getElementById('btnVariantA').classList.toggle('active', selectedVariant === 'A');
+            document.getElementById('btnVariantB').classList.toggle('active', selectedVariant === 'B');
+        }
+        if (currentMode !== 'LEVEL') switchMode('LEVEL');
+        else initGame();
+        return true;
+    }
+
+    if (!applyHashLevel()) initGame();
+
+    window.addEventListener('hashchange', () => { applyHashLevel(); });
 
 </script>
 </body>
