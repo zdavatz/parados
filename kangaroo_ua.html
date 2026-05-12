@@ -1130,7 +1130,7 @@
         const slug = currentLevelHash();
         if (slug) shareUrl += '#' + slug;
         const posLabel = currentMode === 'LEVEL' && currentLevelData ? ` — ${currentLevelData.name}` : '';
-        const msg = `Play DUK — The Impatient Kangaroo${posLabel}: ${shareUrl}\n\nGet the Parados app:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
+        const msg = `Грати DUK — Нетерплячий кенгуру${posLabel}: ${shareUrl}\n\nЗавантажте додаток Parados:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
         if (navigator.share) { navigator.share({ text: msg }).catch(() => {}); return; }
         const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
         const inIOSApp = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.csvExport);

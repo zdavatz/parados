@@ -1094,7 +1094,7 @@
     function setPositionTitle(label) {
         const pt = document.getElementById('position-title');
         if (pt) pt.textContent = label ? ' — ' + label : '';
-        document.title = label ? 'DUK — ' + label : 'DUK';
+        document.title = label ? '急躁的袋鼠 — ' + label : '急躁的袋鼠';
     }
 
     // Hash format:
@@ -1128,7 +1128,7 @@
         const slug = currentLevelHash();
         if (slug) shareUrl += '#' + slug;
         const posLabel = currentMode === 'LEVEL' && currentLevelData ? ` — ${currentLevelData.name}` : '';
-        const msg = `Play DUK — The Impatient Kangaroo${posLabel}: ${shareUrl}\n\nGet the Parados app:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
+        const msg = `玩急躁的袋鼠${posLabel}: ${shareUrl}\n\n获取 Parados 应用:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
         if (navigator.share) { navigator.share({ text: msg }).catch(() => {}); return; }
         const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
         const inIOSApp = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.csvExport);
