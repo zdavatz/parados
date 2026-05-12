@@ -86,7 +86,7 @@
         .position-btn .sub { display: block; font-weight: normal; font-size: 0.85em; opacity: 0.8; margin-top: 3px; }
 
         /* Modal Styling */
-        #rules-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center; }
+        #rules-modal, #share-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center; }
         .modal-box { background: #fdfcf0; color: #222; padding: 25px; border-radius: 12px; max-width: 650px; width: 92%; max-height: 85vh; overflow-y: auto; line-height: 1.6; font-size: 0.95em; }
         .modal-box h2 { border-bottom: 2px solid #6d4c41; padding-bottom: 10px; }
         .modal-box h3 { margin-top: 20px; color: #5d4037; }
@@ -102,7 +102,25 @@
 
     <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
         <h1 style="margin:5px 0;">DIVIDED LOYALTIES<span id="position-title" style="color:#bdbdbd; font-weight:normal;"></span></h1>
-        <button class="btn" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">Share on WhatsApp</button>
+        <button class="btn" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="openShareDialog()">Share on WhatsApp</button>
+    </div>
+
+    <div id="share-modal" onclick="closeShareDialog()">
+        <div class="modal-box" onclick="event.stopPropagation()" style="max-width:480px;">
+            <h2>📤 Auf WhatsApp teilen</h2>
+            <p style="margin:10px 0 0;">Sendet einen Link zur aktuellen Stellung.</p>
+            <label id="share-include-row" style="display:flex; align-items:flex-start; gap:10px; padding:12px; background:#f5f3e8; border-radius:6px; cursor:pointer; margin:14px 0;">
+                <input type="checkbox" id="share-include-state" style="width:18px; height:18px; margin-top:3px;">
+                <div>
+                    <strong>Aktuellen Spielstand mitsenden</strong>
+                    <div style="font-size:0.85em; color:#5d4037; margin-top:4px;">Hängt eine JSON-Datei an, damit der Empfänger das Spiel laden und fortsetzen kann.</div>
+                </div>
+            </label>
+            <div style="display:flex; gap:10px; justify-content:flex-end;">
+                <button class="btn" style="width:auto; background:#8d6e63; margin-top:0;" onclick="closeShareDialog()">Abbrechen</button>
+                <button class="btn" style="width:auto; background:#25D366; color:white; margin-top:0;" onclick="submitShareDialog()">Senden</button>
+            </div>
+        </div>
     </div>
 
     <div id="setup-overlay">
@@ -599,6 +617,28 @@
             init();
             updateScore();
             saveGame();
+        }
+
+        function openShareDialog() {
+            const cb = document.getElementById('share-include-state');
+            const row = document.getElementById('share-include-row');
+            const hasState = !!currentPosition;
+            cb.checked = false;
+            cb.disabled = !hasState;
+            row.style.opacity = hasState ? '1' : '0.55';
+            row.style.cursor = hasState ? 'pointer' : 'not-allowed';
+            document.getElementById('share-modal').style.display = 'flex';
+        }
+
+        function closeShareDialog() {
+            document.getElementById('share-modal').style.display = 'none';
+        }
+
+        function submitShareDialog() {
+            const include = document.getElementById('share-include-state').checked && !!currentPosition;
+            closeShareDialog();
+            if (include) shareGameJSONViaWhatsApp();
+            else shareOnWhatsApp();
         }
 
         function shareOnWhatsApp() {
