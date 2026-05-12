@@ -1527,18 +1527,18 @@
                 if (e && e.name === 'AbortError') return; // user cancelled the share sheet
                 console.warn('navigator.share failed, falling back:', e);
             }
-            // Fallback: download the file, then open WhatsApp text with a note
+            // Fallback: download only — NO wa.me redirect.
+            // Walter (2026-05-12): on Android the wa.me link redirected to
+            // whatsapp:// and the WebView choked with ERR_UNKNOWN_URL_SCHEME
+            // (PDF-Anleitung Schritt 6). Same pattern as
+            // shareGameJSONViaWhatsApp: just download + alert, user attaches
+            // manually in WhatsApp.
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url; a.download = filename;
             document.body.appendChild(a); a.click(); a.remove();
             setTimeout(() => URL.revokeObjectURL(url), 5000);
-            const msg = `Neue Startstellung für Divided Loyalties: ${name}\n\n(CSV-Datei „${filename}" wurde heruntergeladen — bitte als Anhang anfügen.)`;
-            const wa = `https://wa.me/?text=${encodeURIComponent(msg)}`;
-            const inIOSApp = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.csvExport);
-            if (inIOSApp) { window.location.href = wa; return; }
-            const w = window.open(wa, '_blank');
-            if (!w) { window.location.href = wa; }
+            alert(`CSV-Datei „${filename}" wurde heruntergeladen.\n\nBitte in WhatsApp auf die Büroklammer (📎) tippen → „Dokument" → die CSV-Datei aus dem Download-Ordner auswählen und versenden.`);
         }
 
         async function shareEditorViaWhatsApp() {
