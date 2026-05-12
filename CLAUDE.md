@@ -74,6 +74,14 @@ The `navigator.share` short-circuit prevents Android WebView from following `wa.
 
 For file shares (CSV / saved game JSON), use `navigator.share({ files:[file], title:'…' })` — no `text:`, no `wa.me` fallback. See divided_loyalties guardrails.
 
+## Hash deep-links per position
+
+`divided_loyalties.html`, `makalaina.html` (+ `_remote`), and `kangaroo.html` (+ 4 language variants) accept a URL hash that auto-launches a specific starting position on load and on `hashchange`. The pattern: `findPositionByHash(hash)` resolves either a slug or a numeric index, and `setPositionTitle(label)` updates an inline `<span id="position-title">` in the H1 plus `document.title`. `shareOnWhatsApp` appends the active position's slug to `shareUrl` and includes the position name in the message body.
+
+**Cross-language slugs:** kangaroo levels use `levelId` (`tut1`/`mid2`/`adv1`) — stable English IDs, so `kangaroo_jp.html#mid2` and `kangaroo_en.html#mid2` resolve to the same level. Numeric `#1`-`#7` works as shorthand by `LEVEL_DATABASE` index. Trailing `b` selects start variant B (`#adv1b`). **Don't switch slugs to localized names** — that would break cross-variant link sharing.
+
+makalaina uses numeric `#1`-`#10` (positions have no names). makalaina_remote syncs `currentPosition` over the PeerJS `state_sync` payload so the joiner's title matches the host's.
+
 ## Server-side
 
 `cgi-bin/save_csv.py` (Python 3 CGI): accepts POST `{game, csv}`, saves to `csv/` as `gamename_HHMM_dd.mm.yyyy.csv` (collision-avoidance suffix). `csv/` owned by `www-data`. Apache: `cgid` module with `ExecCGI` on `cgi-bin/`.
