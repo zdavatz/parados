@@ -967,16 +967,16 @@ function renderScoreTable(sc, flags) {
 }
 
 const CURATED_POSITIONS = [null,
-    {b:[2,7],w:[9,7],d:[[0,0,'blue',1],[3,0,'blue',4],[10,0,'green',''],[11,0,'purple',''],[4,2,'red',5],[5,2,'blue',4],[2,3,'purple',''],[4,3,'red',6],[6,3,'yellow',4],[9,3,'green',''],[1,4,'red',5],[4,6,'blue',6],[7,6,'blue',3],[11,5,'red',3],[0,7,'red',3],[10,6,'red',3],[2,8,'green',''],[6,8,'red',4],[7,8,'yellow',2],[2,9,'yellow',3],[11,9,'purple',''],[8,10,'yellow',4],[5,11,'blue',5],[1,9,'orange','']]},
-    {b:[7,7],w:[0,4],d:[[2,0,'red',4],[11,1,'yellow',5],[5,1,'orange',''],[7,2,'blue',4],[10,2,'green',''],[5,3,'orange',''],[7,3,'purple',''],[4,3,'red',3],[2,4,'blue',3],[3,4,'yellow',2],[1,5,'green',''],[4,5,'blue',5],[6,5,'red',4],[11,5,'yellow',4],[10,5,'green',''],[11,7,'purple',''],[2,7,'purple',''],[5,7,'yellow',3],[8,7,'orange',''],[0,9,'yellow',4],[2,8,'purple',''],[8,9,'blue',4],[3,10,'red',5],[11,10,'yellow',4]]},
-    {b:[2,3],w:[10,6],d:[[3,0,'yellow',4],[5,0,'green',''],[6,0,'blue',4],[7,0,'blue',5],[1,1,'red',3],[9,1,'yellow',2],[11,1,'red',3],[7,3,'purple',''],[3,4,'yellow',2],[4,5,'yellow',4],[6,6,'orange',''],[11,5,'green',''],[2,7,'blue',3],[4,7,'red',5],[7,7,'purple',''],[0,8,'orange',''],[2,8,'red',4],[11,8,'blue',4],[3,9,'yellow',5],[7,9,'red',3],[0,10,'green',''],[1,11,'blue',1],[6,10,'purple',''],[8,10,'orange','']]},
-    {b:[3,4],w:[8,2],d:[[0,1,'orange',''],[1,0,'yellow',2],[3,0,'yellow',4],[8,0,'green',''],[5,1,'red',5],[10,2,'orange',''],[5,2,'purple',''],[7,2,'yellow',2],[10,3,'purple',''],[2,3,'blue',5],[4,4,'red',2],[6,5,'blue',3],[8,4,'blue',4],[8,5,'orange',''],[11,5,'yellow',3],[0,7,'blue',6],[2,7,'yellow',4],[10,7,'orange',''],[5,8,'green',''],[7,8,'yellow',6],[8,8,'yellow',4],[3,9,'yellow',1],[7,9,'yellow',3],[10,10,'purple','']]},
-    {b:[4,7],w:[8,2],d:[[1,0,'green',''],[4,0,'orange',''],[7,0,'blue',1],[10,0,'blue',4],[9,1,'green',''],[2,3,'blue',5],[5,2,'red',5],[7,2,'yellow',2],[11,3,'purple',''],[5,4,'red',2],[0,6,'orange',''],[7,5,'purple',''],[9,6,'orange',''],[7,7,'blue',3],[10,7,'orange',''],[11,7,'yellow',5],[0,8,'green',''],[2,8,'yellow',4],[0,9,'red',2],[5,9,'green',''],[8,9,'blue',4],[9,9,'purple',''],[2,10,'blue',6],[11,11,'purple','']]},
-    {b:[4,9],w:[7,1],d:[[2,0,'blue',5],[7,0,'blue',4],[1,1,'red',4],[8,1,'green',''],[3,2,'yellow',2],[5,2,'yellow',4],[10,2,'red',6],[2,3,'green',''],[4,3,'red',2],[6,3,'purple',''],[8,3,'yellow',6],[3,5,'orange',''],[4,5,'red',1],[6,5,'orange',''],[0,6,'blue',3],[3,7,'yellow',4],[5,7,'blue',3],[9,7,'blue',5],[0,8,'blue',4],[6,8,'yellow',2],[8,8,'orange',''],[11,8,'green',''],[0,10,'blue',2],[2,10,'red',5]]},
-    {b:[4,11],w:[9,6],d:[[7,0,'yellow',4],[1,1,'yellow',4],[5,1,'yellow',4],[10,1,'yellow',5],[2,2,'green',''],[3,2,'orange',''],[1,3,'blue',1],[5,3,'red',2],[10,3,'green',''],[7,4,'orange',''],[0,5,'red',4],[11,5,'yellow',5],[0,6,'purple',''],[3,6,'purple',''],[4,6,'orange',''],[6,6,'blue',4],[8,6,'orange',''],[10,6,'yellow',1],[5,7,'orange',''],[3,8,'yellow',6],[5,8,'blue',3],[7,8,'yellow',2],[11,8,'orange',''],[2,9,'red',3]]},
-    {b:[1,7],w:[7,3],d:[[8,0,'red',3],[3,1,'orange',''],[5,1,'red',6],[9,1,'green',''],[0,2,'red',3],[1,3,'red',4],[4,3,'blue',6],[5,3,'yellow',2],[8,3,'orange',''],[11,3,'blue',5],[1,5,'orange',''],[3,5,'red',4],[5,5,'red',3],[7,5,'red',5],[2,6,'orange',''],[5,6,'yellow',6],[7,6,'orange',''],[0,8,'green',''],[3,8,'red',4],[4,8,'purple',''],[8,9,'orange',''],[11,9,'purple',''],[5,11,'blue',4],[10,11,'green','']]},
-    {b:[7,5],w:[5,6],d:[[5,0,'red',5],[8,0,'green',''],[3,1,'orange',''],[6,1,'yellow',4],[10,1,'blue',2],[1,2,'blue',5],[4,2,'green',''],[9,2,'blue',3],[2,3,'purple',''],[6,3,'red',3],[11,3,'yellow',1],[0,4,'purple',''],[4,4,'blue',4],[10,5,'orange',''],[11,5,'blue',6],[1,7,'red',2],[6,7,'red',1],[8,7,'yellow',3],[10,7,'orange',''],[3,9,'yellow',5],[6,9,'red',4],[8,9,'green',''],[5,10,'yellow',6],[10,10,'orange','']]},
-    {b:[3,7],w:[5,7],d:[[5,0,'blue',2],[10,0,'green',''],[1,1,'blue',3],[3,1,'blue',1],[8,1,'red',5],[11,1,'green',''],[8,2,'red',3],[1,3,'orange',''],[2,3,'blue',3],[7,4,'green',''],[11,4,'red',2],[1,5,'yellow',5],[3,5,'blue',4],[7,5,'red',1],[9,5,'yellow',4],[6,7,'yellow',4],[2,8,'blue',4],[4,8,'orange',''],[7,8,'yellow',5],[11,8,'blue',5],[0,9,'orange',''],[5,10,'blue',4],[8,10,'yellow',4],[0,11,'yellow',5]]}
+    {name:'Red Tide', b:[2,7],w:[9,7],d:[[0,0,'blue',1],[3,0,'blue',4],[10,0,'green',''],[11,0,'purple',''],[4,2,'red',5],[5,2,'blue',4],[2,3,'purple',''],[4,3,'red',6],[6,3,'yellow',4],[9,3,'green',''],[1,4,'red',5],[4,6,'blue',6],[7,6,'blue',3],[11,5,'red',3],[0,7,'red',3],[10,6,'red',3],[2,8,'green',''],[6,8,'red',4],[7,8,'yellow',2],[2,9,'yellow',3],[11,9,'purple',''],[8,10,'yellow',4],[5,11,'blue',5],[1,9,'orange','']]},
+    {name:'Diagonal', b:[7,7],w:[0,4],d:[[2,0,'red',4],[11,1,'yellow',5],[5,1,'orange',''],[7,2,'blue',4],[10,2,'green',''],[5,3,'orange',''],[7,3,'purple',''],[4,3,'red',3],[2,4,'blue',3],[3,4,'yellow',2],[1,5,'green',''],[4,5,'blue',5],[6,5,'red',4],[11,5,'yellow',4],[10,5,'green',''],[11,7,'purple',''],[2,7,'purple',''],[5,7,'yellow',3],[8,7,'orange',''],[0,9,'yellow',4],[2,8,'purple',''],[8,9,'blue',4],[3,10,'red',5],[11,10,'yellow',4]]},
+    {name:'Open Field', b:[2,3],w:[10,6],d:[[3,0,'yellow',4],[5,0,'green',''],[6,0,'blue',4],[7,0,'blue',5],[1,1,'red',3],[9,1,'yellow',2],[11,1,'red',3],[7,3,'purple',''],[3,4,'yellow',2],[4,5,'yellow',4],[6,6,'orange',''],[11,5,'green',''],[2,7,'blue',3],[4,7,'red',5],[7,7,'purple',''],[0,8,'orange',''],[2,8,'red',4],[11,8,'blue',4],[3,9,'yellow',5],[7,9,'red',3],[0,10,'green',''],[1,11,'blue',1],[6,10,'purple',''],[8,10,'orange','']]},
+    {name:'Sunflower', b:[3,4],w:[8,2],d:[[0,1,'orange',''],[1,0,'yellow',2],[3,0,'yellow',4],[8,0,'green',''],[5,1,'red',5],[10,2,'orange',''],[5,2,'purple',''],[7,2,'yellow',2],[10,3,'purple',''],[2,3,'blue',5],[4,4,'red',2],[6,5,'blue',3],[8,4,'blue',4],[8,5,'orange',''],[11,5,'yellow',3],[0,7,'blue',6],[2,7,'yellow',4],[10,7,'orange',''],[5,8,'green',''],[7,8,'yellow',6],[8,8,'yellow',4],[3,9,'yellow',1],[7,9,'yellow',3],[10,10,'purple','']]},
+    {name:'Compass', b:[4,7],w:[8,2],d:[[1,0,'green',''],[4,0,'orange',''],[7,0,'blue',1],[10,0,'blue',4],[9,1,'green',''],[2,3,'blue',5],[5,2,'red',5],[7,2,'yellow',2],[11,3,'purple',''],[5,4,'red',2],[0,6,'orange',''],[7,5,'purple',''],[9,6,'orange',''],[7,7,'blue',3],[10,7,'orange',''],[11,7,'yellow',5],[0,8,'green',''],[2,8,'yellow',4],[0,9,'red',2],[5,9,'green',''],[8,9,'blue',4],[9,9,'purple',''],[2,10,'blue',6],[11,11,'purple','']]},
+    {name:'Blue Column', b:[4,9],w:[7,1],d:[[2,0,'blue',5],[7,0,'blue',4],[1,1,'red',4],[8,1,'green',''],[3,2,'yellow',2],[5,2,'yellow',4],[10,2,'red',6],[2,3,'green',''],[4,3,'red',2],[6,3,'purple',''],[8,3,'yellow',6],[3,5,'orange',''],[4,5,'red',1],[6,5,'orange',''],[0,6,'blue',3],[3,7,'yellow',4],[5,7,'blue',3],[9,7,'blue',5],[0,8,'blue',4],[6,8,'yellow',2],[8,8,'orange',''],[11,8,'green',''],[0,10,'blue',2],[2,10,'red',5]]},
+    {name:'Sunset', b:[4,11],w:[9,6],d:[[7,0,'yellow',4],[1,1,'yellow',4],[5,1,'yellow',4],[10,1,'yellow',5],[2,2,'green',''],[3,2,'orange',''],[1,3,'blue',1],[5,3,'red',2],[10,3,'green',''],[7,4,'orange',''],[0,5,'red',4],[11,5,'yellow',5],[0,6,'purple',''],[3,6,'purple',''],[4,6,'orange',''],[6,6,'blue',4],[8,6,'orange',''],[10,6,'yellow',1],[5,7,'orange',''],[3,8,'yellow',6],[5,8,'blue',3],[7,8,'yellow',2],[11,8,'orange',''],[2,9,'red',3]]},
+    {name:'Wildfire', b:[1,7],w:[7,3],d:[[8,0,'red',3],[3,1,'orange',''],[5,1,'red',6],[9,1,'green',''],[0,2,'red',3],[1,3,'red',4],[4,3,'blue',6],[5,3,'yellow',2],[8,3,'orange',''],[11,3,'blue',5],[1,5,'orange',''],[3,5,'red',4],[5,5,'red',3],[7,5,'red',5],[2,6,'orange',''],[5,6,'yellow',6],[7,6,'orange',''],[0,8,'green',''],[3,8,'red',4],[4,8,'purple',''],[8,9,'orange',''],[11,9,'purple',''],[5,11,'blue',4],[10,11,'green','']]},
+    {name:'Encounter', b:[7,5],w:[5,6],d:[[5,0,'red',5],[8,0,'green',''],[3,1,'orange',''],[6,1,'yellow',4],[10,1,'blue',2],[1,2,'blue',5],[4,2,'green',''],[9,2,'blue',3],[2,3,'purple',''],[6,3,'red',3],[11,3,'yellow',1],[0,4,'purple',''],[4,4,'blue',4],[10,5,'orange',''],[11,5,'blue',6],[1,7,'red',2],[6,7,'red',1],[8,7,'yellow',3],[10,7,'orange',''],[3,9,'yellow',5],[6,9,'red',4],[8,9,'green',''],[5,10,'yellow',6],[10,10,'orange','']]},
+    {name:'Mirror', b:[3,7],w:[5,7],d:[[5,0,'blue',2],[10,0,'green',''],[1,1,'blue',3],[3,1,'blue',1],[8,1,'red',5],[11,1,'green',''],[8,2,'red',3],[1,3,'orange',''],[2,3,'blue',3],[7,4,'green',''],[11,4,'red',2],[1,5,'yellow',5],[3,5,'blue',4],[7,5,'red',1],[9,5,'yellow',4],[6,7,'yellow',4],[2,8,'blue',4],[4,8,'orange',''],[7,8,'yellow',5],[11,8,'blue',5],[0,9,'orange',''],[5,10,'blue',4],[8,10,'yellow',4],[0,11,'yellow',5]]}
 ];
 
 let currentPosition = null;   // numeric 1..10 for curated, 'random' for random, null before setup
@@ -987,11 +987,23 @@ function setPositionTitle(label) {
     document.title = label ? 'MAKA LAINA — ' + label : 'MAKA LAINA';
 }
 
+function slugifyName(s) {
+    return String(s || '').toLowerCase()
+        .normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+}
+
 function findPositionByHash(hash) {
     const raw = decodeURIComponent(hash || '').replace(/^#/, '').trim();
+    if (!raw) return null;
     if (/^\d+$/.test(raw)) {
         const n = parseInt(raw, 10);
         if (n >= 1 && n <= 10) return n;
+    }
+    const slug = slugifyName(raw);
+    for (let i = 1; i <= 10; i++) {
+        if (slugifyName(CURATED_POSITIONS[i].name) === slug) return i;
     }
     return null;
 }
@@ -1010,7 +1022,7 @@ function loadCuratedPosition(posId) {
     const pos = CURATED_POSITIONS[posId];
     if (!pos) return;
     currentPosition = posId;
-    setPositionTitle('Position ' + posId);
+    setPositionTitle(pos.name);
     document.getElementById('setup-panel').style.display = 'none';
 
     const allDiscs = [];
@@ -1054,8 +1066,8 @@ function toggleRules(show) {
 
 function shareOnWhatsApp() {
     let shareUrl = /^(file|parados):$/.test(window.location.protocol) ? "https://game.ywesee.com/parados/" + (window.location.pathname.split("/").pop() || "index.html") : window.location.href.split('#')[0];
-    if (typeof currentPosition === 'number') shareUrl += '#' + currentPosition;
-    const posLabel = typeof currentPosition === 'number' ? ` — Position ${currentPosition}` : '';
+    if (typeof currentPosition === 'number') shareUrl += '#' + slugifyName(CURATED_POSITIONS[currentPosition].name);
+    const posLabel = typeof currentPosition === 'number' ? ` — ${CURATED_POSITIONS[currentPosition].name}` : '';
     const msg = `Play MAKA LAINA${posLabel}: ${shareUrl}\n\nGet the Parados app:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
     if (navigator.share) { navigator.share({ text: msg }).catch(() => {}); return; }
     const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
@@ -1209,7 +1221,7 @@ function applySyncState(data) {
     if (data.currentPosition !== undefined) {
         currentPosition = data.currentPosition;
         if (currentPosition === 'random') setPositionTitle('Random');
-        else if (typeof currentPosition === 'number') setPositionTitle('Position ' + currentPosition);
+        else if (typeof currentPosition === 'number' && CURATED_POSITIONS[currentPosition]) setPositionTitle(CURATED_POSITIONS[currentPosition].name);
         else setPositionTitle('');
     }
     // Re-show draft panel if syncing into a draft state
