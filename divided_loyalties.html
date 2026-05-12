@@ -101,7 +101,7 @@
 <body>
 
     <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
-        <h1 style="margin:5px 0;">DIVIDED LOYALTIES</h1>
+        <h1 style="margin:5px 0;">DIVIDED LOYALTIES<span id="position-title" style="color:#bdbdbd; font-weight:normal;"></span></h1>
         <button class="btn" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">Share on WhatsApp</button>
     </div>
 
@@ -455,6 +455,9 @@
         function toggleRules(s) { document.getElementById('rules-modal').style.display = s ? 'flex' : 'none'; }
 
         function showSetup() {
+            const pt = document.getElementById('position-title');
+            if (pt) pt.textContent = '';
+            document.title = 'Divided Loyalties';
             const g = document.getElementById('position-grid');
             g.innerHTML = '';
             if (hasSavedGame()) {
@@ -547,6 +550,9 @@
         function startWithPosition(pos) {
             currentPosition = pos;
             undoStack = [];
+            const pt = document.getElementById('position-title');
+            if (pt) pt.textContent = pos && pos.name ? ' — ' + pos.name : '';
+            if (pos && pos.name) document.title = 'Divided Loyalties — ' + pos.name;
             // Normalize: each entry becomes {token, cells:[[x,y],…]}. Hardcoded uses plain [x,y][]
             // arrays; derive a token from cell count for those (9→'S', 7-12→'G', ≤6→'W').
             const norm = pos.boards.map(b => {
