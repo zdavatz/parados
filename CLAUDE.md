@@ -26,8 +26,8 @@ Grid puzzle. Kangy jumps over green/blue dishes ("catapult" jumps, color alterna
 
 **Don't touch:** dish-move shortcut wiring (`ondblclick` + `touch-action: manipulation`) — Walter playtested.
 
-### `divided_loyalties.html` — Divided Loyalties
-Connect-4 with 6 colors. Two-player tile + bridge building. Non-square grid (`GRID_W` × `GRID_H`, computed per position with +2 margin for off-board placements).
+### `divided_loyalties.html` (+ `_en`) — Divided Loyalties
+Connect-4 with 6 colors. Two-player tile + bridge building. Non-square grid (`GRID_W` × `GRID_H`, computed per position with +2 margin for off-board placements). `_en` is a UI-only translation — embedded CSV `position_name` values stay English (`Up the Stairs`, `Wind wheel`, …) so `slugifyName` yields the same hash anchors in both files and shared links travel across language variants.
 
 - Positions: external `divided_loyalties_starting_positions.csv` + embedded copy in HTML (app WebViews can't `fetch()` over `file://`, so the embedded copy is what ships). **Sync both when editing.** CSV format: `position_id,position_name,row,c0..cN`; cell value `'.'` = empty, `'o'` = placement dot, anything else = board token. Each unique token = one separately scored board.
 - Bridges: manual via double-click two endpoints (on-board placements). **Exception:** dot placements auto-form the justifying bridge, since the rule already requires one.
@@ -46,8 +46,8 @@ Connect-4 with 6 colors. Two-player tile + bridge building. Non-square grid (`GR
 - **Board grays:** `S→#3a3a3a` (darkest), `W→#6a6a6a` (middle), `G→#9a9a9a` (lightest) — not monotonic by cell count, per Walter's order.
 - **Don't reintroduce auto-dots** in the editor — Walter places them explicitly with the Punkt brush.
 
-### `democracy.html` / `democracy_remote.html` — Democracy in Space
-Area-majority game (Electoral College concept). Local = pass-and-play; remote uses PeerJS. HTML canvas for connection lines.
+### `democracy.html` (+ `_en`) / `democracy_remote.html` — Democracy in Space
+Area-majority game (Electoral College concept). Local = pass-and-play; remote uses PeerJS. HTML canvas for connection lines. `_en` is a UI-only translation of the local variant (no hash anchors here — setup is randomized).
 
 ### `makalaina.html` / `makalaina_remote.html` — MAKA LAINA
 2-player disc collection on 12×12. 54 discs (36 primary numbered 1–6 in R/B/Y, 18 secondary in G/O/P). Draft system: after each collection, draw 1 from bag and place in your LOS. Sacrifice/relinquish mechanic when stuck (relinquish capped at 2/player). Winner = most colors won (tiebreak: highest single-color score). Curated starts in `makalaina_starting_positions.csv` (vertical format). Remote uses PeerJS with full state sync.
@@ -79,7 +79,7 @@ For file shares (CSV / saved game JSON), use `navigator.share({ files:[file], ti
 
 ## Hash deep-links per position
 
-`divided_loyalties.html`, `makalaina.html` (+ `_remote`), and `kangaroo.html` (+ 4 language variants) accept a URL hash that auto-launches a specific starting position on load and on `hashchange`. The pattern: `findPositionByHash(hash)` resolves either a slug or a numeric index, and `setPositionTitle(label)` updates an inline `<span id="position-title">` in the H1 plus `document.title`. `shareOnWhatsApp` appends the active position's slug to `shareUrl` and includes the position name in the message body.
+`divided_loyalties.html` (+ `_en`), `makalaina.html` (+ `_remote`), and `kangaroo.html` (+ 4 language variants) accept a URL hash that auto-launches a specific starting position on load and on `hashchange`. The pattern: `findPositionByHash(hash)` resolves either a slug or a numeric index, and `setPositionTitle(label)` updates an inline `<span id="position-title">` in the H1 plus `document.title`. `shareOnWhatsApp` appends the active position's slug to `shareUrl` and includes the position name in the message body.
 
 **Cross-language slugs:** kangaroo levels use English mnemonic slugs (`first-steps`, `the-block`, `shifting`, `staircase`, `scattered`, `slant`, `the-cross`) stored in `LEVEL_DATABASE[*].id` — identical across all 5 language variants, so `kangaroo_jp.html#the-cross` and `kangaroo_en.html#the-cross` resolve to the same level. Numeric `#1`-`#7` works as shorthand by `LEVEL_DATABASE` index. Trailing `b` selects start variant B (`#the-crossb`). The `findLevelByHash` regex `[a-z0-9-]+?` allows dashes inside the slug. **Don't switch slugs to localized names** — that would break cross-variant link sharing.
 
@@ -87,7 +87,7 @@ makalaina has thematic slugs from the `name` field on each `CURATED_POSITIONS` e
 
 **Localized share messages:** kangaroo's `shareOnWhatsApp` message is localized per variant. DE uses "Spiele DUK — Das ungeduldige Känguru — Stufe X: …" + "Hol dir die Parados-App:"; EN uses "Play TIK — The Impatient Kangaroo — Level X: …" + "Get the Parados app:" (note: EN H1 is rebranded `TIK 🦘`, not DUK); JP, CN, UA each have their own localized verb and full game name. `setPositionTitle`'s `document.title` prefix is localized too (e.g. `せっかちなカンガルー — …` in JP).
 
-**Anchor links reference:** `docs/parados_anchor_links.pdf` lists every direct-entry URL across all games with clickable hyperlinks (52 anchors total). Regenerate via LibreOffice from the source HTML — URLs must be wrapped in explicit `<a href>` tags or the `writer_pdf` filter won't emit `/URI` annotations and the links render as plain text.
+**Anchor links reference:** `docs/parados_anchor_links.pdf` lists every direct-entry URL across all games with clickable hyperlinks (60 anchors total: 7 DL-DE + 7 DL-EN + 10 MAKA + 7×5 DUK + repo link). Regenerate via LibreOffice from the source HTML — URLs must be wrapped in explicit `<a href>` tags or the `writer_pdf` filter won't emit `/URI` annotations and the links render as plain text.
 
 ## Server-side
 
