@@ -154,6 +154,7 @@
             <button id="csv-export-btn" class="btn" style="background:#27ae60;color:white;display:none;" onclick="downloadCSV()">Export CSV</button>
             <hr>
             <div id="game-actions" style="display:none;">
+                <button id="undo-btn" class="btn" style="background:#5d4037; color:white;" onclick="undoMove()">↶ Undo move</button>
                 <button id="sacrifice-btn" class="btn btn-action" onclick="sacrificeTurn()">Sacrifice & Move</button>
                 <button id="relinquish-btn" class="btn btn-cancel" onclick="relinquishTurn()" style="display:none;">Relinquish Turn</button>
                 <p id="stuck-hint" style="display:none; font-size: 0.75em; color: #7f8c8d; text-align: center;">No valid move! Sacrifice a disc (opponent picks) or relinquish your turn.</p>
@@ -266,8 +267,67 @@
             playerFlags: { 1: {...playerFlags[1]}, 2: {...playerFlags[2]} },
             currentPlayer: currentPlayer,
             bagLen: bag.length,
+            // Extra state for undo (post-game review path only uses cells/scores/playerFlags above)
+            bag: bag.map(d => ({...d})),
+            gameState,
+            selectedIdx,
+            relinquished: { 1: relinquished[1], 2: relinquished[2] },
+            relinquishCount: { 1: relinquishCount[1], 2: relinquishCount[2] },
+            collectedDiscs: {
+                1: collectedDiscs[1].map(d => ({...d})),
+                2: collectedDiscs[2].map(d => ({...d}))
+            },
+            draftChosen: draftChosen ? {...draftChosen} : null,
+            pendingExtraTurn,
+            sacrificeRange,
+            sacrificingPlayer,
+            isFirstMove,
             desc: desc
         });
+    }
+
+    function undoMove() {
+        // Need at least 2 snapshots: keep the "Game start ..." entry as the
+        // pristine baseline, undo the most recent move on top of it.
+        if (moveHistory.length <= 1) return;
+        if (gameState === 'END') return;
+        moveHistory.pop();
+        const snap = moveHistory[moveHistory.length - 1];
+
+        for (let i = 0; i < 144; i++) cells[i] = snap.cells[i] ? {...snap.cells[i]} : null;
+        collectors = { 1: snap.collectors[1], 2: snap.collectors[2] };
+        scores = { 1: {...snap.scores[1]}, 2: {...snap.scores[2]} };
+        playerFlags = { 1: {...snap.playerFlags[1]}, 2: {...snap.playerFlags[2]} };
+        currentPlayer = snap.currentPlayer;
+        bag = (snap.bag || []).map(d => ({...d}));
+        gameState = snap.gameState || 'PLAY';
+        selectedIdx = (snap.selectedIdx == null) ? null : snap.selectedIdx;
+        relinquished = snap.relinquished
+            ? { 1: snap.relinquished[1], 2: snap.relinquished[2] }
+            : { 1: false, 2: false };
+        relinquishCount = snap.relinquishCount
+            ? { 1: snap.relinquishCount[1], 2: snap.relinquishCount[2] }
+            : { 1: 0, 2: 0 };
+        collectedDiscs = snap.collectedDiscs
+            ? {
+                1: snap.collectedDiscs[1].map(d => ({...d})),
+                2: snap.collectedDiscs[2].map(d => ({...d}))
+              }
+            : { 1: [], 2: [] };
+        draftChosen = snap.draftChosen ? {...snap.draftChosen} : null;
+        pendingExtraTurn = !!snap.pendingExtraTurn;
+        sacrificeRange = snap.sacrificeRange || 0;
+        sacrificingPlayer = snap.sacrificingPlayer || 0;
+        isFirstMove = !!snap.isFirstMove;
+
+        // Transient panels — always hide on undo; the snapshots are taken at
+        // stable states (PLAY / SACRIFICE_MOVE / END), never mid-modal.
+        document.getElementById('draft-panel').style.display = 'none';
+        document.getElementById('sacrifice-panel').style.display = 'none';
+        // Exit post-game review mode if it was active
+        isReviewing = false;
+
+        updateUI(); render();
     }
 
     function stepHistory(delta) {
@@ -369,8 +429,26 @@
         setPositionTitle(pos.name);
         document.getElementById('setup-panel').style.display = 'none';
 
-        // Reset board state — needed when re-applying after Reset / from editor
+        // Reset board + transient state — needed when re-applying after a previous
+        // game (e.g. test-play from the editor without a page reload).
         for (let i = 0; i < 144; i++) cells[i] = null;
+        moveHistory = [];
+        historyIndex = -1;
+        isReviewing = false;
+        document.getElementById('history-controls').style.display = 'none';
+        document.getElementById('draft-panel').style.display = 'none';
+        document.getElementById('sacrifice-panel').style.display = 'none';
+        document.getElementById('winner-overlay').style.display = 'none';
+        playerFlags = { 1: {}, 2: {} };
+        relinquished = { 1: false, 2: false };
+        relinquishCount = { 1: 0, 2: 0 };
+        collectedDiscs = { 1: [], 2: [] };
+        draftChosen = null;
+        pendingExtraTurn = false;
+        selectedIdx = null;
+        sacrificeRange = 0;
+        sacrificingPlayer = 0;
+        isFirstMove = true;
 
         // Create all 54 discs
         const allDiscs = [];
@@ -807,6 +885,13 @@
                 stuckHint.innerText = 'No valid move! Sacrifice a disc (opponent picks) or relinquish your turn.';
             }
             stuckHint.style.display = stuck ? 'block' : 'none';
+        }
+        const undoBtn = document.getElementById('undo-btn');
+        if (undoBtn) {
+            const canUndo = moveHistory.length > 1 && gameState !== 'END';
+            undoBtn.disabled = !canUndo;
+            undoBtn.style.opacity = canUndo ? '1' : '0.4';
+            undoBtn.style.cursor = canUndo ? 'pointer' : 'default';
         }
         // Force sacrifice when stuck, no relinquishes left, and no primary discs
         if (stuck && !canRelinquish) {
