@@ -84,20 +84,11 @@
         <button class="btn" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">Share on WhatsApp</button>
     </div>
     <div id="setup-panel" style="margin-bottom:15px; text-align:center; background:white; padding:15px 20px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
-        <p style="font-weight:bold; margin:0 0 10px; color:#2c3e50;">Choose starting setup:</p>
+        <p style="font-weight:bold; margin:0 0 10px; color:#2c3e50;">Start a new game:</p>
         <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
-            <button class="btn" style="width:auto; padding:8px 16px; background:#27ae60; color:white;" onclick="startRandom()">Random</button>
-            <button class="btn" style="width:auto; padding:8px 16px; background:#3498db; color:white;" onclick="loadCuratedPosition(1)">1</button>
-            <button class="btn" style="width:auto; padding:8px 16px; background:#3498db; color:white;" onclick="loadCuratedPosition(2)">2</button>
-            <button class="btn" style="width:auto; padding:8px 16px; background:#3498db; color:white;" onclick="loadCuratedPosition(3)">3</button>
-            <button class="btn" style="width:auto; padding:8px 16px; background:#3498db; color:white;" onclick="loadCuratedPosition(4)">4</button>
-            <button class="btn" style="width:auto; padding:8px 16px; background:#3498db; color:white;" onclick="loadCuratedPosition(5)">5</button>
-            <button class="btn" style="width:auto; padding:8px 16px; background:#3498db; color:white;" onclick="loadCuratedPosition(6)">6</button>
-            <button class="btn" style="width:auto; padding:8px 16px; background:#3498db; color:white;" onclick="loadCuratedPosition(7)">7</button>
-            <button class="btn" style="width:auto; padding:8px 16px; background:#3498db; color:white;" onclick="loadCuratedPosition(8)">8</button>
-            <button class="btn" style="width:auto; padding:8px 16px; background:#3498db; color:white;" onclick="loadCuratedPosition(9)">9</button>
-            <button class="btn" style="width:auto; padding:8px 16px; background:#3498db; color:white;" onclick="loadCuratedPosition(10)">10</button>
+            <button class="btn" style="width:auto; padding:10px 24px; background:#27ae60; color:white; font-size:1em;" onclick="startRandom()">▶ Start</button>
         </div>
+        <p style="margin:10px 0 0; font-size:0.85em; color:#7f8c8d;">24 random discs are placed first. Then <b>Player 1</b> places both collectors. <b>Player 2</b> picks which colour to play.</p>
         <div style="margin-top:14px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
             <button class="btn" style="width:auto; padding:8px 16px; background:#9b59b6; color:white;" onclick="mlOpenEditor(null)">✏️ Editor — Custom Position</button>
         </div>
@@ -110,7 +101,7 @@
                 <input id="ml-editor-name" type="text" placeholder="Position name" style="flex:1; min-width:160px; padding:8px; font-size:1em; border:1px solid #ccc; border-radius:4px;">
             </div>
             <p style="margin:0 0 8px; color:#555; font-size:0.9em;">
-                Pick a brush, then click cells on the 12×12 board. Each board can hold exactly one Black and one White collector. Empty cells stay empty.
+                Pick a brush, then click cells on the 12×12 board to paint the disc layout. Collectors are <b>not</b> part of the position — Player 1 places them live at game start.
             </p>
             <div id="ml-editor-brush-bar" style="display:flex; flex-direction:column; gap:5px; margin-bottom:10px;"></div>
             <div style="overflow:auto; margin-bottom:10px;">
@@ -129,7 +120,7 @@
     <div id="ml-csv-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:2600; justify-content:center; align-items:center;">
         <div style="background:#fff; width:92%; max-width:640px; padding:20px; border-radius:10px;">
             <h3 style="margin:0 0 10px;">CSV — Custom Position</h3>
-            <p style="margin:0 0 8px; color:#555; font-size:0.9em;">Copy this into <code>makalaina_starting_positions.csv</code> (or save it as its own file).</p>
+            <p style="margin:0 0 8px; color:#555; font-size:0.9em;">Disc layout in long format. Collectors are <b>not</b> stored — Player 1 places them live at the start of each game.</p>
             <textarea id="ml-csv-output" readonly style="width:100%; height:240px; font-family:monospace; font-size:0.85em; padding:8px; border:1px solid #ccc; border-radius:4px;"></textarea>
             <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; margin-top:10px;">
                 <button class="btn" style="width:auto; background:#3498db; color:white;" onclick="mlCopyCSVToClipboard()">📋 Copy</button>
@@ -139,16 +130,17 @@
         </div>
     </div>
     <div id="starter-panel" style="display:none; margin-bottom:15px; text-align:center; background:white; padding:15px 20px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
-        <p style="font-weight:bold; margin:0 0 10px; color:#2c3e50;">Who starts?</p>
+        <p style="font-weight:bold; margin:0 0 4px; color:#2c3e50;">Player 2: pick your colour</p>
+        <p style="margin:0 0 10px; font-size:0.85em; color:#7f8c8d;">Player 1 will start the game with the other one.</p>
         <div style="display:flex; gap:12px; justify-content:center;">
-            <button class="btn" style="width:auto; padding:10px 24px; background:#222; color:white; font-size:1em;" onclick="chooseStarter(1)">&#9632; Black</button>
-            <button class="btn" style="width:auto; padding:10px 24px; background:#f5f5f5; color:#222; border:2px solid #999; font-size:1em;" onclick="chooseStarter(2)">&#9633; White</button>
+            <button class="btn" style="width:auto; padding:10px 24px; background:#222; color:white; font-size:1em;" onclick="p2PicksColor(1)">I'll play &#9632; Black</button>
+            <button class="btn" style="width:auto; padding:10px 24px; background:#f5f5f5; color:#222; border:2px solid #999; font-size:1em;" onclick="p2PicksColor(2)">I'll play &#9633; White</button>
         </div>
     </div>
     <div id="game-container">
         <div id="board"></div>
         <div id="ui">
-            <div id="status" style="font-weight: bold; margin-bottom: 10px; color: #2c3e50;">SETUP: Player 1, place both collectors.</div>
+            <div id="status" style="font-weight: bold; margin-bottom: 10px; color: #2c3e50;">SETUP: Click ▶ Start above.</div>
             <button class="btn btn-rules" onclick="toggleRules(true)">View Rules</button>
             <button id="los-toggle" class="btn" style="background:#7f8c8d;color:white;" onclick="toggleLOS()">Show Line of Sight</button>
             <button id="csv-export-btn" class="btn" style="background:#27ae60;color:white;display:none;" onclick="downloadCSV()">Export CSV</button>
@@ -367,20 +359,7 @@
         desc.innerText = moveHistory[historyIndex].desc || '';
     }
 
-    const CURATED_POSITIONS = [null,
-        {name:'Red Tide', b:[2,7],w:[9,7],d:[[0,0,'blue',1],[3,0,'blue',4],[10,0,'green',''],[11,0,'purple',''],[4,2,'red',5],[5,2,'blue',4],[2,3,'purple',''],[4,3,'red',6],[6,3,'yellow',4],[9,3,'green',''],[1,4,'red',5],[4,6,'blue',6],[7,6,'blue',3],[11,5,'red',3],[0,7,'red',3],[10,6,'red',3],[2,8,'green',''],[6,8,'red',4],[7,8,'yellow',2],[2,9,'yellow',3],[11,9,'purple',''],[8,10,'yellow',4],[5,11,'blue',5],[1,9,'orange','']]},
-        {name:'Diagonal', b:[7,7],w:[0,4],d:[[2,0,'red',4],[11,1,'yellow',5],[5,1,'orange',''],[7,2,'blue',4],[10,2,'green',''],[5,3,'orange',''],[7,3,'purple',''],[4,3,'red',3],[2,4,'blue',3],[3,4,'yellow',2],[1,5,'green',''],[4,5,'blue',5],[6,5,'red',4],[11,5,'yellow',4],[10,5,'green',''],[11,7,'purple',''],[2,7,'purple',''],[5,7,'yellow',3],[8,7,'orange',''],[0,9,'yellow',4],[2,8,'purple',''],[8,9,'blue',4],[3,10,'red',5],[11,10,'yellow',4]]},
-        {name:'Open Field', b:[2,3],w:[10,6],d:[[3,0,'yellow',4],[5,0,'green',''],[6,0,'blue',4],[7,0,'blue',5],[1,1,'red',3],[9,1,'yellow',2],[11,1,'red',3],[7,3,'purple',''],[3,4,'yellow',2],[4,5,'yellow',4],[6,6,'orange',''],[11,5,'green',''],[2,7,'blue',3],[4,7,'red',5],[7,7,'purple',''],[0,8,'orange',''],[2,8,'red',4],[11,8,'blue',4],[3,9,'yellow',5],[7,9,'red',3],[0,10,'green',''],[1,11,'blue',1],[6,10,'purple',''],[8,10,'orange','']]},
-        {name:'Sunflower', b:[3,4],w:[8,2],d:[[0,1,'orange',''],[1,0,'yellow',2],[3,0,'yellow',4],[8,0,'green',''],[5,1,'red',5],[10,2,'orange',''],[5,2,'purple',''],[7,2,'yellow',2],[10,3,'purple',''],[2,3,'blue',5],[4,4,'red',2],[6,5,'blue',3],[8,4,'blue',4],[8,5,'orange',''],[11,5,'yellow',3],[0,7,'blue',6],[2,7,'yellow',4],[10,7,'orange',''],[5,8,'green',''],[7,8,'yellow',6],[8,8,'yellow',4],[3,9,'yellow',1],[7,9,'yellow',3],[10,10,'purple','']]},
-        {name:'Compass', b:[4,7],w:[8,2],d:[[1,0,'green',''],[4,0,'orange',''],[7,0,'blue',1],[10,0,'blue',4],[9,1,'green',''],[2,3,'blue',5],[5,2,'red',5],[7,2,'yellow',2],[11,3,'purple',''],[5,4,'red',2],[0,6,'orange',''],[7,5,'purple',''],[9,6,'orange',''],[7,7,'blue',3],[10,7,'orange',''],[11,7,'yellow',5],[0,8,'green',''],[2,8,'yellow',4],[0,9,'red',2],[5,9,'green',''],[8,9,'blue',4],[9,9,'purple',''],[2,10,'blue',6],[11,11,'purple','']]},
-        {name:'Blue Column', b:[4,9],w:[7,1],d:[[2,0,'blue',5],[7,0,'blue',4],[1,1,'red',4],[8,1,'green',''],[3,2,'yellow',2],[5,2,'yellow',4],[10,2,'red',6],[2,3,'green',''],[4,3,'red',2],[6,3,'purple',''],[8,3,'yellow',6],[3,5,'orange',''],[4,5,'red',1],[6,5,'orange',''],[0,6,'blue',3],[3,7,'yellow',4],[5,7,'blue',3],[9,7,'blue',5],[0,8,'blue',4],[6,8,'yellow',2],[8,8,'orange',''],[11,8,'green',''],[0,10,'blue',2],[2,10,'red',5]]},
-        {name:'Sunset', b:[4,11],w:[9,6],d:[[7,0,'yellow',4],[1,1,'yellow',4],[5,1,'yellow',4],[10,1,'yellow',5],[2,2,'green',''],[3,2,'orange',''],[1,3,'blue',1],[5,3,'red',2],[10,3,'green',''],[7,4,'orange',''],[0,5,'red',4],[11,5,'yellow',5],[0,6,'purple',''],[3,6,'purple',''],[4,6,'orange',''],[6,6,'blue',4],[8,6,'orange',''],[10,6,'yellow',1],[5,7,'orange',''],[3,8,'yellow',6],[5,8,'blue',3],[7,8,'yellow',2],[11,8,'orange',''],[2,9,'red',3]]},
-        {name:'Wildfire', b:[1,7],w:[7,3],d:[[8,0,'red',3],[3,1,'orange',''],[5,1,'red',6],[9,1,'green',''],[0,2,'red',3],[1,3,'red',4],[4,3,'blue',6],[5,3,'yellow',2],[8,3,'orange',''],[11,3,'blue',5],[1,5,'orange',''],[3,5,'red',4],[5,5,'red',3],[7,5,'red',5],[2,6,'orange',''],[5,6,'yellow',6],[7,6,'orange',''],[0,8,'green',''],[3,8,'red',4],[4,8,'purple',''],[8,9,'orange',''],[11,9,'purple',''],[5,11,'blue',4],[10,11,'green','']]},
-        {name:'Encounter', b:[7,5],w:[5,6],d:[[5,0,'red',5],[8,0,'green',''],[3,1,'orange',''],[6,1,'yellow',4],[10,1,'blue',2],[1,2,'blue',5],[4,2,'green',''],[9,2,'blue',3],[2,3,'purple',''],[6,3,'red',3],[11,3,'yellow',1],[0,4,'purple',''],[4,4,'blue',4],[10,5,'orange',''],[11,5,'blue',6],[1,7,'red',2],[6,7,'red',1],[8,7,'yellow',3],[10,7,'orange',''],[3,9,'yellow',5],[6,9,'red',4],[8,9,'green',''],[5,10,'yellow',6],[10,10,'orange','']]},
-        {name:'Mirror', b:[3,7],w:[5,7],d:[[5,0,'blue',2],[10,0,'green',''],[1,1,'blue',3],[3,1,'blue',1],[8,1,'red',5],[11,1,'green',''],[8,2,'red',3],[1,3,'orange',''],[2,3,'blue',3],[7,4,'green',''],[11,4,'red',2],[1,5,'yellow',5],[3,5,'blue',4],[7,5,'red',1],[9,5,'yellow',4],[6,7,'yellow',4],[2,8,'blue',4],[4,8,'orange',''],[7,8,'yellow',5],[11,8,'blue',5],[0,9,'orange',''],[5,10,'blue',4],[8,10,'yellow',4],[0,11,'yellow',5]]}
-    ];
-
-    let currentPosition = null;   // numeric 1..10 for curated, 'random' for random, null before setup
+    let currentPosition = null;   // 'random' for random start, custom-id for an editor custom, null before setup
 
     function setPositionTitle(label) {
         const pt = document.getElementById('position-title');
@@ -388,50 +367,11 @@
         document.title = label ? 'MAKA LAINA — ' + label : 'MAKA LAINA';
     }
 
-    function slugifyName(s) {
-        return String(s || '').toLowerCase()
-            .normalize('NFD').replace(/[̀-ͯ]/g, '')
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/^-+|-+$/g, '');
-    }
-
-    function findPositionByHash(hash) {
-        const raw = decodeURIComponent(hash || '').replace(/^#/, '').trim();
-        if (!raw) return null;
-        if (/^\d+$/.test(raw)) {
-            const n = parseInt(raw, 10);
-            if (n >= 1 && n <= 10) return n;
-        }
-        const slug = slugifyName(raw);
-        for (let i = 1; i <= 10; i++) {
-            if (slugifyName(CURATED_POSITIONS[i].name) === slug) return i;
-        }
-        return null;
-    }
-
-    function startRandom() {
-        currentPosition = 'random';
-        setPositionTitle('Random');
-        document.getElementById('setup-panel').style.display = 'none';
-        initBag();
-        gameState = 'PLACEMENT';
-        updateUI(); render();
-    }
-
-    function loadCuratedPosition(posId) {
-        const pos = CURATED_POSITIONS[posId];
-        if (!pos) return;
-        currentPosition = posId;
-        applyPositionData(pos);
-    }
-
-    function applyPositionData(pos) {
-        setPositionTitle(pos.name);
-        document.getElementById('setup-panel').style.display = 'none';
-
-        // Reset board + transient state — needed when re-applying after a previous
-        // game (e.g. test-play from the editor without a page reload).
+    // Reset all per-game state. Called by both Random and Custom start paths
+    // before placing discs.
+    function resetGameState() {
         for (let i = 0; i < 144; i++) cells[i] = null;
+        collectors = { 1: null, 2: null };
         moveHistory = [];
         historyIndex = -1;
         isReviewing = false;
@@ -449,21 +389,40 @@
         sacrificeRange = 0;
         sacrificingPlayer = 0;
         isFirstMove = true;
+        colors.forEach(c => { scores[1][c] = 0; scores[2][c] = 0; });
+    }
 
-        // Create all 54 discs
+    function startRandom() {
+        currentPosition = 'random';
+        setPositionTitle('');
+        document.getElementById('setup-panel').style.display = 'none';
+        resetGameState();
+        initBag();
+        // Drop 24 random discs FIRST so Player 1 can see the layout when
+        // deciding where to put the collectors (Walter's rule).
+        for (let i = 0; i < 24; i++) {
+            let r; do { r = Math.floor(Math.random() * 144); } while (cells[r]);
+            cells[r] = bag.pop();
+        }
+        gameState = 'PLACEMENT';
+        updateUI(); render();
+    }
+
+    // For custom positions from the editor. pos.d is the disc layout;
+    // pos.b / pos.w (if present from legacy customs) are ignored — Player 1
+    // places both collectors live, just like Random.
+    function applyPositionData(pos) {
+        setPositionTitle(pos.name);
+        document.getElementById('setup-panel').style.display = 'none';
+
+        resetGameState();
+
+        // Create all 54 discs (pool); used ones come off the pool as we place pos.d.
         const allDiscs = [];
         ['red','blue','yellow'].forEach(c => [1,2,2,3,3,3,4,4,4,5,5,6].forEach(n => allDiscs.push({color:c, num:n, type:'primary'})));
         ['green','orange','purple'].forEach(c => { for(let i=0;i<6;i++) allDiscs.push({color:c, num:'', type:'secondary'}); });
 
-        // Place collectors
-        const blackIdx = pos.b[1] * 12 + pos.b[0];
-        const whiteIdx = pos.w[1] * 12 + pos.w[0];
-        collectors[1] = blackIdx;
-        collectors[2] = whiteIdx;
-        cells[blackIdx] = {type:'collector', player:1};
-        cells[whiteIdx] = {type:'collector', player:2};
-
-        // Place discs on board and remove from pool
+        // Place discs from the custom layout
         pos.d.forEach(([x, y, color, num]) => {
             const idx = y * 12 + x;
             const poolIdx = allDiscs.findIndex(p => p.color === color && p.num === num);
@@ -479,10 +438,7 @@
         allDiscs.splice(0, 6);
         bag = allDiscs;
 
-        colors.forEach(c => { scores[1][c] = 0; scores[2][c] = 0; });
-
-        gameState = 'CHOOSE_STARTER';
-        document.getElementById('starter-panel').style.display = 'block';
+        gameState = 'PLACEMENT';
         updateUI(); render();
     }
 
@@ -493,14 +449,19 @@
         applyPositionData(pos);
     }
 
-    function chooseStarter(player) {
-        currentPlayer = player;
+    // Called when Player 2 picks their colour after Player 1 has placed both collectors.
+    // Player 1 then plays the OTHER colour and starts the first turn.
+    //   color = 1 (Black)  → P2 plays Black → P1 plays White → currentPlayer = 2
+    //   color = 2 (White)  → P2 plays White → P1 plays Black → currentPlayer = 1
+    function p2PicksColor(color) {
+        currentPlayer = (color === 1) ? 2 : 1;
         document.getElementById('starter-panel').style.display = 'none';
         document.getElementById('game-actions').style.display = 'block';
         document.getElementById('csv-export-btn').style.display = '';
         gameState = 'PLAY';
         isFirstMove = true;
-        saveSnapshot('Game start — ' + (player === 1 ? 'Black' : 'White') + ' goes first');
+        const starterName = (currentPlayer === 1 ? 'Black' : 'White');
+        saveSnapshot('Game start — ' + starterName + ' goes first (P2 took ' + (color === 1 ? 'Black' : 'White') + ')');
         updateUI(); render();
     }
 
@@ -508,9 +469,7 @@
 
     function shareOnWhatsApp() {
         let shareUrl = /^(file|parados):$/.test(window.location.protocol) ? "https://game.ywesee.com/parados/" + (window.location.pathname.split("/").pop() || "index.html") : window.location.href.split('#')[0];
-        if (typeof currentPosition === 'number') shareUrl += '#' + slugifyName(CURATED_POSITIONS[currentPosition].name);
-        const posLabel = typeof currentPosition === 'number' ? ` — ${CURATED_POSITIONS[currentPosition].name}` : '';
-        const msg = `Play MAKA LAINA${posLabel}: ${shareUrl}\n\nGet the Parados app:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
+        const msg = `Play MAKA LAINA: ${shareUrl}\n\nGet the Parados app:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
         if (navigator.share) { navigator.share({ text: msg }).catch(() => {}); return; }
         const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
         const inIOSApp = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.csvExport);
@@ -547,12 +506,12 @@
     }
 
     function handleClick(i) {
-        if (gameState === 'SETUP' || gameState === 'CHOOSE_STARTER') return;
+        if (gameState === 'SETUP' || gameState === 'P2_CHOOSE') return;
         if (gameState === 'PLACEMENT') {
             if (cells[i]) return;
             if (!collectors[1]) { collectors[1] = i; cells[i] = {type:'collector', player:1}; }
-            else if (!collectors[2]) { collectors[2] = i; cells[i] = {type:'collector', player:2}; startPlay(); }
-            render();
+            else if (!collectors[2]) { collectors[2] = i; cells[i] = {type:'collector', player:2}; goToP2Choose(); }
+            render(); updateUI();
         } else if (gameState === 'PLAY') {
             handleMove(i);
         } else if (gameState === 'DRAFT_PLACE') {
@@ -579,12 +538,8 @@
         }
     }
 
-    function startPlay() {
-        for (let i = 0; i < 24; i++) {
-            let r; do { r = Math.floor(Math.random() * 144); } while (cells[r]);
-            cells[r] = bag.pop();
-        }
-        gameState = 'CHOOSE_STARTER';
+    function goToP2Choose() {
+        gameState = 'P2_CHOOSE';
         document.getElementById('starter-panel').style.display = 'block';
         updateUI(); render();
     }
@@ -852,11 +807,11 @@
                 const smLabel = sacrificingPlayer === 1 ? 'Black' : 'White';
                 status.innerText = `${smLabel}: Move collector (up to ${sacrificeRange} squares)`; break;
             case 'PLACEMENT':
-                status.innerText = `SETUP: Place ${collectors[1] ? 'White' : 'Black'} collector.`; break;
-            case 'CHOOSE_STARTER':
-                status.innerText = 'Choose who starts above.'; break;
+                status.innerText = `Player 1: place the ${collectors[1] ? 'White' : 'Black'} collector.`; break;
+            case 'P2_CHOOSE':
+                status.innerText = 'Player 2: pick your colour above.'; break;
             case 'SETUP':
-                status.innerText = 'Choose a starting position above.'; break;
+                status.innerText = 'Click ▶ Start above.'; break;
         }
 
         renderScoreTable(scores, playerFlags);
@@ -1108,9 +1063,10 @@
     function mlOpenEditor(existingPos) {
         mlEditorPaint = {};
         if (existingPos) {
-            mlEditorPaint[existingPos.b[1] * 12 + existingPos.b[0]] = 'CB';
-            mlEditorPaint[existingPos.w[1] * 12 + existingPos.w[0]] = 'CW';
-            existingPos.d.forEach(([x, y, color, num]) => {
+            // Legacy custom positions had b/w (collector positions). The new
+            // opening flow has Player 1 place collectors live, so we ignore
+            // those fields and only restore the disc layout.
+            (existingPos.d || []).forEach(([x, y, color, num]) => {
                 const letter = Object.keys(ML_COLOR_FOR).find(k => ML_COLOR_FOR[k] === color);
                 if (!letter) return;
                 mlEditorPaint[y * 12 + x] = letter + (num === '' || num == null ? '' : num);
@@ -1121,7 +1077,7 @@
             mlEditorName = '';
             mlEditingCustomId = null;
         }
-        mlEditorBrush = 'CB';
+        mlEditorBrush = 'R1';
         document.getElementById('ml-editor-name').value = mlEditorName;
         document.getElementById('ml-editor-overlay').style.display = 'block';
         mlRenderBrushBar();
@@ -1135,12 +1091,6 @@
     function mlEditorClick(idx) {
         if (mlEditorBrush === 'erase') {
             delete mlEditorPaint[idx];
-        } else if (mlEditorBrush === 'CB' || mlEditorBrush === 'CW') {
-            // Only one of each collector — remove any existing instance first.
-            Object.keys(mlEditorPaint).forEach(k => {
-                if (mlEditorPaint[k] === mlEditorBrush) delete mlEditorPaint[k];
-            });
-            mlEditorPaint[idx] = mlEditorBrush;
         } else {
             mlEditorPaint[idx] = mlEditorBrush;
         }
@@ -1149,8 +1099,6 @@
 
     function mlBrushSwatch(tok, sel) {
         const border = sel ? '#FFEB3B' : 'rgba(0,0,0,0.25)';
-        if (tok === 'CB') return `<span style="display:inline-block; width:22px; height:22px; background:#000; border:3px solid gold; outline:3px solid ${border}; border-radius:3px;"></span>`;
-        if (tok === 'CW') return `<span style="display:inline-block; width:22px; height:22px; background:#fff; border:3px solid gold; outline:3px solid ${border}; border-radius:3px;"></span>`;
         const letter = tok[0];
         const num = tok.slice(1);
         const bg = COLOR_HEX[ML_COLOR_FOR[letter]];
@@ -1181,18 +1129,20 @@
             bar.appendChild(row);
         };
 
-        // Collectors + eraser row
-        const eraser = document.createElement('button');
-        eraser.type = 'button';
-        eraser.textContent = '✕ Erase';
-        eraser.style.cssText = `margin-left:auto; padding:6px 10px; background:#fff; color:#000; border:3px solid ${mlEditorBrush==='erase'?'#FFEB3B':'rgba(0,0,0,0.25)'}; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.85em;`;
-        eraser.onclick = () => { mlEditorBrush = 'erase'; mlRenderBrushBar(); };
-        mkRow('Collectors', ['CB','CW'], [eraser]);
-
         // One row per primary color (1-6)
-        ML_PRIMARY_LETTERS.forEach(L => {
+        ML_PRIMARY_LETTERS.forEach((L, i) => {
             const toks = [1,2,3,4,5,6].map(n => L + n);
-            mkRow(ML_COLOR_FOR[L].charAt(0).toUpperCase() + ML_COLOR_FOR[L].slice(1), toks);
+            const extras = [];
+            // Hang the eraser off the first row so it's always visible.
+            if (i === 0) {
+                const eraser = document.createElement('button');
+                eraser.type = 'button';
+                eraser.textContent = '✕ Erase';
+                eraser.style.cssText = `margin-left:auto; padding:6px 10px; background:#fff; color:#000; border:3px solid ${mlEditorBrush==='erase'?'#FFEB3B':'rgba(0,0,0,0.25)'}; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.85em;`;
+                eraser.onclick = () => { mlEditorBrush = 'erase'; mlRenderBrushBar(); };
+                extras.push(eraser);
+            }
+            mkRow(ML_COLOR_FOR[L].charAt(0).toUpperCase() + ML_COLOR_FOR[L].slice(1), toks, extras);
         });
         // Secondaries
         mkRow('Secondary', ML_SECONDARY_LETTERS);
@@ -1209,12 +1159,7 @@
             const c = document.createElement('div');
             c.style.cssText = `width:${ecs}px; height:${ecs}px; background:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative;`;
             const tok = mlEditorPaint[i];
-            if (tok === 'CB' || tok === 'CW') {
-                const inner = document.createElement('div');
-                const bg = tok === 'CB' ? '#000' : '#fff';
-                inner.style.cssText = `width:${ecs - 6}px; height:${ecs - 6}px; background:${bg}; border:3px solid gold; border-radius:4px;`;
-                c.appendChild(inner);
-            } else if (tok) {
+            if (tok) {
                 const letter = tok[0];
                 const num = tok.slice(1);
                 const bg = COLOR_HEX[ML_COLOR_FOR[letter]];
@@ -1231,38 +1176,26 @@
 
     function mlUpdateEditorSummary() {
         const sum = document.getElementById('ml-editor-summary');
-        let cb = 0, cw = 0, discs = 0;
-        Object.values(mlEditorPaint).forEach(t => {
-            if (t === 'CB') cb++;
-            else if (t === 'CW') cw++;
-            else discs++;
-        });
-        sum.textContent = `Black collectors: ${cb} · White collectors: ${cw} · Discs: ${discs} (canonical 24)`;
+        const discs = Object.keys(mlEditorPaint).length;
+        sum.textContent = `Discs placed: ${discs} (canonical 24). Collectors are placed live by Player 1 at game start.`;
     }
 
     function mlPaintToPosition(name) {
-        let b = null, w = null;
         const d = [];
         Object.keys(mlEditorPaint).forEach(k => {
             const idx = parseInt(k);
             const x = idx % 12, y = Math.floor(idx / 12);
             const tok = mlEditorPaint[k];
-            if (tok === 'CB') b = [x, y];
-            else if (tok === 'CW') w = [x, y];
-            else {
-                const color = ML_COLOR_FOR[tok[0]];
-                const num = tok.length > 1 ? parseInt(tok.slice(1)) : '';
-                d.push([x, y, color, num]);
-            }
+            const color = ML_COLOR_FOR[tok[0]];
+            const num = tok.length > 1 ? parseInt(tok.slice(1)) : '';
+            d.push([x, y, color, num]);
         });
-        return { name: name || mlEditorName, b, w, d };
+        return { name: name || mlEditorName, d };
     }
 
     function mlValidateEditor() {
-        let cb = 0, cw = 0;
-        Object.values(mlEditorPaint).forEach(t => { if (t === 'CB') cb++; else if (t === 'CW') cw++; });
-        if (cb !== 1 || cw !== 1) {
-            alert('Place exactly one Black and one White collector.');
+        if (Object.keys(mlEditorPaint).length === 0) {
+            alert('Place at least one disc.');
             return false;
         }
         return true;
@@ -1297,14 +1230,11 @@
         applyPositionData(pos);
     }
 
-    // CSV in the same vertical / long format as makalaina_starting_positions.csv
+    // CSV in vertical / long format — disc rows only.
     function mlBuildCSV(pos, positionId) {
         const pid = positionId || 1;
         const lines = ['position_id,element,x,y,color,number'];
         const csvName = (pos.name || 'Custom').replace(/,/g, ' ');
-        // collectors first, mirroring file convention
-        lines.push(`${pid},collector_black,${pos.b[0]},${pos.b[1]},,`);
-        lines.push(`${pid},collector_white,${pos.w[0]},${pos.w[1]},,`);
         pos.d.forEach(([x, y, color, num]) => {
             lines.push(`${pid},disc,${x},${y},${color},${num === '' || num == null ? '' : num}`);
         });
@@ -1316,8 +1246,7 @@
         const name = (document.getElementById('ml-editor-name').value || '').trim() || 'Custom';
         mlEditorName = name;
         const pos = mlPaintToPosition(name);
-        const nextId = CURATED_POSITIONS.length; // 1-indexed array, length = next available id
-        const { csv } = mlBuildCSV(pos, nextId);
+        const { csv } = mlBuildCSV(pos, 1);
         document.getElementById('ml-csv-output').value = csv;
         document.getElementById('ml-csv-modal').style.display = 'flex';
         document.getElementById('ml-csv-modal').dataset.filename = `makalaina_${name.replace(/[^\w\-]+/g, '_')}.csv`;
@@ -1346,7 +1275,7 @@
         const name = (document.getElementById('ml-editor-name').value || '').trim() || 'Custom';
         mlEditorName = name;
         const pos = mlPaintToPosition(name);
-        const { csv } = mlBuildCSV(pos, CURATED_POSITIONS.length);
+        const { csv } = mlBuildCSV(pos, 1);
         const safe = name.replace(/[^\w\-]+/g, '_');
         const filename = `makalaina_${safe}.csv`;
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
@@ -1417,14 +1346,6 @@
     }
 
     mlRefreshCustomList();
-
-    const fromHash = findPositionByHash(location.hash);
-    if (fromHash) loadCuratedPosition(fromHash);
-
-    window.addEventListener('hashchange', () => {
-        const p = findPositionByHash(location.hash);
-        if (p && gameState === 'SETUP') loadCuratedPosition(p);
-    });
 </script>
 </body>
 </html>
