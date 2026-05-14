@@ -1651,9 +1651,10 @@
         }
 
         function getPositionLink(pos) {
-            const url = new URL(window.location.href);
-            url.hash = slugifyName(pos.name);
-            return url.href;
+            const base = /^(file|parados):$/.test(window.location.protocol)
+                ? "https://game.ywesee.com/parados/" + (window.location.pathname.split("/").pop() || "divided_loyalties_en.html")
+                : window.location.href.split('#')[0];
+            return base + '#' + slugifyName(pos.name);
         }
 
         function findPositionByHash(hash) {
