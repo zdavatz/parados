@@ -88,7 +88,7 @@ For file shares (CSV / saved game JSON), use `navigator.share({ files:[file], ti
 
 **Localized share messages:** kangaroo's `shareOnWhatsApp` message is localized per variant. DE uses "Spiele DUK — Das ungeduldige Känguru — Stufe X: …" + "Hol dir die Parados-App:"; EN uses "Play TIK — The Impatient Kangaroo — Level X: …" + "Get the Parados app:" (note: EN H1 is rebranded `TIK 🦘`, not DUK); JP, CN, UA each have their own localized verb and full game name. `setPositionTitle`'s `document.title` prefix is localized too (e.g. `せっかちなカンガルー — …` in JP).
 
-**Anchor links reference:** `docs/parados_anchor_links.pdf` lists every direct-entry URL across all games with clickable hyperlinks (62 anchors total: 13 DL-DE + 13 DL-EN + 7×5 DUK + repo link — DL has 13 starting positions as of 2026-05-15; regenerate the PDF after adding positions). Regenerate via LibreOffice from the source HTML — URLs must be wrapped in explicit `<a href>` tags or the `writer_pdf` filter won't emit `/URI` annotations and the links render as plain text.
+**Anchor links reference:** `docs/parados_anchor_links.pdf` lists every direct-entry URL across all games with clickable hyperlinks (60 anchors total: 12 DL-DE + 12 DL-EN + 7×5 DUK + repo link — DL has 12 starting positions as of 2026-05-16: a 4-round set (ids 1–6) + a 3-round set (ids 7–12); regenerate the PDF after adding/removing positions). Regenerate via LibreOffice from the source HTML — URLs must be wrapped in explicit `<a href>` tags or the `writer_pdf` filter won't emit `/URI` annotations and the links render as plain text.
 
 ## Server-side
 
