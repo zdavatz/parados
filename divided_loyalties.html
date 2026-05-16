@@ -571,8 +571,22 @@
             }
             const customs = loadCustomPositions();
             const all = STARTING_POSITIONS.concat(customs);
+            // Built-ins split into a 4-round set (ids 1–6) and a 3-round
+            // set (ids 7–12); the boundary is the design convention, not
+            // stored in the CSV — change FOUR_ROUND_COUNT if it ever moves.
+            const FOUR_ROUND_COUNT = 6;
             all.forEach((p, i) => {
                 const isCustom = !!p.customId;
+                let hdrText = null;
+                if (i === 0) hdrText = '4-Runden-Spiel';
+                else if (i === FOUR_ROUND_COUNT && STARTING_POSITIONS.length > FOUR_ROUND_COUNT) hdrText = '3-Runden-Spiel';
+                else if (i === STARTING_POSITIONS.length && customs.length) hdrText = 'Eigene Stellungen';
+                if (hdrText) {
+                    const hdr = document.createElement('div');
+                    hdr.textContent = hdrText;
+                    hdr.style.cssText = 'grid-column:1 / -1; margin:12px 0 2px; font-weight:bold; font-size:0.95em; color:#3d5245; border-bottom:1px solid #c9c6ad; padding-bottom:4px;';
+                    g.appendChild(hdr);
+                }
                 const wrapper = document.createElement('div');
                 wrapper.style.position = 'relative';
                 const b = document.createElement('button');
