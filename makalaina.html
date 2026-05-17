@@ -104,6 +104,11 @@
                 Pick a brush, then click cells on the 12×12 board to paint the disc layout. Collectors are <b>not</b> part of the position — Player 1 places them live at game start.
             </p>
             <div id="ml-editor-brush-bar" style="display:flex; flex-direction:column; gap:5px; margin-bottom:10px;"></div>
+            <details style="margin-bottom:10px; border:1px solid #ddd; border-radius:4px; padding:6px 8px;">
+                <summary style="cursor:pointer; font-size:0.9em; color:#555; font-weight:bold;">🎨 Disc colours — pick your own</summary>
+                <div id="ml-editor-colors" style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:8px;"></div>
+                <p style="margin:8px 0 0; color:#777; font-size:0.8em;">Applies to every MAKA LAINA game on this device (board, score table, editor). Saved automatically.</p>
+            </details>
             <div style="overflow:auto; margin-bottom:10px;">
                 <div id="ml-editor-grid" style="display:grid; gap:1px; background:#2c3e50; padding:2px; border-radius:4px; width:max-content; margin:0 auto;"></div>
             </div>
@@ -250,6 +255,22 @@
     let isReviewing = false;
 
     const COLOR_HEX = { red: '#e74c3c', blue: '#3498db', yellow: '#d4ac0d', green: '#27ae60', orange: '#e67e22', purple: '#9b59b6' };
+    // Walter-customisable disc colours. COLOR_HEX is the single source of
+    // truth for every disc render (board, score table, editor); a saved
+    // override in localStorage["ml_colors"] is mutated onto it at startup.
+    const COLOR_HEX_DEFAULT = { ...COLOR_HEX };
+    const ML_COLOR_NAMES = ['red', 'blue', 'yellow', 'green', 'orange', 'purple'];
+    function mlLoadColorPrefs() {
+        try { return JSON.parse(localStorage.getItem('ml_colors') || '{}') || {}; }
+        catch (e) { return {}; }
+    }
+    function mlApplyColorPrefs() {
+        const p = mlLoadColorPrefs();
+        ML_COLOR_NAMES.forEach(c => {
+            COLOR_HEX[c] = /^#[0-9a-fA-F]{6}$/.test(p[c]) ? p[c] : COLOR_HEX_DEFAULT[c];
+        });
+    }
+    mlApplyColorPrefs();
 
     function saveSnapshot(desc) {
         moveHistory.push({
@@ -1014,7 +1035,7 @@
                 const d = document.createElement('div');
                 if (cells[i].type === 'collector') d.className = `collector ${cells[i].player === 1 ? 'black' : 'white'}`;
                 else {
-                    d.className = 'disc'; d.style.backgroundColor = cells[i].color;
+                    d.className = 'disc'; d.style.backgroundColor = COLOR_HEX[cells[i].color] || cells[i].color;
                     d.innerText = cells[i].num;
                 }
                 el.appendChild(d);
@@ -1081,6 +1102,7 @@
         document.getElementById('ml-editor-name').value = mlEditorName;
         document.getElementById('ml-editor-overlay').style.display = 'block';
         mlRenderBrushBar();
+        mlRenderColorChooser();
         mlRenderEditor();
     }
 
@@ -1146,6 +1168,56 @@
         });
         // Secondaries
         mkRow('Secondary', ML_SECONDARY_LETTERS);
+    }
+
+    // ---- Walter's disc-colour chooser (global, persisted) ----
+    function mlSaveColorPrefs() {
+        const p = {};
+        ML_COLOR_NAMES.forEach(c => { p[c] = COLOR_HEX[c]; });
+        try { localStorage.setItem('ml_colors', JSON.stringify(p)); }
+        catch (e) { alert('Could not save colours: ' + e.message); }
+    }
+    function mlSetColor(name, hex) {
+        if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return;
+        COLOR_HEX[name] = hex;
+        mlSaveColorPrefs();
+        mlRenderColorChooser();
+        mlRenderBrushBar();
+        mlRenderEditor();
+        if (typeof render === 'function') { try { render(); } catch (e) {} }
+    }
+    function mlResetColors() {
+        ML_COLOR_NAMES.forEach(c => { COLOR_HEX[c] = COLOR_HEX_DEFAULT[c]; });
+        mlSaveColorPrefs();
+        mlRenderColorChooser();
+        mlRenderBrushBar();
+        mlRenderEditor();
+        if (typeof render === 'function') { try { render(); } catch (e) {} }
+    }
+    function mlRenderColorChooser() {
+        const box = document.getElementById('ml-editor-colors');
+        if (!box) return;
+        box.innerHTML = '';
+        ML_COLOR_NAMES.forEach(name => {
+            const wrap = document.createElement('label');
+            wrap.style.cssText = 'display:inline-flex; flex-direction:column; align-items:center; gap:3px; font-size:0.78em; color:#555; text-transform:capitalize;';
+            const inp = document.createElement('input');
+            inp.type = 'color';
+            inp.value = COLOR_HEX[name];
+            inp.style.cssText = 'width:42px; height:30px; padding:0; border:1px solid #ccc; border-radius:4px; cursor:pointer; background:none;';
+            inp.oninput = () => mlSetColor(name, inp.value);
+            wrap.appendChild(inp);
+            const lab = document.createElement('span');
+            lab.textContent = name;
+            wrap.appendChild(lab);
+            box.appendChild(wrap);
+        });
+        const reset = document.createElement('button');
+        reset.type = 'button';
+        reset.textContent = '↺ Reset to defaults';
+        reset.style.cssText = 'margin-left:auto; padding:6px 10px; background:#fff; border:1px solid #ccc; border-radius:4px; cursor:pointer; font-size:0.8em;';
+        reset.onclick = mlResetColors;
+        box.appendChild(reset);
     }
 
     function mlRenderEditor() {
