@@ -148,6 +148,7 @@
             <button class="btn btn-rules" onclick="toggleRules(true)">View Rules</button>
             <button id="los-toggle" class="btn" style="background:#7f8c8d;color:white;" onclick="toggleLOS()">Show Line of Sight</button>
             <button id="csv-export-btn" class="btn" style="background:#27ae60;color:white;display:none;" onclick="downloadCSV()">Export CSV</button>
+            <button id="opening-export-btn" class="btn" style="background:#6d4c41;color:white;" onclick="exportOpeningCSV()">📋 Export opening (CSV)</button>
             <hr>
             <div id="game-actions" style="display:none;">
                 <button id="undo-btn" class="btn" style="background:#5d4037; color:white;" onclick="undoMove()">↶ Undo move</button>
@@ -1011,6 +1012,64 @@
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
+    }
+
+    // Serialise the current board (discs AND both collectors) as a position
+    // CSV. Unlike the editor export (disc-only — collectors are normally
+    // live), the in-game "Export opening" keeps the collectors so Walter can
+    // capture a whole opening (Walter, 2026-05-17). collector_black = P1,
+    // collector_white = P2.
+    function buildOpeningCSV() {
+        const lines = ['position_id,element,x,y,color,number'];
+        for (let i = 0; i < 144; i++) {
+            const c = cells[i];
+            if (!c) continue;
+            const x = i % 12, y = Math.floor(i / 12);
+            if (c.type === 'collector') {
+                lines.push(`1,${c.player === 1 ? 'collector_black' : 'collector_white'},${x},${y},,`);
+            } else {
+                lines.push(`1,disc,${x},${y},${c.color},${c.num === '' || c.num == null ? '' : c.num}`);
+            }
+        }
+        return lines.join('\n') + '\n';
+    }
+
+    async function exportOpeningCSV() {
+        if (collectors[1] == null || collectors[2] == null) {
+            alert('Place both collectors first — then the opening can be exported.');
+            return;
+        }
+        const csv = buildOpeningCSV();
+        const filename = 'makalaina_opening.csv';
+        // Fire-and-forget server copy (same endpoint as the move-log export).
+        fetch('cgi-bin/save_csv.py', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ game: 'makalaina_opening', csv })
+        }).then(r => r.json()).then(d => {
+            if (!d.ok) console.warn('Server CSV save failed: ' + (d.error || 'unknown'));
+        }).catch(e => console.warn('Server CSV save failed: ' + e));
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        try {
+            if (navigator.canShare) {
+                const file = new File([blob], filename, { type: 'text/csv' });
+                if (navigator.canShare({ files: [file] })) {
+                    // No `text:` alongside `files:` — Android WhatsApp drops the
+                    // file when both are present (Divided Loyalties lesson).
+                    await navigator.share({ files: [file], title: 'MAKA LAINA opening' });
+                    return;
+                }
+            }
+        } catch (e) {
+            if (e && e.name === 'AbortError') return;
+            console.warn('navigator.share failed, falling back:', e);
+        }
+        // Fallback: download only — never wa.me on Android WebView.
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+        alert(`Saved ${filename}. Attach it to your WhatsApp message manually.`);
     }
 
     function render() {
