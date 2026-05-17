@@ -98,7 +98,6 @@
         <div style="max-width:760px; margin:0 auto; background:#fff; border-radius:8px; padding:15px;">
             <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:10px;">
                 <h2 style="margin:0; font-size:1.2em;">Editor — Custom MAKA LAINA Position</h2>
-                <input id="ml-editor-name" type="text" placeholder="Position name" style="flex:1; min-width:160px; padding:8px; font-size:1em; border:1px solid #ccc; border-radius:4px;">
             </div>
             <p style="margin:0 0 8px; color:#555; font-size:0.9em;">
                 Pick a brush, then click cells on the 12×12 board to paint the disc layout. Collectors are <b>not</b> part of the position — Player 1 places them live at game start.
@@ -433,7 +432,7 @@
     // pos.b / pos.w (if present from legacy customs) are ignored — Player 1
     // places both collectors live, just like Random.
     function applyPositionData(pos) {
-        setPositionTitle(pos.name);
+        setPositionTitle('');
         document.getElementById('setup-panel').style.display = 'none';
 
         resetGameState();
@@ -1061,7 +1060,6 @@
     // (R/B/Y × 1-6), '<COLOR>' for secondaries (G/O/P). Paint is keyed by y*12+x.
     let mlEditorPaint = {};
     let mlEditorBrush = 'CB';
-    let mlEditorName = '';
     let mlEditingCustomId = null;
 
     const ML_COLOR_FOR = { R:'red', B:'blue', Y:'yellow', G:'green', O:'orange', P:'purple' };
@@ -1092,14 +1090,14 @@
                 if (!letter) return;
                 mlEditorPaint[y * 12 + x] = letter + (num === '' || num == null ? '' : num);
             });
-            mlEditorName = existingPos.name || '';
             mlEditingCustomId = existingPos.customId || null;
         } else {
-            mlEditorName = '';
             mlEditingCustomId = null;
         }
         mlEditorBrush = 'R1';
-        document.getElementById('ml-editor-name').value = mlEditorName;
+        // MAKA LAINA positions are nameless (unlike DL, where the name
+        // describes a recognisable shape — Pyramid, E M 3 W, Frankenstein).
+        // ML layouts have no shape, so customs are just numbered.
         document.getElementById('ml-editor-overlay').style.display = 'block';
         mlRenderBrushBar();
         mlRenderColorChooser();
@@ -1252,7 +1250,7 @@
         sum.textContent = `Discs placed: ${discs} (canonical 24). Collectors are placed live by Player 1 at game start.`;
     }
 
-    function mlPaintToPosition(name) {
+    function mlPaintToPosition() {
         const d = [];
         Object.keys(mlEditorPaint).forEach(k => {
             const idx = parseInt(k);
@@ -1262,7 +1260,7 @@
             const num = tok.length > 1 ? parseInt(tok.slice(1)) : '';
             d.push([x, y, color, num]);
         });
-        return { name: name || mlEditorName, d };
+        return { d };
     }
 
     function mlValidateEditor() {
@@ -1275,53 +1273,44 @@
 
     function mlSaveCustomPosition() {
         if (!mlValidateEditor()) return;
-        const nameInput = document.getElementById('ml-editor-name');
-        let name = (nameInput.value || '').trim();
-        if (!name) name = (prompt('Name of position:', 'My Position') || '').trim();
-        if (!name) return;
-        mlEditorName = name;
-        const pos = mlPaintToPosition(name);
+        const pos = mlPaintToPosition();
         pos.customId = mlEditingCustomId || ('c' + Date.now());
         const customs = mlLoadCustomPositions();
         const idx = customs.findIndex(p => p.customId === pos.customId);
         if (idx >= 0) customs[idx] = pos; else customs.push(pos);
         mlSaveCustomPositionsArr(customs);
         mlEditingCustomId = pos.customId;
-        nameInput.value = name;
-        alert(`"${name}" saved.`);
+        const n = (idx >= 0 ? idx : customs.length - 1) + 1;
+        alert(`Position ${n} saved.`);
         mlRefreshCustomList();
     }
 
     function mlPlayFromEditor() {
         if (!mlValidateEditor()) return;
-        const name = (document.getElementById('ml-editor-name').value || '').trim() || 'Custom';
-        mlEditorName = name;
-        const pos = mlPaintToPosition(name);
+        const pos = mlPaintToPosition();
         mlCloseEditor();
         currentPosition = 'custom';
         applyPositionData(pos);
     }
 
-    // CSV in vertical / long format — disc rows only.
+    // CSV in vertical / long format — disc rows only. ML positions are
+    // nameless, so the CSV carries no name (unlike DL's shaped positions).
     function mlBuildCSV(pos, positionId) {
         const pid = positionId || 1;
         const lines = ['position_id,element,x,y,color,number'];
-        const csvName = (pos.name || 'Custom').replace(/,/g, ' ');
         pos.d.forEach(([x, y, color, num]) => {
             lines.push(`${pid},disc,${x},${y},${color},${num === '' || num == null ? '' : num}`);
         });
-        return { csv: lines.join('\n') + '\n', name: csvName };
+        return { csv: lines.join('\n') + '\n' };
     }
 
     function mlExportEditorCSV() {
         if (!mlValidateEditor()) return;
-        const name = (document.getElementById('ml-editor-name').value || '').trim() || 'Custom';
-        mlEditorName = name;
-        const pos = mlPaintToPosition(name);
+        const pos = mlPaintToPosition();
         const { csv } = mlBuildCSV(pos, 1);
         document.getElementById('ml-csv-output').value = csv;
         document.getElementById('ml-csv-modal').style.display = 'flex';
-        document.getElementById('ml-csv-modal').dataset.filename = `makalaina_${name.replace(/[^\w\-]+/g, '_')}.csv`;
+        document.getElementById('ml-csv-modal').dataset.filename = 'makalaina_position.csv';
     }
 
     function mlCopyCSVToClipboard() {
@@ -1344,12 +1333,9 @@
 
     async function mlShareEditorCSV() {
         if (!mlValidateEditor()) return;
-        const name = (document.getElementById('ml-editor-name').value || '').trim() || 'Custom';
-        mlEditorName = name;
-        const pos = mlPaintToPosition(name);
+        const pos = mlPaintToPosition();
         const { csv } = mlBuildCSV(pos, 1);
-        const safe = name.replace(/[^\w\-]+/g, '_');
-        const filename = `makalaina_${safe}.csv`;
+        const filename = 'makalaina_position.csv';
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
         try {
             if (navigator.canShare) {
@@ -1357,7 +1343,7 @@
                 if (navigator.canShare({ files: [file] })) {
                     // No `text:` alongside `files:` — Android WhatsApp drops the file
                     // when both are present (same lesson as Divided Loyalties share).
-                    await navigator.share({ files: [file], title: `MAKA LAINA: ${name}` });
+                    await navigator.share({ files: [file], title: 'MAKA LAINA position' });
                     return;
                 }
             }
@@ -1386,13 +1372,14 @@
         host.appendChild(title);
         const row = document.createElement('div');
         row.style.cssText = 'display:flex; gap:8px; justify-content:center; flex-wrap:wrap;';
-        customs.forEach(p => {
+        customs.forEach((p, i) => {
+            const n = i + 1;
             const wrap = document.createElement('div');
             wrap.style.cssText = 'display:flex; gap:2px; align-items:stretch;';
             const playBtn = document.createElement('button');
             playBtn.className = 'btn';
             playBtn.style.cssText = 'width:auto; padding:8px 12px; background:#8e44ad; color:white; margin:0;';
-            playBtn.textContent = '★ ' + p.name;
+            playBtn.textContent = '★ Position ' + n;
             playBtn.onclick = () => loadCustomPosition(p.customId);
             const editBtn = document.createElement('button');
             editBtn.className = 'btn';
@@ -1407,7 +1394,7 @@
             delBtn.textContent = '🗑';
             delBtn.onclick = (e) => {
                 e.stopPropagation();
-                if (confirm(`Delete "${p.name}"?`)) mlDeleteCustomPosition(p.customId);
+                if (confirm(`Delete position ${n}?`)) mlDeleteCustomPosition(p.customId);
             };
             wrap.appendChild(playBtn);
             wrap.appendChild(editBtn);
