@@ -1034,6 +1034,29 @@
         return lines.join('\n') + '\n';
     }
 
+    // Put text on the clipboard so it can be pasted directly into a WhatsApp
+    // message box. navigator.clipboard first, then a temp-textarea +
+    // execCommand fallback (works inside the app WebView).
+    function mlCopyTextToClipboard(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            return navigator.clipboard.writeText(text).then(() => true, () => mlLegacyCopy(text));
+        }
+        return Promise.resolve(mlLegacyCopy(text));
+    }
+    function mlLegacyCopy(text) {
+        try {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            const ok = document.execCommand('copy');
+            document.body.removeChild(ta);
+            return ok;
+        } catch (e) { return false; }
+    }
+
     async function exportOpeningCSV() {
         if (collectors[1] == null || collectors[2] == null) {
             alert('Place both collectors first — then the opening can be exported.');
@@ -1041,6 +1064,9 @@
         }
         const csv = buildOpeningCSV();
         const filename = 'makalaina_opening.csv';
+        // Copy the opening to the clipboard up front, so it can be pasted as
+        // text into WhatsApp even if the file share is dropped/unavailable.
+        const copied = await mlCopyTextToClipboard(csv);
         // Fire-and-forget server copy (same endpoint as the move-log export).
         fetch('cgi-bin/save_csv.py', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -1063,13 +1089,15 @@
             if (e && e.name === 'AbortError') return;
             console.warn('navigator.share failed, falling back:', e);
         }
-        // Fallback: download only — never wa.me on Android WebView.
+        // Fallback: download + clipboard — never wa.me on Android WebView.
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url; a.download = filename;
         document.body.appendChild(a); a.click(); a.remove();
         setTimeout(() => URL.revokeObjectURL(url), 5000);
-        alert(`Saved ${filename}. Attach it to your WhatsApp message manually.`);
+        alert(copied
+            ? `Opening copied to clipboard — long-press the WhatsApp message box and Paste it. (Also saved as ${filename}.)`
+            : `Saved ${filename}. Attach it to your WhatsApp message manually.`);
     }
 
     function render() {
