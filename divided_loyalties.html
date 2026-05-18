@@ -1773,6 +1773,13 @@
 
         async function startup() {
             STARTING_POSITIONS = await loadPositions();
+            // #editor — opened from the central startpositionen.html hub:
+            // go straight into a fresh position editor.
+            if (location.hash === '#editor') {
+                showSetup();
+                openEditor(null);
+                return;
+            }
             const fromHash = findPositionByHash(location.hash);
             if (fromHash) {
                 startWithPosition(fromHash);

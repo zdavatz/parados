@@ -92,6 +92,13 @@ For file shares (CSV / saved game JSON), use `navigator.share({ files:[file], ti
 
 **Anchor links reference:** `docs/parados_anchor_links.pdf` lists every direct-entry URL across all games with clickable hyperlinks (60 anchors total: 12 DL-DE + 12 DL-EN + 7×5 DUK + repo link — DL has 12 starting positions as of 2026-05-16: a 4-round set (ids 1–6) + a 3-round set (ids 7–12); regenerate the PDF after adding/removing positions). Regenerate via LibreOffice from the source HTML — URLs must be wrapped in explicit `<a href>` tags or the `writer_pdf` filter won't emit `/URI` annotations and the links render as plain text.
 
+## Startpositionen hub (`startpositionen.html`)
+
+Standalone, self-contained page (Parados dark theme) — **not a game**, a tool: one place to create/share starting positions. Scope is **DL + ML only** (the only games with shareable position CSVs; kangaroo levels are code-defined, the other 4 games have no position concept). It does **not** re-implement any editor — it deep-links into the existing ones and centralises the *send* step. Linked from `index.html` footer.
+
+- **Deep-links:** buttons open `divided_loyalties.html#editor` / `makalaina.html#editor`. Both games gained a tiny `startup()`/load hook: `if (location.hash === '#editor')` → `openEditor(null)` (DL) / `mlOpenEditor(null)` (ML). Keep these hooks if touching those load paths.
+- **"CSV laden & erneut senden":** load/paste any exported CSV → `detectCSV()` sniffs the header (`position_id,position_name,row,c0…` = DL; `position_id,element,x,y,color,number` = ML, with a `collector_(black|white)` row → ML opening) to pick filename/title → 📤 share / 📋 copy / 💾 download. Same guardrails as the games: `navigator.share({files:[…]})` only (no `text:`), no `wa.me`; fallback = download **+** clipboard copy + alert.
+
 ## Server-side
 
 `cgi-bin/save_csv.py` (Python 3 CGI): accepts POST `{game, csv}`, saves to `csv/` as `gamename_HHMM_dd.mm.yyyy.csv` (collision-avoidance suffix). `csv/` owned by `www-data`. Apache: `cgid` module with `ExecCGI` on `cgi-bin/`.
