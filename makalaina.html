@@ -91,7 +91,10 @@
         <p style="margin:10px 0 0; font-size:0.85em; color:#7f8c8d;">24 random discs are placed first. Then <b>Player 1</b> places both collectors. <b>Player 2</b> picks which colour to play.</p>
         <div style="margin-top:14px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
             <button class="btn" style="width:auto; padding:8px 16px; background:#9b59b6; color:white;" onclick="mlOpenEditor(null)">✏️ Editor — Custom Position</button>
+            <button class="btn" style="width:auto; padding:8px 16px; background:#6d4c41; color:white;" onclick="document.getElementById('ml-opening-file').click()">📥 Load opening (CSV)</button>
+            <input type="file" id="ml-opening-file" accept=".csv,text/csv" style="display:none;" onchange="mlImportOpeningFile(this)">
         </div>
+        <p style="margin:8px 0 0; font-size:0.8em; color:#7f8c8d;">An <b>Export opening</b> CSV with both collectors loads as a preset: discs <i>and</i> collectors fixed — no live placement, Player 2 still picks the colour.</p>
         <div id="ml-custom-list" style="margin-top:12px;"></div>
     </div>
     <div id="ml-editor-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.92); z-index:2500; overflow-y:auto; padding:15px 8px;">
@@ -429,9 +432,25 @@
         updateUI(); render();
     }
 
-    // For custom positions from the editor. pos.d is the disc layout;
-    // pos.b / pos.w (if present from legacy customs) are ignored — Player 1
-    // places both collectors live, just like Random.
+    // True when a saved position carries baked-in collector cells (imported
+    // from an "Export opening" CSV). Legacy `b`/`w` fields are deliberately
+    // NOT honoured here — only the explicit `coll:{b,w}` set by the importer,
+    // and only if both cells are on-board, distinct, and disc-free.
+    function mlPresetCollectors(pos) {
+        const c = pos && pos.coll;
+        if (!c) return null;
+        const b = c.b, w = c.w;
+        if (!Number.isInteger(b) || !Number.isInteger(w)) return null;
+        if (b < 0 || b >= 144 || w < 0 || w >= 144 || b === w) return null;
+        return { b, w };
+    }
+
+    // For custom positions. pos.d is the disc layout. If pos.coll is present
+    // (imported preset opening) both collectors are placed from it and the
+    // game skips PLACEMENT straight to P2_CHOOSE (Walter, 2026-05-18 — live
+    // placement is too slow for a "light" game; fairness still comes from
+    // Player 2's colour pick). Otherwise Player 1 places collectors live, and
+    // legacy pos.b / pos.w are ignored, just like Random.
     function applyPositionData(pos) {
         setPositionTitle('');
         document.getElementById('setup-panel').style.display = 'none';
@@ -458,6 +477,16 @@
         allDiscs.sort(() => Math.random() - 0.5);
         allDiscs.splice(0, 6);
         bag = allDiscs;
+
+        // Preset opening: place both collectors and skip live placement,
+        // but only if their cells are free (a disc row must not sit there).
+        const pc = mlPresetCollectors(pos);
+        if (pc && !cells[pc.b] && !cells[pc.w]) {
+            collectors[1] = pc.b; cells[pc.b] = { type: 'collector', player: 1 };
+            collectors[2] = pc.w; cells[pc.w] = { type: 'collector', player: 2 };
+            goToP2Choose();
+            return;
+        }
 
         gameState = 'PLACEMENT';
         updateUI(); render();
@@ -1380,6 +1409,61 @@
         applyPositionData(pos);
     }
 
+    // Parse an "Export opening" / editor CSV (long format
+    // `position_id,element,x,y,color,number`). Returns { d, coll } where
+    // `d` is the disc layout and `coll` = {b,w} cell indices iff BOTH
+    // collector rows are present (else null → live placement on play).
+    function mlParseOpeningCSV(text) {
+        const d = [];
+        let cb = null, cw = null;
+        text.split(/\r?\n/).forEach(line => {
+            const t = line.trim();
+            if (!t || /^position_id\s*,/i.test(t)) return;
+            const f = t.split(',');
+            if (f.length < 4) return;
+            const element = (f[1] || '').trim();
+            const x = parseInt(f[2], 10), y = parseInt(f[3], 10);
+            if (!Number.isInteger(x) || !Number.isInteger(y)) return;
+            if (x < 0 || x >= 12 || y < 0 || y >= 12) return;
+            if (element === 'disc') {
+                const color = (f[4] || '').trim();
+                const numRaw = (f[5] || '').trim();
+                if (!color) return;
+                d.push([x, y, color, numRaw === '' ? '' : parseInt(numRaw, 10)]);
+            } else if (element === 'collector_black') {
+                cb = y * 12 + x;
+            } else if (element === 'collector_white') {
+                cw = y * 12 + x;
+            }
+        });
+        const coll = (cb != null && cw != null && cb !== cw) ? { b: cb, w: cw } : null;
+        return { d, coll };
+    }
+
+    function mlImportOpeningFile(input) {
+        const file = input.files && input.files[0];
+        input.value = '';                       // allow re-importing the same file
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            let parsed;
+            try { parsed = mlParseOpeningCSV(String(reader.result || '')); }
+            catch (e) { alert('Could not read that CSV: ' + e.message); return; }
+            if (!parsed.d.length) { alert('No disc rows found in that CSV.'); return; }
+            const pos = { customId: 'c' + Date.now(), d: parsed.d };
+            if (parsed.coll) pos.coll = parsed.coll;
+            const customs = mlLoadCustomPositions();
+            customs.push(pos);
+            mlSaveCustomPositionsArr(customs);
+            mlRefreshCustomList();
+            alert(parsed.coll
+                ? `Imported as Position ${customs.length} — preset opening (collectors fixed, Player 2 picks the colour).`
+                : `Imported as Position ${customs.length} — disc layout only (Player 1 places collectors live).`);
+        };
+        reader.onerror = () => alert('Could not read the file.');
+        reader.readAsText(file);
+    }
+
     // CSV in vertical / long format — disc rows only. ML positions are
     // nameless, so the CSV carries no name (unlike DL's shaped positions).
     function mlBuildCSV(pos, positionId) {
@@ -1463,14 +1547,19 @@
             const n = i + 1;
             const wrap = document.createElement('div');
             wrap.style.cssText = 'display:flex; gap:2px; align-items:stretch;';
+            const isPreset = !!(p.coll && p.coll.b != null && p.coll.w != null);
             const playBtn = document.createElement('button');
             playBtn.className = 'btn';
             playBtn.style.cssText = 'width:auto; padding:8px 12px; background:#8e44ad; color:white; margin:0;';
-            playBtn.textContent = '★ Position ' + n;
+            playBtn.textContent = (isPreset ? '★ Opening ' : '★ Position ') + n;
+            playBtn.title = isPreset ? 'Preset opening — collectors fixed, Player 2 picks the colour' : '';
             playBtn.onclick = () => loadCustomPosition(p.customId);
+            // The editor is disc-only; editing a preset would silently strip
+            // its baked-in collectors, so offer it only for disc layouts.
             const editBtn = document.createElement('button');
             editBtn.className = 'btn';
-            editBtn.style.cssText = 'width:auto; padding:8px 10px; background:#7f8c8d; color:white; margin:0;';
+            editBtn.style.cssText = 'width:auto; padding:8px 10px; background:#7f8c8d; color:white; margin:0;'
+                + (isPreset ? 'display:none;' : '');
             editBtn.title = 'Edit';
             editBtn.textContent = '✏️';
             editBtn.onclick = (e) => { e.stopPropagation(); mlOpenEditor(p); };

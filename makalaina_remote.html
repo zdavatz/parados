@@ -601,8 +601,10 @@
     <p style="font-weight:bold; margin:0 0 10px; color:var(--accent);">Start a new game:</p>
     <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
         <button class="action-btn" style="width:auto; padding:10px 24px; font-size:1em;" onclick="startRandom()">▶ Start</button>
+        <button class="action-btn" style="width:auto; padding:10px 24px; font-size:1em; background:#6d4c41; color:white;" onclick="document.getElementById('ml-opening-file').click()">📥 Load opening (CSV)</button>
+        <input type="file" id="ml-opening-file" accept=".csv,text/csv" style="display:none;" onchange="mlImportOpeningFile(this)">
     </div>
-    <p style="font-size:0.75rem; color:var(--text-dim); margin-top:8px;">Host (P1) places both collectors. Joiner (P2) then picks a colour — host plays the other and goes first.</p>
+    <p style="font-size:0.75rem; color:var(--text-dim); margin-top:8px;">Host (P1) places both collectors. Joiner (P2) then picks a colour — host plays the other and goes first.<br><b>Load opening</b> (host only): an <b>Export opening</b> CSV with both collectors starts a preset — no live placement, P2 still picks the colour.</p>
 </div>
 
 <div id="p2-choose-panel" style="display:none; max-width:600px; margin:0 auto 16px; text-align:center; background:var(--surface); padding:16px 20px; border-radius:12px; border:1px solid var(--border);">
@@ -991,6 +993,107 @@ function startRandom() {
     currentPlayer = 1;  // Only P1 (host) clicks during PLACEMENT
     syncState();
     updateUI(); render();
+}
+
+// Parse an "Export opening" CSV (long format
+// `position_id,element,x,y,color,number`). Returns { d, coll } — coll = {b,w}
+// cell indices iff BOTH collector rows are present.
+function mlParseOpeningCSV(text) {
+    const d = [];
+    let cb = null, cw = null;
+    text.split(/\r?\n/).forEach(line => {
+        const t = line.trim();
+        if (!t || /^position_id\s*,/i.test(t)) return;
+        const f = t.split(',');
+        if (f.length < 4) return;
+        const element = (f[1] || '').trim();
+        const x = parseInt(f[2], 10), y = parseInt(f[3], 10);
+        if (!Number.isInteger(x) || !Number.isInteger(y)) return;
+        if (x < 0 || x >= 12 || y < 0 || y >= 12) return;
+        if (element === 'disc') {
+            const color = (f[4] || '').trim();
+            const numRaw = (f[5] || '').trim();
+            if (!color) return;
+            d.push([x, y, color, numRaw === '' ? '' : parseInt(numRaw, 10)]);
+        } else if (element === 'collector_black') {
+            cb = y * 12 + x;
+        } else if (element === 'collector_white') {
+            cw = y * 12 + x;
+        }
+    });
+    const coll = (cb != null && cw != null && cb !== cw) ? { b: cb, w: cw } : null;
+    return { d, coll };
+}
+
+// Host-only. Loads a preset opening from an "Export opening" CSV: discs AND
+// both collectors fixed, skipping live PLACEMENT and going straight to
+// P2_CHOOSE (Walter, 2026-05-18 — live placement is too slow for a "light"
+// game; fairness still comes from Player 2's colour pick). Remote has no
+// disc-only custom path, so the CSV must carry both collectors.
+function mlImportOpeningFile(input) {
+    const file = input.files && input.files[0];
+    input.value = '';
+    if (!file) return;
+    if (myRole !== 'host') { alert('Only the host (Player 1) can load an opening.'); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+        let parsed;
+        try { parsed = mlParseOpeningCSV(String(reader.result || '')); }
+        catch (e) { alert('Could not read that CSV: ' + e.message); return; }
+        if (!parsed.d.length) { alert('No disc rows found in that CSV.'); return; }
+        if (!parsed.coll) { alert('That CSV has no collectors. Use an "Export opening" CSV (with both collectors) for a remote preset.'); return; }
+        if (parsed.coll.b < 0 || parsed.coll.b >= 144 || parsed.coll.w < 0 || parsed.coll.w >= 144) {
+            alert('Collector positions in that CSV are invalid.'); return;
+        }
+
+        // Fresh state (allow loading after a prior game on the same page).
+        cells = Array(144).fill(null);
+        collectors = { 1: null, 2: null };
+        scores = { 1: {}, 2: {} };
+        playerFlags = { 1: {}, 2: {} };
+        relinquished = { 1: false, 2: false };
+        relinquishCount = { 1: 0, 2: 0 };
+        collectedDiscs = { 1: [], 2: [] };
+        draftChosen = null;
+        pendingExtraTurn = false;
+        selectedIdx = null;
+        sacrificeRange = 0;
+        sacrificingPlayer = 0;
+        moveHistory = [];
+        historyIndex = -1;
+        isReviewing = false;
+        allColors.forEach(c => { scores[1][c] = 0; scores[2][c] = 0; });
+
+        // Build the 54-disc pool; placed discs come off it, the rest (minus
+        // 6 hidden) becomes the bag — same accounting as the local variant.
+        const pool = [];
+        ['red','blue','yellow'].forEach(c => [1,2,2,3,3,3,4,4,4,5,5,6].forEach(n => pool.push({ color:c, num:n, type:'primary' })));
+        ['green','orange','purple'].forEach(c => { for (let i=0;i<6;i++) pool.push({ color:c, num:'', type:'secondary' }); });
+        parsed.d.forEach(([x, y, color, num]) => {
+            const idx = y * 12 + x;
+            const pi = pool.findIndex(p => p.color === color && p.num === num);
+            cells[idx] = pi >= 0 ? pool.splice(pi, 1)[0] : { color, num, type: num !== '' ? 'primary' : 'secondary' };
+        });
+        pool.sort(() => Math.random() - 0.5);
+        pool.splice(0, 6);
+        bag = pool;
+
+        if (cells[parsed.coll.b] || cells[parsed.coll.w]) {
+            alert('A disc sits on a collector cell in that CSV — cannot use it as a preset.');
+            return;
+        }
+        collectors[1] = parsed.coll.b; cells[parsed.coll.b] = { type: 'collector', player: 1 };
+        collectors[2] = parsed.coll.w; cells[parsed.coll.w] = { type: 'collector', player: 2 };
+
+        currentPosition = 'opening';
+        setPositionTitle('');
+        document.getElementById('setup-panel').style.display = 'none';
+        goToP2Choose();          // → P2_CHOOSE (host buttons disabled)
+        syncState();             // push discs + collectors + state to joiner
+        updateUI(); render();
+    };
+    reader.onerror = () => alert('Could not read the file.');
+    reader.readAsText(file);
 }
 
 function toggleRules(show) {
