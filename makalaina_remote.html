@@ -612,6 +612,7 @@
         <button class="action-btn" style="width:auto; padding:8px 12px; background:#8e44ad; color:white;" onclick="loadBuiltinOpening(3)">★ Opening 4</button>
         <button class="action-btn" style="width:auto; padding:8px 12px; background:#8e44ad; color:white;" onclick="loadBuiltinOpening(4)">★ Opening 5</button>
         <button class="action-btn" style="width:auto; padding:8px 12px; background:#8e44ad; color:white;" onclick="loadBuiltinOpening(5)">★ Opening 6</button>
+        <button class="action-btn" style="width:auto; padding:8px 12px; background:#8e44ad; color:white;" onclick="loadBuiltinOpening(6)">★ Opening 7</button>
     </div>
     <p style="font-size:0.75rem; color:var(--text-dim); margin-top:8px;">Host (P1) places both collectors. Joiner (P2) then picks a colour — host plays the other and goes first.<br><b>Load opening</b> / <b>Preset openings</b> (host only): discs <i>and</i> both collectors fixed — no live placement, P2 still picks the colour.</p>
 </div>
@@ -1171,7 +1172,34 @@ const ML_BUILTIN_OPENING_CSVS = [
 1,disc,2,10,yellow,5
 1,disc,6,10,blue,3
 1,disc,7,10,green,
-1,disc,5,11,red,2`
+1,disc,5,11,red,2`,
+`position_id,element,x,y,color,number
+1,disc,5,0,yellow,2
+1,disc,9,0,orange,
+1,disc,1,1,red,2
+1,disc,9,1,blue,5
+1,disc,4,2,yellow,5
+1,disc,6,2,purple,
+1,disc,7,2,orange,
+1,disc,10,2,blue,3
+1,disc,6,3,blue,4
+1,disc,1,4,blue,4
+1,disc,0,5,green,
+1,disc,4,5,purple,
+1,disc,10,5,green,
+1,disc,1,7,blue,5
+1,disc,4,7,purple,
+1,disc,5,7,yellow,3
+1,disc,8,7,orange,
+1,collector_white,9,7,,
+1,disc,11,7,blue,3
+1,disc,6,8,green,
+1,disc,8,9,yellow,3
+1,collector_black,3,10,,
+1,disc,10,10,red,5
+1,disc,0,11,yellow,5
+1,disc,1,11,yellow,3
+1,disc,9,11,yellow,4`
 ];
 
 function mlParseOpeningCSV(text) {
