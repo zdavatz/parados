@@ -103,7 +103,7 @@
                 <h2 style="margin:0; font-size:1.2em;">Editor — Custom MAKA LAINA Position</h2>
             </div>
             <p style="margin:0 0 8px; color:#555; font-size:0.9em;">
-                Pick a brush, then click cells on the 12×12 board to paint the disc layout. Collectors are <b>not</b> part of the position — Player 1 places them live at game start.
+                Pick a brush, then click cells on the 12×12 board to paint the disc layout. <b>Collectors are optional:</b> place both (Black = Player 1, White = Player 2) to make a <b>preset opening</b> — no live placement, Player 2 still picks the colour. Leave them out for a disc-only layout where Player 1 places them live.
             </p>
             <div id="ml-editor-brush-bar" style="display:flex; flex-direction:column; gap:5px; margin-bottom:10px;"></div>
             <details style="margin-bottom:10px; border:1px solid #ddd; border-radius:4px; padding:6px 8px;">
@@ -127,7 +127,7 @@
     <div id="ml-csv-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:2600; justify-content:center; align-items:center;">
         <div style="background:#fff; width:92%; max-width:640px; padding:20px; border-radius:10px;">
             <h3 style="margin:0 0 10px;">CSV — Custom Position</h3>
-            <p style="margin:0 0 8px; color:#555; font-size:0.9em;">Disc layout in long format. Collectors are <b>not</b> stored — Player 1 places them live at the start of each game.</p>
+            <p style="margin:0 0 8px; color:#555; font-size:0.9em;">Long format. If you placed both collectors, the CSV includes <code>collector_black</code> / <code>collector_white</code> rows and loads back as a preset opening; otherwise it is disc-only (Player 1 places collectors live).</p>
             <textarea id="ml-csv-output" readonly style="width:100%; height:240px; font-family:monospace; font-size:0.85em; padding:8px; border:1px solid #ccc; border-radius:4px;"></textarea>
             <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; margin-top:10px;">
                 <button class="btn" style="width:auto; background:#3498db; color:white;" onclick="mlCopyCSVToClipboard()">📋 Copy</button>
@@ -1436,14 +1436,19 @@
     function mlOpenEditor(existingPos) {
         mlEditorPaint = {};
         if (existingPos) {
-            // Legacy custom positions had b/w (collector positions). The new
-            // opening flow has Player 1 place collectors live, so we ignore
-            // those fields and only restore the disc layout.
             (existingPos.d || []).forEach(([x, y, color, num]) => {
                 const letter = Object.keys(ML_COLOR_FOR).find(k => ML_COLOR_FOR[k] === color);
                 if (!letter) return;
                 mlEditorPaint[y * 12 + x] = letter + (num === '' || num == null ? '' : num);
             });
+            // Restore preset collectors so they can be moved/added in the
+            // editor (Walter, 2026-05-19). Only the explicit importer/editor
+            // `coll:{b,w}` drives this — legacy `b`/`w` fields stay ignored.
+            const c = existingPos.coll;
+            if (c && Number.isInteger(c.b) && Number.isInteger(c.w) && c.b !== c.w) {
+                mlEditorPaint[c.b] = 'CB';
+                mlEditorPaint[c.w] = 'CW';
+            }
             mlEditingCustomId = existingPos.customId || null;
         } else {
             mlEditingCustomId = null;
@@ -1466,6 +1471,13 @@
         if (mlEditorBrush === 'erase') {
             delete mlEditorPaint[idx];
         } else {
+            // Exactly one Black (P1) and one White (P2) collector — painting a
+            // collector clears any previous cell of the same colour.
+            if (mlEditorBrush === 'CB' || mlEditorBrush === 'CW') {
+                Object.keys(mlEditorPaint).forEach(k => {
+                    if (mlEditorPaint[k] === mlEditorBrush) delete mlEditorPaint[k];
+                });
+            }
             mlEditorPaint[idx] = mlEditorBrush;
         }
         mlRenderEditor();
@@ -1473,6 +1485,10 @@
 
     function mlBrushSwatch(tok, sel) {
         const border = sel ? '#FFEB3B' : 'rgba(0,0,0,0.25)';
+        if (tok === 'CB' || tok === 'CW') {
+            const fill = tok === 'CB' ? '#000' : '#fff';
+            return `<span style="display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; background:${fill}; border:3px solid gold; border-radius:6px; outline:3px solid ${border};"></span>`;
+        }
         const letter = tok[0];
         const num = tok.slice(1);
         const bg = COLOR_HEX[ML_COLOR_FOR[letter]];
@@ -1520,6 +1536,13 @@
         });
         // Secondaries
         mkRow('Secondary', ML_SECONDARY_LETTERS);
+        // Collectors (optional). Painting both turns the position into a
+        // preset opening: discs + collectors fixed, Player 2 still picks the
+        // colour (Walter, 2026-05-19). Leave them out for a disc-only layout.
+        const cap = document.createElement('span');
+        cap.textContent = 'Black = P1 · White = P2 (place both for a preset opening, or neither)';
+        cap.style.cssText = 'font-size:0.78em; color:#777; margin-left:6px;';
+        mkRow('Collectors', ['CB', 'CW'], [cap]);
     }
 
     // ---- Walter's disc-colour chooser (global, persisted) ----
@@ -1583,7 +1606,12 @@
             const c = document.createElement('div');
             c.style.cssText = `width:${ecs}px; height:${ecs}px; background:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative;`;
             const tok = mlEditorPaint[i];
-            if (tok) {
+            if (tok === 'CB' || tok === 'CW') {
+                const col = document.createElement('div');
+                const fill = tok === 'CB' ? '#000' : '#fff';
+                col.style.cssText = `width:${ecs - 6}px; height:${ecs - 6}px; background:${fill}; border:3px solid gold; border-radius:6px; box-shadow:0 2px 4px rgba(0,0,0,0.3);`;
+                c.appendChild(col);
+            } else if (tok) {
                 const letter = tok[0];
                 const num = tok.slice(1);
                 const bg = COLOR_HEX[ML_COLOR_FOR[letter]];
@@ -1600,26 +1628,51 @@
 
     function mlUpdateEditorSummary() {
         const sum = document.getElementById('ml-editor-summary');
-        const discs = Object.keys(mlEditorPaint).length;
-        sum.textContent = `Discs placed: ${discs} (canonical 24). Collectors are placed live by Player 1 at game start.`;
+        let discs = 0, cb = false, cw = false;
+        Object.keys(mlEditorPaint).forEach(k => {
+            const t = mlEditorPaint[k];
+            if (t === 'CB') cb = true; else if (t === 'CW') cw = true; else discs++;
+        });
+        const collMsg = (cb && cw)
+            ? 'Collectors set → preset opening (Player 2 still picks the colour).'
+            : (cb || cw)
+                ? '⚠ One collector placed — add the other, or remove it for a disc-only layout.'
+                : 'No collectors → disc-only (Player 1 places them live at game start).';
+        sum.textContent = `Discs placed: ${discs} (canonical 24). ${collMsg}`;
     }
 
     function mlPaintToPosition() {
         const d = [];
+        let cb = null, cw = null;
         Object.keys(mlEditorPaint).forEach(k => {
             const idx = parseInt(k);
-            const x = idx % 12, y = Math.floor(idx / 12);
             const tok = mlEditorPaint[k];
+            if (tok === 'CB') { cb = idx; return; }
+            if (tok === 'CW') { cw = idx; return; }
+            const x = idx % 12, y = Math.floor(idx / 12);
             const color = ML_COLOR_FOR[tok[0]];
             const num = tok.length > 1 ? parseInt(tok.slice(1)) : '';
             d.push([x, y, color, num]);
         });
-        return { d };
+        const pos = { d };
+        // Both collectors → preset opening; neither → disc-only (live
+        // placement). Exactly one is rejected by mlValidateEditor().
+        if (cb != null && cw != null) pos.coll = { b: cb, w: cw };
+        return pos;
     }
 
     function mlValidateEditor() {
-        if (Object.keys(mlEditorPaint).length === 0) {
+        let discs = 0, cb = false, cw = false;
+        Object.keys(mlEditorPaint).forEach(k => {
+            const t = mlEditorPaint[k];
+            if (t === 'CB') cb = true; else if (t === 'CW') cw = true; else discs++;
+        });
+        if (discs === 0) {
             alert('Place at least one disc.');
+            return false;
+        }
+        if (cb !== cw) {
+            alert('Place BOTH collectors (one Black for Player 1, one White for Player 2) — or neither for a disc-only layout where Player 1 places them live.');
             return false;
         }
         return true;
@@ -1702,14 +1755,21 @@
         reader.readAsText(file);
     }
 
-    // CSV in vertical / long format — disc rows only. ML positions are
-    // nameless, so the CSV carries no name (unlike DL's shaped positions).
+    // CSV in vertical / long format. ML positions are nameless, so the CSV
+    // carries no name (unlike DL's shaped positions). If pos.coll is present
+    // (both collectors painted) it emits collector_black (P1) / collector_white
+    // (P2) rows too — that makes it a reusable preset-opening CSV.
     function mlBuildCSV(pos, positionId) {
         const pid = positionId || 1;
         const lines = ['position_id,element,x,y,color,number'];
         pos.d.forEach(([x, y, color, num]) => {
             lines.push(`${pid},disc,${x},${y},${color},${num === '' || num == null ? '' : num}`);
         });
+        if (pos.coll && Number.isInteger(pos.coll.b) && Number.isInteger(pos.coll.w)) {
+            const b = pos.coll.b, w = pos.coll.w;
+            lines.push(`${pid},collector_black,${b % 12},${Math.floor(b / 12)},,`);
+            lines.push(`${pid},collector_white,${w % 12},${Math.floor(w / 12)},,`);
+        }
         return { csv: lines.join('\n') + '\n' };
     }
 
@@ -1719,7 +1779,8 @@
         const { csv } = mlBuildCSV(pos, 1);
         document.getElementById('ml-csv-output').value = csv;
         document.getElementById('ml-csv-modal').style.display = 'flex';
-        document.getElementById('ml-csv-modal').dataset.filename = 'makalaina_position.csv';
+        document.getElementById('ml-csv-modal').dataset.filename =
+            pos.coll ? 'makalaina_opening.csv' : 'makalaina_position.csv';
     }
 
     function mlCopyCSVToClipboard() {
@@ -1744,7 +1805,7 @@
         if (!mlValidateEditor()) return;
         const pos = mlPaintToPosition();
         const { csv } = mlBuildCSV(pos, 1);
-        const filename = 'makalaina_position.csv';
+        const filename = pos.coll ? 'makalaina_opening.csv' : 'makalaina_position.csv';
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
         try {
             if (navigator.canShare) {
@@ -1752,7 +1813,7 @@
                 if (navigator.canShare({ files: [file] })) {
                     // No `text:` alongside `files:` — Android WhatsApp drops the file
                     // when both are present (same lesson as Divided Loyalties share).
-                    await navigator.share({ files: [file], title: 'MAKA LAINA position' });
+                    await navigator.share({ files: [file], title: pos.coll ? 'MAKA LAINA opening' : 'MAKA LAINA position' });
                     return;
                 }
             }
@@ -1813,12 +1874,11 @@
             playBtn.textContent = (isPreset ? '★ Opening ' : '★ Position ') + n;
             playBtn.title = isPreset ? 'Preset opening — collectors fixed, Player 2 picks the colour' : '';
             playBtn.onclick = () => loadCustomPosition(p.customId);
-            // The editor is disc-only; editing a preset would silently strip
-            // its baked-in collectors, so offer it only for disc layouts.
+            // The editor now has collector brushes (Walter, 2026-05-19), so it
+            // round-trips a preset's collectors — editing presets is allowed.
             const editBtn = document.createElement('button');
             editBtn.className = 'btn';
-            editBtn.style.cssText = 'width:auto; padding:8px 10px; background:#7f8c8d; color:white; margin:0;'
-                + (isPreset ? 'display:none;' : '');
+            editBtn.style.cssText = 'width:auto; padding:8px 10px; background:#7f8c8d; color:white; margin:0;';
             editBtn.title = 'Edit';
             editBtn.textContent = '✏️';
             editBtn.onclick = (e) => { e.stopPropagation(); mlOpenEditor(p); };
