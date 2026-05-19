@@ -96,6 +96,7 @@ For file shares (CSV / saved game JSON), use `navigator.share({ files:[file], ti
 
 Standalone, self-contained page (Parados dark theme) — **not a game**, a tool: one place to create/share starting positions. Scope is **DL + ML only** (the only games with shareable position CSVs; kangaroo levels are code-defined, the other 4 games have no position concept). It does **not** re-implement any editor — it deep-links into the existing ones and centralises the *send* step. Linked from `index.html` footer.
 
+- **Disc-edit help:** the ML card has a collapsible native `<details class="help">` ("Wie verschiebe ich 1 Disc?") explaining that editing a disc/collector = changing `x,y` (0–11) in its CSV row, the 3 load rules, and that openings must be CSV-edited not editor-edited (editor is disc-only). No JS — pure `<details>`.
 - **Deep-links:** buttons open `divided_loyalties.html#editor` / `makalaina.html#editor`. Both games gained a tiny `startup()`/load hook: `if (location.hash === '#editor')` → `openEditor(null)` (DL) / `mlOpenEditor(null)` (ML). Keep these hooks if touching those load paths.
 - **"CSV laden & erneut senden":** load/paste any exported CSV → `detectCSV()` sniffs the header (`position_id,position_name,row,c0…` = DL; `position_id,element,x,y,color,number` = ML, with a `collector_(black|white)` row → ML opening) to pick filename/title → 📤 share / 📋 copy / 💾 download. Same guardrails as the games: `navigator.share({files:[…]})` only (no `text:`), no `wa.me`; fallback = download **+** clipboard copy + alert.
 

@@ -76,6 +76,44 @@ textarea {
     background: rgba(255,215,0,0.15); color: var(--accent);
     vertical-align: middle;
 }
+details.help {
+    margin-top: 16px;
+    background: #2b373d;
+    border: 1px solid #546e7a;
+    border-radius: 8px;
+    padding: 0 14px;
+}
+details.help[open] { padding-bottom: 12px; }
+details.help > summary {
+    cursor: pointer;
+    list-style: none;
+    padding: 12px 0;
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 0.95em;
+}
+details.help > summary::-webkit-details-marker { display: none; }
+details.help > summary::before { content: "▸ "; }
+details.help[open] > summary::before { content: "▾ "; }
+details.help code, .card code {
+    background: #1f2a30;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.88em;
+    color: #ffe082;
+}
+details.help .ex {
+    display: block;
+    background: #1f2a30;
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin: 6px 0;
+    font-family: monospace;
+    font-size: 0.85em;
+    white-space: pre-wrap;
+    color: #eceff1;
+}
+details.help .ex .hl { color: #ffe082; font-weight: 700; }
 footer {
     text-align: center; color: var(--text-dim);
     font-size: 0.85em; margin-top: 30px; padding: 20px 10px;
@@ -124,6 +162,39 @@ footer a:hover { text-decoration: underline; }
             <a class="btn btn-brown" href="makalaina.html">▶ ML spielen (Export / Load opening)</a>
             <a class="btn btn-blue" href="makalaina_remote.html">🌐 ML Remote</a>
         </div>
+
+        <details class="help">
+            <summary>Wie verschiebe ich 1 Disc (oder einen Collector)?</summary>
+            <p>Einfach die <b>CSV ändern</b>. Jede Zeile hat das Format
+               <code>position_id,element,x,y,color,number</code> mit</p>
+            <ul style="margin:6px 0 10px 20px;">
+                <li><code>x</code> = Spalte <b>0–11</b> (links → rechts)</li>
+                <li><code>y</code> = Zeile <b>0–11</b> (oben → unten)</li>
+            </ul>
+            <p>Beispiel — eine rote 2 auf Spalte 3 / Zeile 4:</p>
+            <span class="ex">1,disc,<span class="hl">3,4</span>,red,2</span>
+            <p>Soll sie nach Spalte 7 / Zeile 9, nur x und y ändern:</p>
+            <span class="ex">1,disc,<span class="hl">7,9</span>,red,2</span>
+            <p>Einen Collector verschiebst du genauso
+               (<code>1,collector_black,2,2,,</code> → x/y ändern).
+               Danach im Spiel-Setup mit <b>📥 Load opening (CSV)</b> laden
+               (oder unten in <b>„CSV laden &amp; erneut senden"</b> einfügen
+               und neu verschicken).</p>
+            <p style="margin-top:8px;"><b>Drei Regeln</b>, damit es sauber lädt:</p>
+            <ol style="margin:6px 0 4px 20px;">
+                <li>x und y immer <b>0–11</b> — alles außerhalb wird
+                    stillschweigend ignoriert (die Disc verschwindet).</li>
+                <li><b>Kein Feld doppelt belegen</b> — nicht zwei Discs, oder
+                    Disc + Collector, auf dasselbe x/y.</li>
+                <li>Bei einer <b>Eröffnung</b> (mit Collectors) die CSV
+                    <b>direkt</b> bearbeiten — <b>nicht</b> den ML-Editor
+                    benutzen, der kennt nur Discs und verliert die Collectors.</li>
+            </ol>
+            <p style="margin-top:8px; color:var(--text-dim); font-size:0.9em;">
+                Reine Disc-Stellung <i>ohne</i> Collectors? Dann geht auch der
+                visuelle ML-Editor: alte Disc mit dem Radiergummi weg, neue an
+                die gewünschte Stelle malen.</p>
+        </details>
     </div>
 
     <div class="card">
