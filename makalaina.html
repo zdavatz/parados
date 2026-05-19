@@ -499,6 +499,17 @@
         applyPositionData(pos);
     }
 
+    // Built-in preset opening: parse its CSV the same way the 📥 Load opening
+    // button does, then hand the { d, coll } to applyPositionData — which
+    // places both collectors and goes straight to P2's colour pick.
+    function loadBuiltinOpening(i) {
+        const csv = ML_BUILTIN_OPENING_CSVS[i];
+        if (csv == null) return;
+        const parsed = mlParseOpeningCSV(csv);
+        currentPosition = 'opening' + (i + 1);
+        applyPositionData({ d: parsed.d, coll: parsed.coll });
+    }
+
     // Called when Player 2 picks their colour after Player 1 has placed both collectors.
     // Player 1 then plays the OTHER colour and starts the first turn.
     //   color = 1 (Black)  → P2 plays Black → P1 plays White → currentPlayer = 2
@@ -1182,6 +1193,152 @@
     const ML_PRIMARY_LETTERS = ['R','B','Y'];
     const ML_SECONDARY_LETTERS = ['G','O','P'];
 
+    // Built-in fair openings (Walter, 2026-05-19). Each is a full "Export
+    // opening" CSV — discs PLUS both collectors — so it loads via the preset
+    // flow: no live placement, Player 2 still picks the colour (fairness comes
+    // from that pick, not the disc layout; Walter: "alle diese Startpositionen
+    // sind eigentlich egal, sie müssen nur gerecht sein, ohne FPA"). Stored as
+    // raw CSV text and run through the same mlParseOpeningCSV() the 📥 Load
+    // opening button uses, so behaviour is identical to a loaded CSV. To add
+    // more, just append another CSV string here (in either ML variant).
+    const ML_BUILTIN_OPENING_CSVS = [
+`position_id,element,x,y,color,number
+1,disc,0,0,blue,6
+1,disc,1,0,yellow,1
+1,disc,9,0,red,2
+1,disc,5,1,yellow,3
+1,disc,3,2,green,
+1,disc,7,2,blue,4
+1,disc,1,3,purple,
+1,disc,4,3,green,
+1,collector_black,5,3,,
+1,disc,8,3,yellow,3
+1,disc,3,4,red,4
+1,disc,9,4,yellow,4
+1,disc,4,5,red,3
+1,disc,8,5,purple,
+1,disc,11,5,red,4
+1,disc,2,6,purple,
+1,disc,6,6,blue,3
+1,disc,11,6,yellow,2
+1,collector_white,1,7,,
+1,disc,5,7,purple,
+1,disc,3,8,blue,4
+1,disc,6,9,blue,3
+1,disc,3,10,red,1
+1,disc,7,10,green,
+1,disc,5,11,blue,4
+1,disc,11,11,red,2`,
+`position_id,element,x,y,color,number
+1,disc,1,0,red,2
+1,disc,2,1,purple,
+1,collector_black,8,1,,
+1,disc,11,1,blue,3
+1,disc,5,2,yellow,2
+1,disc,11,4,orange,
+1,disc,0,5,yellow,1
+1,disc,5,5,blue,5
+1,disc,8,5,red,3
+1,disc,11,5,yellow,3
+1,disc,2,6,purple,
+1,disc,3,7,orange,
+1,disc,5,7,orange,
+1,disc,6,7,purple,
+1,disc,0,8,blue,4
+1,disc,5,8,green,
+1,disc,6,8,yellow,4
+1,disc,11,8,red,4
+1,disc,6,9,blue,1
+1,disc,10,9,purple,
+1,disc,2,10,blue,2
+1,collector_white,4,10,,
+1,disc,3,11,green,
+1,disc,4,11,blue,6
+1,disc,5,11,yellow,2
+1,disc,9,11,green,`,
+`position_id,element,x,y,color,number
+1,disc,4,0,blue,2
+1,disc,10,0,red,4
+1,disc,11,1,purple,
+1,disc,4,2,blue,6
+1,disc,5,2,yellow,4
+1,disc,7,2,blue,5
+1,disc,9,2,purple,
+1,disc,0,3,orange,
+1,disc,2,3,yellow,2
+1,disc,7,3,blue,2
+1,disc,4,4,purple,
+1,disc,3,5,yellow,6
+1,disc,5,5,red,5
+1,collector_white,7,5,,
+1,disc,9,5,purple,
+1,disc,9,6,blue,3
+1,collector_black,2,7,,
+1,disc,7,7,orange,
+1,disc,3,8,orange,
+1,disc,3,9,orange,
+1,disc,5,9,yellow,2
+1,disc,8,9,red,4
+1,disc,11,9,red,6
+1,disc,11,10,blue,3
+1,disc,4,11,green,
+1,disc,5,11,orange,`,
+`position_id,element,x,y,color,number
+1,disc,3,0,purple,
+1,disc,7,0,red,3
+1,disc,0,1,green,
+1,collector_white,2,1,,
+1,disc,0,2,green,
+1,disc,4,2,blue,4
+1,disc,5,2,green,
+1,disc,10,2,orange,
+1,disc,11,2,yellow,2
+1,disc,6,3,red,2
+1,disc,5,4,yellow,5
+1,disc,3,5,blue,2
+1,collector_black,9,5,,
+1,disc,5,6,blue,1
+1,disc,9,6,blue,6
+1,disc,0,7,yellow,3
+1,disc,9,7,yellow,3
+1,disc,10,7,blue,3
+1,disc,10,8,yellow,4
+1,disc,7,9,blue,2
+1,disc,0,10,red,2
+1,disc,5,10,purple,
+1,disc,7,10,yellow,4
+1,disc,11,10,green,
+1,disc,1,11,blue,5
+1,disc,2,11,red,3`,
+`position_id,element,x,y,color,number
+1,disc,7,0,green,
+1,disc,8,0,orange,
+1,collector_black,0,1,,
+1,collector_white,5,1,,
+1,disc,7,1,purple,
+1,disc,7,2,yellow,3
+1,disc,5,3,yellow,1
+1,disc,3,4,yellow,4
+1,disc,5,4,green,
+1,disc,6,4,purple,
+1,disc,8,4,yellow,3
+1,disc,2,5,blue,3
+1,disc,3,5,red,4
+1,disc,4,5,orange,
+1,disc,1,6,blue,3
+1,disc,7,6,blue,5
+1,disc,1,7,orange,
+1,disc,11,7,yellow,4
+1,disc,1,8,green,
+1,disc,4,8,yellow,5
+1,disc,7,8,blue,1
+1,disc,0,9,red,6
+1,disc,6,9,yellow,4
+1,disc,0,11,yellow,5
+1,disc,8,11,red,2
+1,disc,11,11,orange,`
+    ];
+
     function mlLoadCustomPositions() {
         try { return JSON.parse(localStorage.getItem('ml_custom_positions') || '[]'); }
         catch (e) { return []; }
@@ -1534,11 +1691,32 @@
     function mlRefreshCustomList() {
         const host = document.getElementById('ml-custom-list');
         if (!host) return;
-        const customs = mlLoadCustomPositions();
         host.innerHTML = '';
+
+        // Built-in fair openings — always available, not stored in
+        // localStorage, not editable (the disc-only editor would strip the
+        // baked-in collectors). Each runs the preset flow via loadBuiltinOpening.
+        const bTitle = document.createElement('p');
+        bTitle.style.cssText = 'font-weight:bold; margin:6px 0; color:#2c3e50; font-size:0.95em;';
+        bTitle.textContent = 'Preset openings (collectors fixed — Player 2 picks the colour):';
+        host.appendChild(bTitle);
+        const bRow = document.createElement('div');
+        bRow.style.cssText = 'display:flex; gap:8px; justify-content:center; flex-wrap:wrap;';
+        ML_BUILTIN_OPENING_CSVS.forEach((_, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'btn';
+            btn.style.cssText = 'width:auto; padding:8px 12px; background:#8e44ad; color:white; margin:0;';
+            btn.textContent = '★ Opening ' + (i + 1);
+            btn.title = 'Preset opening — collectors fixed, Player 2 picks the colour';
+            btn.onclick = () => loadBuiltinOpening(i);
+            bRow.appendChild(btn);
+        });
+        host.appendChild(bRow);
+
+        const customs = mlLoadCustomPositions();
         if (!customs.length) return;
         const title = document.createElement('p');
-        title.style.cssText = 'font-weight:bold; margin:6px 0; color:#2c3e50; font-size:0.95em;';
+        title.style.cssText = 'font-weight:bold; margin:14px 0 6px; color:#2c3e50; font-size:0.95em;';
         title.textContent = 'Your custom positions:';
         host.appendChild(title);
         const row = document.createElement('div');
