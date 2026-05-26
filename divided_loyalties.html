@@ -235,7 +235,7 @@
             <h3>4. Außenfelder & Boards</h3>
             <ul>
                 <li><strong>Punkte (•):</strong> Die kleinen Punkte zeigen Felder außerhalb der Boards. Steine dürfen <em>nur</em> auf solche Punktfelder gesetzt werden, wenn sie damit <em>im selben Zug</em> eine Brücke vervollständigen.</li>
-                [cite_start]<li>Nur ein Stein einer Reihe darf außerhalb liegen[cite: 53].</li>
+                <li><strong>Mehrere Steine einer Reihe dürfen außerhalb liegen</strong> — sofern jeder Stein bei seinem Platzieren eine eigene Brücke vervollständigt hat. Eine spätere Reihe darf also ruhig durch zwei oder drei „dotted" Steine laufen.</li>
                 <li>Andres Kuusk (Weltmeister im abstrakten Spiel) nennt diese Regel „an excellent rule":-)</li>
             </ul>
 
@@ -997,14 +997,13 @@
         }
 
         // Does this row (filled with stones) form a valid bridge for `player`?
-        // Returns { isRed, isScoring } or null. Enforces no two adjacent same colors
-        // and the "max 1 stone off-board" rule.
+        // Returns { isRed, isScoring } or null. Enforces no two adjacent same colors.
+        // (Off-board tiles in a row are always OK — placement-time already required
+        // each off-board stone to complete a bridge of its own. Walter, 2026-05-26.)
         function classifyRow(row, player) {
             const colors = row.map(i => grid[i]);
             if (colors.includes(null)) return null;
             for (let i = 0; i < colors.length - 1; i++) if (colors[i] === colors[i+1]) return null;
-            const offBoard = row.filter(i => !allBoardIdx.includes(i)).length;
-            if (offBoard > 1) return null;
             const isRed = colors.every(c => SETS.red.includes(c));
             const isScoring = colors.every(c => SETS[player].includes(c));
             if (!isRed && !isScoring) return null;

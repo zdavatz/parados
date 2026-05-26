@@ -235,7 +235,7 @@
             <h3>4. Off-board Cells &amp; Boards</h3>
             <ul>
                 <li><strong>Dots (•):</strong> the small dots mark cells outside the boards. Stones may <em>only</em> be placed on such dot cells if they <em>complete a bridge in the same turn</em>.</li>
-                <li>Only one stone of a row may lie off-board.</li>
+                <li><strong>Several stones of a row may lie off-board</strong> — as long as each was placed by completing a bridge of its own. A later row may therefore run through two or three "dotted" stones.</li>
                 <li>Andres Kuusk (world champion of abstract games) calls this rule „an excellent rule":-)</li>
             </ul>
 
@@ -997,14 +997,13 @@
         }
 
         // Does this row (filled with stones) form a valid bridge for `player`?
-        // Returns { isRed, isScoring } or null. Enforces no two adjacent same colors
-        // and the "max 1 stone off-board" rule.
+        // Returns { isRed, isScoring } or null. Enforces no two adjacent same colors.
+        // (Off-board tiles in a row are always OK — placement-time already required
+        // each off-board stone to complete a bridge of its own. Walter, 2026-05-26.)
         function classifyRow(row, player) {
             const colors = row.map(i => grid[i]);
             if (colors.includes(null)) return null;
             for (let i = 0; i < colors.length - 1; i++) if (colors[i] === colors[i+1]) return null;
-            const offBoard = row.filter(i => !allBoardIdx.includes(i)).length;
-            if (offBoard > 1) return null;
             const isRed = colors.every(c => SETS.red.includes(c));
             const isScoring = colors.every(c => SETS[player].includes(c));
             if (!isRed && !isScoring) return null;
