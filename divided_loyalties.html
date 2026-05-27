@@ -222,13 +222,14 @@
                 [cite_start]<li>Eine Brücke muss im selben Zug platziert werden wie der Stein, der die Reihe vervollständigt[cite: 33].</li>
                 <li><strong>3er kann nicht zur 4er erweitert werden:</strong> Sobald du eine 3er-Brücke gesetzt hast, kannst du sie nicht später durch einen vierten Stein zu einer 4er ausbauen. „<em>Lauter Gemeinheiten in diesem Spiel!</em>" — Walter. Setzt du dagegen erstmal nur den vierten Stein an die Reihe (ohne 3er-Brücke), bleibt dir die Option auf eine direkte 4er-Brücke offen — du musst dann aber riskieren, dass der Gegner zwischendurch schneidet.</li>
                 <li><strong>So setzt du eine Brücke:</strong> <em>Doppelklick</em> (oder Doppel-Tipp) auf den ersten Stein der Reihe, danach <em>Doppelklick</em> auf den letzten Stein. Wenn die Reihe gültig ist (3 oder 4 Steine, alle in deiner Farbgruppe oder alle rot, keine zwei gleichen Farben hintereinander), wird die Brücke gezogen. Ein zweiter Doppelklick auf denselben Stein hebt die Auswahl wieder auf.</li>
-                <li><strong>Setzt du auf einen Punkt (Außenfeld), wird die Brücke automatisch gezogen</strong> — denn Außenplatzierungen sind ohnehin nur erlaubt, wenn sie im selben Zug eine Brücke schließen. <strong>Du kannst die automatisch gezogene Brücke aber noch ändern:</strong> Doppelklick auf zwei Endsteine einer anderen gültigen Reihe, die deinen gerade platzierten Stein enthält — die automatische Brücke wird dann durch deine ersetzt (z.B. eine kürzere 3er statt einer 4er, oder eine andere Richtung mit besserem Regionen-Bonus).</li>
+                <li><strong>Setzt du auf einen Punkt (Außenfeld), werden alle Brücken automatisch gezogen, die der Stein vervollständigt</strong> — eine einzige Platzierung kann <em>mehrere</em> Brücken auf einmal abschließen (z.B. eine 3er-Brücke oberhalb <em>und</em> eine 3er-Brücke unterhalb des Steins). Lässt sich keine Brücke ziehen (z.B. weil jede mögliche Reihe von einer gegnerischen Brücke gekreuzt würde), wird die Platzierung rückgängig gemacht — Außenfeld-Platzierungen sind ohne tatsächliche Brücke nicht erlaubt. <strong>Du kannst die zuletzt gezogene automatische Brücke noch ändern:</strong> Doppelklick auf zwei Endsteine einer anderen gültigen Reihe, die deinen gerade platzierten Stein enthält — diese Brücke wird dann ersetzt.</li>
             </ul>
 
             <h3>3. Rote Brücken & Schneiden ("Cut")</h3>
             <ul>
                 [cite_start]<li>Rote Brücken werden zur Verteidigung genutzt[cite: 43].</li>
                 [cite_start]<li>Wenn eine rote Brücke eine blaue/gelbe kreuzt, verliert diese ihren Wert[cite: 41].</li>
+                <li><strong>Rot kann Rot nicht schneiden:</strong> Eine neue rote Brücke wird abgewiesen, wenn sie eine bereits liegende rote Brücke kreuzen würde — sonst wären keine Verteidigungs­strukturen möglich (Walter).</li>
                 [cite_start]<li><strong>Geometrie:</strong> Brücken können nur an den <em>inneren</em> Feldern geschnitten werden; die Endfelder sind immun[cite: 42].</li>
                 [cite_start]<li>Diagonalen können sich zwischen End- und Innenfeld kreuzen[cite: 42].</li>
                 <li><strong>Geschnittene Brücken bleiben liegen:</strong> Eine durchgeschnittene Brücke wird grau und gestrichelt dargestellt — sie verliert sowohl die Brücken- als auch die Regionen-Punkte, bleibt aber physisch im Spiel und blockiert weiterhin alles, was über sie hinweg gebaut werden soll (egal ob wertende oder rote Brücke).</li>
@@ -973,21 +974,36 @@
             currentPlayer === 'blue' ? blueInv[selectedColor]-- : yellowInv[selectedColor]--;
             selectedColor = null;
             bridgeSelection = [];
-            // Off-board placements MUST form a bridge by rule, so auto-form it (Walter, 2026-05-09).
-            // Manual double-click stays for on-board placements where the player wants to delay.
-            // The auto-bridge's id is remembered as `amendableBridgeId` so the player can
-            // double-click a different endpoint pair to override it (Walter, 2026-05-26 —
-            // "the player can change the auto-bridge by double-clicking, just like any other").
+            // Off-board placements MUST form a bridge by rule, so auto-form (Walter, 2026-05-09).
+            // Walter, 2026-05-27: a single placement can complete MULTIPLE bridges
+            // (e.g. middle of a 5-stone column → upper 3-bridge + lower 3-bridge).
+            // findAutoBridges yields every justifying row through the placement; we
+            // try each and keep the ones that actually build. If none can be built
+            // (every candidate would cross an opponent bridge), the placement itself
+            // is illegal and we undo it — the off-board rule requires at least one
+            // bridge actually formed in the same turn.
+            // amendableBridgeId tracks the LAST auto-built bridge so the player can
+            // still override the system's pick via double-click (Walter, 2026-05-26).
             amendableBridgeId = null;
             if (offBoardPlacement) {
-                const found = findBridgeContaining(idx, currentPlayer);
-                if (found) {
+                const candidates = findAutoBridges(idx, currentPlayer);
+                let formedAny = false;
+                let lastFormedId = null;
+                for (const row of candidates) {
                     const lenBefore = activeBridges.length;
-                    tryFormBridge(found.row[0], found.row[found.row.length - 1]);
+                    tryFormBridge(row[0], row[row.length - 1]);
                     if (activeBridges.length > lenBefore) {
-                        amendableBridgeId = activeBridges[activeBridges.length - 1].id;
+                        lastFormedId = activeBridges[activeBridges.length - 1].id;
+                        formedAny = true;
                     }
                 }
+                if (!formedAny) {
+                    // Every justifying row turned out unbuildable (usually because it
+                    // would cross an opponent's scoring bridge). Reject the placement.
+                    undo();
+                    return;
+                }
+                amendableBridgeId = lastFormedId;
             }
             updateUI();
             saveGame();
@@ -1077,6 +1093,81 @@
             const r = findBridgeContaining(idx, currentPlayer);
             grid[idx] = null;
             return !!r;
+        }
+
+        // Multi-bridge auto-form (Walter, 2026-05-27). When a stone is placed on a dot,
+        // the system forms ALL bridges that placement justifies — not just the best one.
+        // For each of the 4 directions we collect:
+        //   - the longest valid "before" row (idx is the LAST cell — bridge extends backward)
+        //   - the longest valid "after"  row (idx is the FIRST cell — bridge extends forward)
+        // These two share only idx, so both can coexist visually (lines go opposite ways).
+        // If neither endpoint-row is valid in a direction, we fall back to ONE "middle" row
+        // (idx not at either end) so 3-stone lines with the placement in the middle still
+        // get a bridge. The caller then runs each through tryFormBridge — any that would
+        // collide with an opponent's bridge are silently skipped.
+        function findAutoBridges(idx, player) {
+            const dirs = [[1,0],[0,1],[1,1],[1,-1]];
+            const isValidCandidate = (row) => {
+                if (!row) return false;
+                if (!classifyRow(row, player)) return false;
+                const sameAsExisting = activeBridges.some(b =>
+                    b.row.length === row.length &&
+                    (b.row.every((c,i) => c === row[i]) || b.row.every((c,i) => c === row[row.length-1-i]))
+                );
+                if (sameAsExisting) return false;
+                const wouldExtend = activeBridges.some(b => {
+                    if (b.cut) return false;
+                    if (b.row.length >= row.length) return false;
+                    return b.row.every(c => row.includes(c));
+                });
+                if (wouldExtend) return false;
+                return true;
+            };
+            const result = [];
+            for (const dir of dirs) {
+                let before = null;
+                for (const len of [4, 3]) {
+                    const x0 = (idx % GRID_W) - (len - 1) * dir[0];
+                    const y0 = Math.floor(idx / GRID_W) - (len - 1) * dir[1];
+                    if (x0 < 0 || y0 < 0 || x0 >= GRID_W || y0 >= GRID_H) continue;
+                    const start = y0 * GRID_W + x0;
+                    const row = getRowCells(start, dir, len);
+                    if (row && row[row.length - 1] === idx && isValidCandidate(row)) {
+                        before = row;
+                        break;
+                    }
+                }
+                let after = null;
+                for (const len of [4, 3]) {
+                    const row = getRowCells(idx, dir, len);
+                    if (row && row[0] === idx && isValidCandidate(row)) {
+                        after = row;
+                        break;
+                    }
+                }
+                if (before) result.push(before);
+                if (after) result.push(after);
+                if (!before && !after) {
+                    // Fall back to one middle-row in this direction.
+                    let middle = null;
+                    for (const len of [4, 3]) {
+                        for (let off = 1; off < len - 1; off++) {
+                            const x0 = (idx % GRID_W) - off * dir[0];
+                            const y0 = Math.floor(idx / GRID_W) - off * dir[1];
+                            if (x0 < 0 || y0 < 0 || x0 >= GRID_W || y0 >= GRID_H) continue;
+                            const start = y0 * GRID_W + x0;
+                            const row = getRowCells(start, dir, len);
+                            if (row && row[off] === idx && isValidCandidate(row)) {
+                                middle = row;
+                                break;
+                            }
+                        }
+                        if (middle) break;
+                    }
+                    if (middle) result.push(middle);
+                }
+            }
+            return result;
         }
 
         // Manual bridge — TOGGLE selection model (Walter, 2026-05-27).
@@ -1233,16 +1324,29 @@
             const angle = Math.atan2(y2-y1, x2-x1);
             const off = cellSize * 0.50;
             const c = { x1: x1 + Math.cos(angle)*off, y1: y1 + Math.sin(angle)*off, x2: x2 - Math.cos(angle)*off, y2: y2 - Math.sin(angle)*off };
-            const collision = checkCollision(c);
             if (cls.isRed) {
+                // Red sees ALL bridges (red AND scoring) when checking collisions —
+                // Walter, 2026-05-27: a red bridge cannot cut another red bridge
+                // (otherwise defensive structures could be unwound by the same color
+                // that built them). Red is now tracked in activeBridges with
+                // player:'red' so red-vs-red collisions are detectable.
+                const collision = checkCollision(c, false);
                 if (collision) {
-                    if (collision.cut) return;  // can't cross an already-cut bridge
+                    if (collision.cut) return;          // can't cross an already-cut bridge
+                    if (collision.player === 'red') return;  // red can't cut red
                     destroyBridge(collision.id);
                 }
-                drawBridge(c, 'red', Date.now());
+                const bId = Date.now();
+                activeBridges.push({id: bId, row, player: 'red', coords: c, s, e, cut: false});
+                drawBridge(c, 'red', bId);
                 bridgePlaced = true;
             } else {
-                if (collision) return;  // a scoring bridge can't cross any existing line (active, cut, or red)
+                // Scoring bridges ignore red bridges when checking collisions —
+                // Walter only asked for "red can't cut red", not "scoring can't
+                // cross red". Red's defensive value comes from cutting the scoring
+                // bridge AT CONSTRUCTION TIME, not from being a permanent block.
+                const collision = checkCollision(c, true);
+                if (collision) return;  // can't cross any existing scoring line (active or cut)
                 const bId = Date.now();
                 activeBridges.push({id: bId, row, player: currentPlayer, coords: c, s, e, cut: false});
                 drawBridge(c, currentPlayer, bId);
@@ -1267,8 +1371,9 @@
             }
         }
 
-        function checkCollision(c) {
+        function checkCollision(c, skipRed) {
             for (let b of activeBridges) {
+                if (skipRed && b.player === 'red') continue;
                 const ccw = (p,q,r) => (r.y-p.y)*(q.x-p.x) > (q.y-p.y)*(r.x-p.x);
                 const a={x:c.x1,y:c.y1}, b1={x:c.x2,y:c.y2}, c1={x:b.coords.x1,y:b.coords.y1}, d1={x:b.coords.x2,y:b.coords.y2};
                 if (ccw(a,c1,d1) !== ccw(b1,c1,d1) && ccw(a,b1,c1) !== ccw(a,b1,d1)) return b;
@@ -1344,6 +1449,7 @@
             const claimed = { blue: new Set(), yellow: new Set() };
             for (const b of activeBridges) {
                 if (b.cut) continue;
+                if (b.player === 'red') continue;  // red bridges are defensive — no score
                 bridgeScore[b.player] += (b.row.length === 3 ? 1 : 2);
                 const inner = b.row.slice(1, -1);
                 for (const cellIdx of inner) {
