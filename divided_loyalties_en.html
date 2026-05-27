@@ -220,7 +220,7 @@
                 <li>A bridge must be placed in the same turn as the stone that completes the row.</li>
                 <li><strong>A 3 can't be extended to a 4:</strong> once you've placed a 3-bridge, you can't later add a fourth stone to grow it into a 4. „<em>Nothing but meanness in this game!</em>" — Walter. If instead you only add the fourth stone to the row (without a 3-bridge), the option of a direct 4-bridge stays open — but then you risk the opponent cutting in between.</li>
                 <li><strong>How to place a bridge:</strong> <em>double-click</em> (or double-tap) the first stone of the row, then <em>double-click</em> the last stone. If the row is valid (3 or 4 stones, all in your colour group or all red, no two identical colours in a row), the bridge is drawn. A second double-click on the same stone clears the selection again.</li>
-                <li><strong>If you place on a dot (off-board cell), the bridge is drawn automatically</strong> — because off-board placements are only allowed when they close a bridge in the same turn anyway.</li>
+                <li><strong>If you place on a dot (off-board cell), the bridge is drawn automatically</strong> — because off-board placements are only allowed when they close a bridge in the same turn anyway. <strong>You can still override the auto-drawn bridge:</strong> double-click the two endpoints of any other valid row that contains your just-placed stone — the auto-bridge is replaced by yours (e.g., pick a shorter 3 instead of a 4, or a different direction with a better region bonus).</li>
             </ul>
 
             <h3>3. Red Bridges &amp; Cutting ("Cut")</h3>
@@ -273,6 +273,10 @@
         let grid = Array(GRID_W * GRID_H).fill(null), blueInv = {...BLUE_BATCH}, yellowInv = {...YELLOW_BATCH};
         let blueBatch = 1, yellowBatch = 1;
         let activeBridges = [], bridgeSelection = [], bridgeScore = {blue:0, yellow:0}, regionScore = {blue:0, yellow:0};
+        // If a stone placed on a dot auto-formed a bridge this turn, this is its id —
+        // the player may double-click to amend it (Walter, 2026-05-26: "the player can change
+        // the auto-bridge by double-clicking, just like any other bridge"). Reset on endTurn.
+        let amendableBridgeId = null;
         let cellSize = 44, gapSize = 2, padSize = 10;
         let undoStack = [];           // TUK-style history: snapshot before each user-input mutation
         let currentPosition = null;   // the {name, boards, dots, ...} the current game started from
@@ -695,6 +699,7 @@
             blueBatch = 1; yellowBatch = 1;
             activeBridges = [];
             bridgeSelection = [];
+            amendableBridgeId = null;
             bridgeScore = {blue:0, yellow:0};
             regionScore = {blue:0, yellow:0};
             document.getElementById('meta-grid').innerHTML = '';
@@ -767,6 +772,7 @@
                 bridgeSelection: [...bridgeSelection],
                 bridgeScore: {...bridgeScore}, regionScore: {...regionScore},
                 activeBridges: JSON.parse(JSON.stringify(activeBridges)),
+                amendableBridgeId,
             });
         }
 
@@ -781,6 +787,7 @@
             bridgeSelection = s.bridgeSelection;
             bridgeScore = s.bridgeScore; regionScore = s.regionScore;
             activeBridges = s.activeBridges;
+            amendableBridgeId = s.amendableBridgeId == null ? null : s.amendableBridgeId;
             rerenderAllTiles();
             redrawBridges();
             renderBridgePending();
@@ -816,6 +823,7 @@
                     currentPlayer, selectedColor, lastPlaced, bridgePlaced, moveState,
                     blueBatch, yellowBatch,
                     activeBridges, bridgeScore, regionScore,
+                    amendableBridgeId,
                 };
                 localStorage.setItem(SAVEGAME_KEY, JSON.stringify(state));
             } catch (e) { console.warn('saveGame failed:', e); }
@@ -839,6 +847,7 @@
             moveState = state.moveState;
             blueBatch = state.blueBatch; yellowBatch = state.yellowBatch;
             activeBridges = state.activeBridges || [];
+            amendableBridgeId = state.amendableBridgeId == null ? null : state.amendableBridgeId;
             bridgeScore = state.bridgeScore || {blue:0,yellow:0};
             regionScore = state.regionScore || {blue:0,yellow:0};
             rerenderAllTiles();
@@ -964,9 +973,19 @@
             bridgeSelection = [];
             // Off-board placements MUST form a bridge by rule, so auto-form it (Walter, 2026-05-09).
             // Manual double-click stays for on-board placements where the player wants to delay.
+            // The auto-bridge's id is remembered as `amendableBridgeId` so the player can
+            // double-click a different endpoint pair to override it (Walter, 2026-05-26 —
+            // "the player can change the auto-bridge by double-clicking, just like any other").
+            amendableBridgeId = null;
             if (offBoardPlacement) {
                 const found = findBridgeContaining(idx, currentPlayer);
-                if (found) tryFormBridge(found.row[0], found.row[found.row.length - 1]);
+                if (found) {
+                    const lenBefore = activeBridges.length;
+                    tryFormBridge(found.row[0], found.row[found.row.length - 1]);
+                    if (activeBridges.length > lenBefore) {
+                        amendableBridgeId = activeBridges[activeBridges.length - 1].id;
+                    }
+                }
             }
             updateUI();
             saveGame();
@@ -1061,6 +1080,13 @@
         // Manual bridge: player double-clicks the first stone (endpoint A), then
         // double-clicks the last stone (endpoint B). Walter's request — auto-bridge
         // was too magical; the player should decide.
+        //
+        // Amend mode (Walter, 2026-05-26): if the placed stone was on a dot and the
+        // system auto-drew a bridge (amendableBridgeId is set), a double-click pair
+        // whose row still contains lastPlaced REPLACES the auto-bridge — the auto
+        // one is removed first so the new endpoints can claim the same or a
+        // different row through the placement. Lets the player pick the shorter /
+        // strategically better bridge instead of the system's longest-row default.
         function handleStoneDblClick(idx) {
             if (grid[idx] === null || grid[idx] === undefined) return;
             if (bridgeSelection.length === 0) {
@@ -1077,8 +1103,43 @@
             bridgeSelection = [];
             renderBridgePending();
             snapshot();
+            if (amendableBridgeId !== null) {
+                const proposedRow = getRow(s, e);
+                if (proposedRow && proposedRow.includes(lastPlaced)) {
+                    removeBridgeById(amendableBridgeId);
+                    amendableBridgeId = null;
+                    bridgePlaced = false;
+                    const lenBefore = activeBridges.length;
+                    tryFormBridge(s, e);
+                    if (activeBridges.length > lenBefore) {
+                        amendableBridgeId = activeBridges[activeBridges.length - 1].id;
+                        updateScore();
+                        saveGame();
+                    } else if (bridgePlaced) {
+                        // a red bridge was placed (no push to activeBridges) — accept it
+                        updateScore();
+                        saveGame();
+                    } else {
+                        // amend failed (invalid row, collision, etc.) — restore the
+                        // auto-bridge from the snapshot we took above
+                        undo();
+                    }
+                    return;
+                }
+            }
             tryFormBridge(s, e);
             saveGame();
+        }
+
+        // Fully remove a bridge from activeBridges + its SVG line. Unlike destroyBridge
+        // (which marks cut:true and keeps the line dashed), this is used by the amend
+        // flow to replace an auto-bridge with a player-chosen one.
+        function removeBridgeById(id) {
+            const i = activeBridges.findIndex(b => b.id === id);
+            if (i < 0) return;
+            activeBridges.splice(i, 1);
+            const l = document.getElementById('line-' + id);
+            if (l) l.remove();
         }
 
         function renderBridgePending() {
@@ -1200,7 +1261,7 @@
             }
             currentPlayer = currentPlayer==='blue'?'yellow':'blue';
             maybeRefillBatch();
-            moveState='tile'; lastPlaced=null; bridgePlaced=false; bridgeSelection=[]; updateUI();
+            moveState='tile'; lastPlaced=null; bridgePlaced=false; bridgeSelection=[]; amendableBridgeId=null; updateUI();
             saveGame();
         }
 
