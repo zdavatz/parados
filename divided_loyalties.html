@@ -1079,34 +1079,48 @@
             return !!r;
         }
 
-        // Manual bridge: player double-clicks the first stone (endpoint A), then
-        // double-clicks the last stone (endpoint B). Walter's request — auto-bridge
-        // was too magical; the player should decide.
+        // Manual bridge — TOGGLE selection model (Walter, 2026-05-27).
+        //   - Each double-click on a stone toggles its cyan ring (add or remove).
+        //   - When exactly 2 stones are ringed, the bridge auto-attempts.
+        //       * success → both rings clear, bridge drawn.
+        //       * failure → both rings STAY visible, the most-recent stone briefly
+        //         flashes red so the player sees the click was registered AND
+        //         that this specific pairing was rejected. Player can deselect
+        //         either ringed stone (toggle off) or swap one out.
+        //   - 3rd click while 2 are ringed: ignored + brief red flash on the
+        //     would-be-third stone (deselect one of the existing rings first).
+        // Walter's reasoning: the previous "second click immediately fires"
+        // behavior meant the second stone never visibly got a ring, so players
+        // couldn't tell their click had landed. With the toggle model the player
+        // can also reject *either* stone individually — sometimes you realize
+        // both your picks were wrong and want to start fresh.
         //
         // Amend mode (Walter, 2026-05-26): if the placed stone was on a dot and the
-        // system auto-drew a bridge (amendableBridgeId is set), a double-click pair
-        // whose row still contains lastPlaced REPLACES the auto-bridge — the auto
-        // one is removed first so the new endpoints can claim the same or a
-        // different row through the placement. Lets the player pick the shorter /
-        // strategically better bridge instead of the system's longest-row default.
+        // system auto-drew a bridge (amendableBridgeId is set), the 2-stone attempt
+        // for a row that still contains lastPlaced REPLACES the auto-bridge — the
+        // auto one is removed first so the new endpoints can claim the same or a
+        // different row through the placement.
         function handleStoneDblClick(idx) {
             if (grid[idx] === null || grid[idx] === undefined) return;
-            if (bridgeSelection.length === 0) {
-                bridgeSelection = [idx];
+            // Toggle: clicking a ringed stone deselects it.
+            if (bridgeSelection.includes(idx)) {
+                bridgeSelection = bridgeSelection.filter(i => i !== idx);
                 renderBridgePending();
                 return;
             }
-            if (bridgeSelection[0] === idx) {
-                bridgeSelection = [];
-                renderBridgePending();
+            // 3rd-click guard: with 2 already ringed, refuse a new one + flash hint.
+            if (bridgeSelection.length >= 2) {
+                flashStoneInvalid(idx);
                 return;
             }
-            const s = bridgeSelection[0], e = idx;
-            // Snapshot FIRST (captures bridgeSelection=[s] so undo restores the cyan
-            // ring on failure), then clear the selection while we attempt the bridge.
-            snapshot();
-            bridgeSelection = [];
+            // Add this stone to the selection.
+            bridgeSelection.push(idx);
             renderBridgePending();
+            if (bridgeSelection.length < 2) return;
+            // Two stones ringed — attempt the bridge.
+            const [s, e] = bridgeSelection;
+            // Snapshot AFTER both stones are added (so undo restores both rings on failure).
+            snapshot();
             const lenBefore = activeBridges.length;
             const bridgePlacedBefore = bridgePlaced;
             let succeeded = false;
@@ -1137,13 +1151,15 @@
                 }
             }
             if (succeeded) {
+                bridgeSelection = [];
+                renderBridgePending();
                 saveGame();
                 return;
             }
-            // Failure UX (Walter, 2026-05-27): silent rejection used to make players
-            // think their second double-click was ignored. Now we restore the snapshot
-            // (auto-bridge back, first stone's ring restored) and flash the rejected
-            // second stone red briefly so the click is acknowledged.
+            // Failure: restore via undo (brings the auto-bridge back if amend was
+            // attempted, and restores bridgeSelection=[s,e] so both rings show).
+            // Then flash the last-clicked stone red so the player knows that pairing
+            // was the rejected one.
             undo();
             flashStoneInvalid(idx);
         }
@@ -1165,7 +1181,7 @@
         function flashStoneInvalid(idx) {
             const cell = document.getElementById('meta-grid').children[idx];
             if (!cell) return;
-            const tile = cell.firstChild;
+            const tile = cell.querySelector('.tile');
             if (!tile) return;
             tile.classList.remove('bridge-rejected');
             // Force reflow so the animation restarts if the same stone is flashed twice in a row.
@@ -1180,7 +1196,10 @@
             for (let i = 0; i < total; i++) {
                 const cell = meta.children[i];
                 if (!cell) continue;
-                const tile = cell.firstChild;
+                // Use querySelector('.tile') rather than firstChild so this is robust
+                // regardless of any other children that might appear in the cell
+                // (e.g., future overlays, off-board dot markers).
+                const tile = cell.querySelector('.tile');
                 if (!tile) continue;
                 if (bridgeSelection.includes(i)) tile.classList.add('bridge-pending');
                 else tile.classList.remove('bridge-pending');
