@@ -59,6 +59,8 @@
         .tile.red { background: var(--red); } .tile.green { background: var(--green); }
         .tile.purple { background: var(--purple); } .tile.orange { background: var(--orange); }
         .tile.bridge-pending { outline: 3px solid #64ffda; outline-offset: 1px; box-shadow: 0 0 0 2px rgba(100,255,218,0.45), 0 4px 8px rgba(0,0,0,0.6); }
+        .tile.bridge-rejected { animation: rejectFlash 0.55s ease-out; }
+        @keyframes rejectFlash { 0% { outline: 3px solid #D32F2F; outline-offset: 1px; box-shadow: 0 0 0 4px rgba(211,47,47,0.55), 0 0 14px rgba(255,23,68,0.7); } 100% { outline: 0 solid transparent; box-shadow: none; } }
         #ui-panel { width: 100%; max-width: 340px; padding: 15px; background: var(--panel); border-radius: 8px; border: 1px solid #3d5245; }
         .current-player { font-size: 1.1em; margin-bottom: 12px; padding: 10px; border-radius: 4px; text-align: center; font-weight: bold; }
         .blue-turn { background: #1565C0; color: white; } .yellow-turn { background: #fbc02d; color: #333; }
@@ -1100,35 +1102,50 @@
                 return;
             }
             const s = bridgeSelection[0], e = idx;
+            // Snapshot FIRST (captures bridgeSelection=[s] so undo restores the cyan
+            // ring on failure), then clear the selection while we attempt the bridge.
+            snapshot();
             bridgeSelection = [];
             renderBridgePending();
-            snapshot();
+            const lenBefore = activeBridges.length;
+            const bridgePlacedBefore = bridgePlaced;
+            let succeeded = false;
+            let triedAmend = false;
             if (amendableBridgeId !== null) {
                 const proposedRow = getRow(s, e);
                 if (proposedRow && proposedRow.includes(lastPlaced)) {
+                    triedAmend = true;
                     removeBridgeById(amendableBridgeId);
                     amendableBridgeId = null;
                     bridgePlaced = false;
-                    const lenBefore = activeBridges.length;
                     tryFormBridge(s, e);
                     if (activeBridges.length > lenBefore) {
                         amendableBridgeId = activeBridges[activeBridges.length - 1].id;
                         updateScore();
-                        saveGame();
+                        succeeded = true;
                     } else if (bridgePlaced) {
                         // a red bridge was placed (no push to activeBridges) — accept it
                         updateScore();
-                        saveGame();
-                    } else {
-                        // amend failed (invalid row, collision, etc.) — restore the
-                        // auto-bridge from the snapshot we took above
-                        undo();
+                        succeeded = true;
                     }
-                    return;
                 }
             }
-            tryFormBridge(s, e);
-            saveGame();
+            if (!triedAmend) {
+                tryFormBridge(s, e);
+                if (activeBridges.length > lenBefore || (bridgePlaced && !bridgePlacedBefore)) {
+                    succeeded = true;
+                }
+            }
+            if (succeeded) {
+                saveGame();
+                return;
+            }
+            // Failure UX (Walter, 2026-05-27): silent rejection used to make players
+            // think their second double-click was ignored. Now we restore the snapshot
+            // (auto-bridge back, first stone's ring restored) and flash the rejected
+            // second stone red briefly so the click is acknowledged.
+            undo();
+            flashStoneInvalid(idx);
         }
 
         // Fully remove a bridge from activeBridges + its SVG line. Unlike destroyBridge
@@ -1140,6 +1157,21 @@
             activeBridges.splice(i, 1);
             const l = document.getElementById('line-' + id);
             if (l) l.remove();
+        }
+
+        // Brief red flash on a stone whose double-click couldn't form a valid bridge.
+        // Walter, 2026-05-27: silent rejection used to make players think their click
+        // was ignored; this acknowledges the click while leaving the rule in force.
+        function flashStoneInvalid(idx) {
+            const cell = document.getElementById('meta-grid').children[idx];
+            if (!cell) return;
+            const tile = cell.firstChild;
+            if (!tile) return;
+            tile.classList.remove('bridge-rejected');
+            // Force reflow so the animation restarts if the same stone is flashed twice in a row.
+            void tile.offsetWidth;
+            tile.classList.add('bridge-rejected');
+            setTimeout(() => tile.classList.remove('bridge-rejected'), 600);
         }
 
         function renderBridgePending() {
