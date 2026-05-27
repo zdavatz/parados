@@ -220,7 +220,7 @@
                 <li><strong>Separate display:</strong> bridge and region points are shown separately — add them yourself at the end.</li>
                 <li><strong>Important:</strong> two identical colours may not lie directly next to each other.</li>
                 <li>A bridge must be placed in the same turn as the stone that completes the row.</li>
-                <li><strong>A 3 can't be extended to a 4:</strong> once you've placed a 3-bridge, you can't later add a fourth stone to grow it into a 4. „<em>Nothing but meanness in this game!</em>" — Walter. If instead you only add the fourth stone to the row (without a 3-bridge), the option of a direct 4-bridge stays open — but then you risk the opponent cutting in between.</li>
+                <li><strong>Bridges can't be extended later!</strong> — Walter. A new bridge cannot share <em>two or more stones</em> with any existing (non-cut) bridge. This blocks not only growing a 3 into a 4 later, but also overlapping 3-bridges along the same line (e.g., existing <em>[A,B,C]</em> + new <em>[B,C,D]</em> — would look like a 4 and is therefore forbidden). Single shared stones are still fine — that's how perpendicular crosses and the multi-bridge case work (a placement in the middle of 5 stones forms an upper and a lower 3-bridge sharing only the placed stone). If you instead only add a fourth stone to a row (without a prior 3-bridge), the option of a direct 4-bridge stays open — but then you risk the opponent cutting in between.</li>
                 <li><strong>How to place a bridge:</strong> <em>double-click</em> (or double-tap) the first stone of the row, then <em>double-click</em> the last stone. If the row is valid (3 or 4 stones, all in your colour group or all red, no two identical colours in a row), the bridge is drawn. A second double-click on the same stone clears the selection again.</li>
                 <li><strong>If you place on a dot (off-board cell), every bridge the stone completes is drawn automatically</strong> — a single placement can close <em>multiple</em> bridges at once (e.g. a 3-bridge above <em>and</em> a 3-bridge below the placed stone). If no bridge can be drawn (e.g. every justifying row would cross an opponent bridge), the placement is undone — off-board placements aren't allowed without an actual bridge. <strong>You can still override the last auto-drawn bridge:</strong> double-click the two endpoints of any other valid row that contains your just-placed stone — that bridge is replaced.</li>
             </ul>
@@ -229,6 +229,7 @@
             <ul>
                 <li>Red bridges are used for defence.</li>
                 <li>When a red bridge crosses a blue/yellow one, the latter loses its value.</li>
+                <li><strong>Nobody crosses an existing bridge:</strong> blue or yellow bridges <em>cannot</em> retroactively cross a red (or any other) bridge — they must route around it. A red bridge can only cut a scoring one <em>at the moment red is placed</em>; once on the board, red locks its line for everyone (Walter, 2026-05-27).</li>
                 <li><strong>Red can't cut red:</strong> a new red bridge is rejected if it would cross an existing red bridge — otherwise no defensive structures would be possible (Walter).</li>
                 <li><strong>Geometry:</strong> bridges can only be cut at their <em>inner</em> cells; the endpoints are immune.</li>
                 <li>Diagonals can cross between endpoint and inner cell.</li>
@@ -1064,19 +1065,20 @@
                         if (!row || !row.includes(idx)) continue;
                         const cls = classifyRow(row, player);
                         if (!cls) continue;
-                        // Don't re-create an existing bridge over the same cells (in either order)
-                        const sameAsExisting = activeBridges.some(b =>
-                            b.row.length === row.length &&
-                            (b.row.every((c,i) => c === row[i]) || b.row.every((c,i) => c === row[row.length-1-i]))
-                        );
-                        if (sameAsExisting) continue;
-                        // Don't propose extending an active 3-bridge to a 4-bridge (Walter's rule).
-                        const wouldExtend = activeBridges.some(b => {
+                        // Walter, 2026-05-27: a new bridge cannot share 2+ stones with
+                        // any active (non-cut) bridge. Subsumes the older "no 3→4
+                        // extension" + "no duplicate row" rules and also blocks the
+                        // overlapping case (existing [A,B,C] + new [B,C,D]), which
+                        // visually looks like an extension. Single-stone overlap is
+                        // still fine — that's how perpendicular crosses and the
+                        // 5-stone multi-bridge case both work.
+                        const sharesTwoPlus = activeBridges.some(b => {
                             if (b.cut) return false;
-                            if (b.row.length >= row.length) return false;
-                            return b.row.every(c => row.includes(c));
+                            let shared = 0;
+                            for (const c of row) if (b.row.includes(c)) shared++;
+                            return shared >= 2;
                         });
-                        if (wouldExtend) continue;
+                        if (sharesTwoPlus) continue;
                         const score = (len === 4 ? 100 : 50) + (cls.isScoring ? 10 : 0);
                         if (!best || score > best.score) best = { row, isRed: cls.isRed, isScoring: cls.isScoring, score };
                     }
@@ -1110,17 +1112,17 @@
             const isValidCandidate = (row) => {
                 if (!row) return false;
                 if (!classifyRow(row, player)) return false;
-                const sameAsExisting = activeBridges.some(b =>
-                    b.row.length === row.length &&
-                    (b.row.every((c,i) => c === row[i]) || b.row.every((c,i) => c === row[row.length-1-i]))
-                );
-                if (sameAsExisting) return false;
-                const wouldExtend = activeBridges.some(b => {
+                // Walter, 2026-05-27: reject any row that shares 2+ stones with an
+                // existing non-cut bridge. Subsumes "same row already built" and
+                // "would extend a 3 to a 4" and also blocks overlapping 3-bridges
+                // along the same line (which look like extensions).
+                const sharesTwoPlus = activeBridges.some(b => {
                     if (b.cut) return false;
-                    if (b.row.length >= row.length) return false;
-                    return b.row.every(c => row.includes(c));
+                    let shared = 0;
+                    for (const c of row) if (b.row.includes(c)) shared++;
+                    return shared >= 2;
                 });
-                if (wouldExtend) return false;
+                if (sharesTwoPlus) return false;
                 return true;
             };
             const result = [];
@@ -1303,21 +1305,21 @@
             if (row.length !== 3 && row.length !== 4) return;
             const cls = classifyRow(row, currentPlayer);
             if (!cls) return;
-            const sameAsExisting = activeBridges.some(b =>
-                b.row.length === row.length &&
-                (b.row.every((c,i) => c === row[i]) || b.row.every((c,i) => c === row[row.length-1-i]))
-            );
-            if (sameAsExisting) return;
-            // Walter's rule: a 3-bridge cannot be extended to a 4-bridge — the
-            // strategic tension is that committing to a 3 means your opponent doesn't
-            // have to worry about a 4. Reject if any active (non-cut) bridge's stones
-            // are fully contained in the new row.
-            const wouldExtendExisting = activeBridges.some(b => {
+            // Walter, 2026-05-27: a new bridge cannot share 2+ stones with any
+            // active (non-cut) bridge. "Bridges cannot be extended later!" —
+            // Walter. This covers three cases at once: re-forming the same row,
+            // extending a 3 to a 4 (existing 3 ⊂ new 4), and overlapping
+            // 3-bridges along the same line (e.g., existing [A,B,C] + new
+            // [B,C,D] visually look like a 4). Single-stone overlap is still
+            // allowed, which is how perpendicular crosses and the multi-bridge
+            // case work.
+            const sharesTwoPlus = activeBridges.some(b => {
                 if (b.cut) return false;
-                if (b.row.length >= row.length) return false;
-                return b.row.every(c => row.includes(c));
+                let shared = 0;
+                for (const c of row) if (b.row.includes(c)) shared++;
+                return shared >= 2;
             });
-            if (wouldExtendExisting) return;
+            if (sharesTwoPlus) return;
             const step = cellSize + gapSize;
             const x1 = (s%GRID_W)*step+cellSize/2, y1 = Math.floor(s/GRID_W)*step+cellSize/2;
             const x2 = (e%GRID_W)*step+cellSize/2, y2 = Math.floor(e/GRID_W)*step+cellSize/2;
@@ -1328,7 +1330,7 @@
                 // Red sees ALL bridges (red AND scoring) when checking collisions —
                 // Walter, 2026-05-27: a red bridge cannot cut another red bridge
                 // (otherwise defensive structures could be unwound by the same color
-                // that built them). Red is now tracked in activeBridges with
+                // that built them). Red is tracked in activeBridges with
                 // player:'red' so red-vs-red collisions are detectable.
                 const collision = checkCollision(c, false);
                 if (collision) {
@@ -1341,12 +1343,13 @@
                 drawBridge(c, 'red', bId);
                 bridgePlaced = true;
             } else {
-                // Scoring bridges ignore red bridges when checking collisions —
-                // Walter only asked for "red can't cut red", not "scoring can't
-                // cross red". Red's defensive value comes from cutting the scoring
-                // bridge AT CONSTRUCTION TIME, not from being a permanent block.
-                const collision = checkCollision(c, true);
-                if (collision) return;  // can't cross any existing scoring line (active or cut)
+                // Scoring bridges see ALL bridges (red AND scoring) — Walter,
+                // 2026-05-27: "the yellow or blue bridges cannot cross over the
+                // red ones (nobody can)". A scoring bridge can only be cut by
+                // red AT CONSTRUCTION TIME of the red bridge — once red is on
+                // the board, scoring lines must route around it.
+                const collision = checkCollision(c, false);
+                if (collision) return;  // can't cross any existing line (scoring, red, or cut)
                 const bId = Date.now();
                 activeBridges.push({id: bId, row, player: currentPlayer, coords: c, s, e, cut: false});
                 drawBridge(c, currentPlayer, bId);
