@@ -16,6 +16,7 @@ Every game has a **Share on WhatsApp** button (WhatsApp green `#25D366`) placed 
 
 - **Divided Loyalties:** `#up-the-stairs`, `#octopus`, `#wind-wheel`, `#gentle-kiss`, `#utopia`, `#e-m-3-w`, `#pyramid`, `#horseshoes`, `#swisscross`, `#picasso`, `#almostadiamond`, `#frankenstein` (+ numeric `#1`–`#12`) — same slugs work for `divided_loyalties.html` and `divided_loyalties_en.html`
 - **DUK / TIK kangaroo:** `#first-steps`, `#the-block`, `#shifting`, `#staircase`, `#scattered`, `#slant`, `#the-cross` — slugs are identical across all 5 language variants (DE/EN/JP/CN/UA), so `kangaroo_jp.html#the-cross` and `kangaroo_en.html#the-cross` land on the same level. Numeric `#1`–`#7` works as shorthand; trailing `b` selects start variant B (e.g. `#the-crossb`).
+- **Rules — `#rules` (Walter, 2026-05-28):** every game variant accepts `#rules` and opens its rules modal on load and on `hashchange` — so the rules can be shared per game *and* per language by URL. Examples: `kangaroo_jp.html#rules` opens the Japanese DUK rules, `divided_loyalties_en.html#rules` opens the English DL rules, `makalaina.html#rules` opens the MAKA LAINA rules. Works in every game (DUK ×5 languages, Divided Loyalties ×2, Democracy ×3, MAKA LAINA ×2, Capovolto, Rainbow Blackjack ×3, Frankenstein). `index.html` and `startpositionen.html` are intentionally excluded — they have no game rules of their own.
 
 Full clickable PDF reference: [`docs/parados_anchor_links.pdf`](docs/parados_anchor_links.pdf).
 
