@@ -1547,6 +1547,11 @@ document.addEventListener('keydown', e => {
         undoMove();
     }
 });
+
+// #rules deep-link — share rules per game/language
+function applyRulesHash() { if (location.hash === '#rules') openRules(); }
+window.addEventListener('hashchange', applyRulesHash);
+applyRulesHash();
 </script>
 </body>
 </html>

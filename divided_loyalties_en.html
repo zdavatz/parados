@@ -1993,13 +1993,19 @@
 
         async function startup() {
             STARTING_POSITIONS = await loadPositions();
-            const fromHash = findPositionByHash(location.hash);
-            if (fromHash) {
-                startWithPosition(fromHash);
-            } else {
+            if (location.hash === '#rules') {
                 showSetup();
+                toggleRules(true);
+            } else {
+                const fromHash = findPositionByHash(location.hash);
+                if (fromHash) {
+                    startWithPosition(fromHash);
+                } else {
+                    showSetup();
+                }
             }
             window.addEventListener('hashchange', () => {
+                if (location.hash === '#rules') { toggleRules(true); return; }
                 const p = findPositionByHash(location.hash);
                 if (p) {
                     document.getElementById('setup-overlay').style.display = 'none';

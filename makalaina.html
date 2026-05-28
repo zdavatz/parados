@@ -2066,9 +2066,15 @@
     // #editor — opened from the central startpositionen.html hub: go
     // straight into a fresh disc-position editor. #loadopening — focus the
     // setup so Walter can use the 📥 Load opening (CSV) button right away.
+    // #rules — open rules modal (shareable per game/language).
     if (location.hash === '#editor') {
         mlOpenEditor(null);
+    } else if (location.hash === '#rules') {
+        toggleRules(true);
     }
+    window.addEventListener('hashchange', () => {
+        if (location.hash === '#rules') toggleRules(true);
+    });
 </script>
 </body>
 </html>

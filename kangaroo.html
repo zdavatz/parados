@@ -1541,9 +1541,13 @@
         return true;
     }
 
-    if (!applyHashLevel()) initGame();
+    if (location.hash === '#rules') { initGame(); openRules(); }
+    else if (!applyHashLevel()) initGame();
 
-    window.addEventListener('hashchange', () => { applyHashLevel(); });
+    window.addEventListener('hashchange', () => {
+        if (location.hash === '#rules') { openRules(); return; }
+        applyHashLevel();
+    });
 
 </script>
 </body>

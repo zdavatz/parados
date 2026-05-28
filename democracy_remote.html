@@ -1154,6 +1154,13 @@
     setupGame();
     render();
     logChat(0, "Lokaler 2-Spieler-Modus. Für Online: ID eingeben und ONLINE klicken.");
+
+    // #rules deep-link — share rules per game/language
+    function applyRulesHash() {
+        if (location.hash === '#rules') document.getElementById('rules-modal').style.display = 'flex';
+    }
+    window.addEventListener('hashchange', applyRulesHash);
+    applyRulesHash();
 </script>
 </body>
 </html>
