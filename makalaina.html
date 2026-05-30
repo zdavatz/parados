@@ -212,7 +212,7 @@
                 <ul>
                     <li><b>Number 1:</b> Immediate extra turn.</li>
                     <li><b>Number 6:</b> Future discs of that color are worthless for you.</li>
-                    <li><b>Stuck?</b> Your opponent chooses which of your collected primary discs to sacrifice: your score for that color decreases, but your collector can move up to that many squares freely.</li>
+                    <li><b>Stuck?</b> Your opponent chooses which of your collected primary discs to sacrifice: your score for that color decreases, but your collector can move up to that many squares freely. <b>Nothing to sacrifice?</b> You still get a free escape move of up to 2 squares — so being trapped early is never an instant loss.</li>
                 </ul>
                 <button class="close-btn" onclick="toggleRules(false)" style="display:block; margin:18px auto 0; padding:12px 36px; font-size:1.1em; cursor:pointer; border:none; border-radius:8px; background:#27ae60; color:white; font-weight:bold;">Got it!</button>
             </div>
@@ -336,10 +336,15 @@
         sacrificingPlayer = snap.sacrificingPlayer || 0;
         isFirstMove = !!snap.isFirstMove;
 
-        // Transient panels — always hide on undo; the snapshots are taken at
-        // stable states (PLAY / SACRIFICE_MOVE / END), never mid-modal.
-        document.getElementById('draft-panel').style.display = 'none';
+        // Transient panels: hide the sacrifice (opponent-pick) panel; but if we
+        // landed back on a DRAFT_PLACE snapshot, re-show the draft panel so the
+        // drafted disc is in hand again, ready to re-place on another square.
         document.getElementById('sacrifice-panel').style.display = 'none';
+        if (gameState === 'DRAFT_PLACE' && draftChosen) {
+            showDraftPlacePanel(draftChosen);
+        } else {
+            document.getElementById('draft-panel').style.display = 'none';
+        }
         // Exit post-game review mode if it was active
         isReviewing = false;
 
@@ -678,30 +683,37 @@
         cells[newIdx] = { type: 'collector', player: currentPlayer };
         selectedIdx = null;
         relinquished[1] = relinquished[2] = false;
-        saveSnapshot(`${pName} collects ${disc.color} ${disc.num || ''}${disc.num === 6 ? ' (worthless!)' : ''}${disc.num === 1 ? ' (extra turn!)' : ''}`);
+        const collectDesc = `${pName} collects ${disc.color} ${disc.num || ''}${disc.num === 6 ? ' (worthless!)' : ''}${disc.num === 1 ? ' (extra turn!)' : ''}`;
 
         // Check if all discs collected and bag empty
         const remaining = cells.filter(c => c && c.type !== 'collector').length;
         if (remaining === 0 && bag.length === 0) {
             gameState = 'END';
+            saveSnapshot(collectDesc);
             updateUI(); render();
             return;
         }
 
-        // Draft: draw 1 disc from bag, player must place it
+        // Draft: draw 1 disc from bag, player must place it. Snapshot the
+        // DRAFT_PLACE state (disc already in hand) so undoing the placement
+        // returns the player here, disc ready to re-place on another square.
         if (bag.length > 0) {
             pendingExtraTurn = (disc.num === 1);
             draftChosen = bag.pop();
             gameState = 'DRAFT_PLACE';
+            saveSnapshot(collectDesc);
             showDraftPlacePanel(draftChosen);
             updateUI(); render();
             return;
         }
 
-        // No draft: normal turn switch
+        // No draft (bag empty): switch the turn FIRST, then snapshot — so the
+        // saved state records whose turn it now is. Snapshotting before the
+        // switch made undo restore the previous mover as the current player.
         if (disc.num !== 1) {
             currentPlayer = currentPlayer === 1 ? 2 : 1;
         }
+        saveSnapshot(collectDesc);
         updateUI(); render();
     }
 
@@ -725,19 +737,36 @@
 
     // --- SACRIFICE SYSTEM ---
 
+    // Walter's escape rule (2026-05-29): a trapped player with nothing to
+    // sacrifice gets a free move of up to 2 squares instead of being stuck
+    // (which used to be a near-certain loss). This discourages trapping the
+    // opponent too early — an early trap no longer wins on the spot. Returns
+    // true if a free move was set up; false if even a 2-square move is
+    // impossible (truly boxed in).
+    function freeEscapeMove(player) {
+        if (getReachableCells(collectors[player], 2).length === 0) return false;
+        sacrificingPlayer = player;
+        sacrificeRange = 2;
+        currentPlayer = player;
+        gameState = 'SACRIFICE_MOVE';
+        return true;
+    }
+
     function sacrificeTurn() {
         if (gameState !== 'PLAY') return;
         sacrificingPlayer = currentPlayer;
         const primaryDiscs = collectedDiscs[sacrificingPlayer].filter(d => d.type === 'primary');
         if (primaryDiscs.length === 0) {
-            // No primary discs to sacrifice: forced relinquish
+            // Nothing to sacrifice → free escape move (Walter's rule).
             const sName = sacrificingPlayer === 1 ? 'Black' : 'White';
-            relinquished[sacrificingPlayer] = true;
-            saveSnapshot(`${sName} forced relinquish (no discs to sacrifice)`);
-            if (relinquished[1] && relinquished[2]) {
-                gameState = 'END';
+            if (freeEscapeMove(sacrificingPlayer)) {
+                saveSnapshot(`${sName} has nothing to sacrifice — free move (up to 2)`);
             } else {
-                currentPlayer = currentPlayer === 1 ? 2 : 1;
+                // Truly boxed in: relinquish as a last resort.
+                relinquished[sacrificingPlayer] = true;
+                if (relinquished[1] && relinquished[2]) gameState = 'END';
+                else currentPlayer = sacrificingPlayer === 1 ? 2 : 1;
+                saveSnapshot(`${sName} forced relinquish (no escape)`);
             }
             updateUI(); render();
             return;
@@ -755,12 +784,14 @@
         const rName = currentPlayer === 1 ? 'Black' : 'White';
         relinquishCount[currentPlayer]++;
         relinquished[currentPlayer] = true;
-        saveSnapshot(`${rName} relinquishes turn (${RELINQUISH_LIMIT - relinquishCount[currentPlayer]} left)`);
+        const rLeft = RELINQUISH_LIMIT - relinquishCount[currentPlayer];
         if (relinquished[1] && relinquished[2]) {
             gameState = 'END';
         } else {
             currentPlayer = currentPlayer === 1 ? 2 : 1;
         }
+        // Snapshot AFTER the switch so undo restores whose turn it now is.
+        saveSnapshot(`${rName} relinquishes turn (${rLeft} left)`);
         updateUI(); render();
     }
 
@@ -895,7 +926,10 @@
             relBtn.innerText = `Relinquish Turn (${remaining}/${RELINQUISH_LIMIT})`;
         }
         if (stuckHint) {
-            if (stuck && !canRelinquish) {
+            const noDiscs = collectedDiscs[currentPlayer].filter(d => d.type === 'primary').length === 0;
+            if (stuck && noDiscs) {
+                stuckHint.innerText = 'No valid move & nothing to sacrifice — press “Sacrifice & Move” to escape up to 2 squares.';
+            } else if (stuck && !canRelinquish) {
                 stuckHint.innerText = 'No valid move! No relinquishes left — you must sacrifice a disc!';
             } else if (stuck) {
                 stuckHint.innerText = 'No valid move! Sacrifice a disc (opponent picks) or relinquish your turn.';
@@ -909,19 +943,21 @@
             undoBtn.style.opacity = canUndo ? '1' : '0.4';
             undoBtn.style.cursor = canUndo ? 'pointer' : 'default';
         }
-        // Force sacrifice when stuck, no relinquishes left, and no primary discs
+        // Stuck, no relinquishes left, nothing to sacrifice: grant a free
+        // escape move (Walter's rule) instead of ending the game; only end if
+        // even a 2-square move is impossible (truly boxed in).
         if (stuck && !canRelinquish) {
             const primaryDiscs = collectedDiscs[currentPlayer].filter(d => d.type === 'primary');
             if (primaryDiscs.length === 0) {
-                // Cannot sacrifice either — game ends
                 const fName = currentPlayer === 1 ? 'Black' : 'White';
-                relinquished[currentPlayer] = true;
-                saveSnapshot(`${fName} forced end (no relinquishes, no discs to sacrifice)`);
-                if (relinquished[1] && relinquished[2]) {
-                    gameState = 'END';
+                if (freeEscapeMove(currentPlayer)) {
+                    saveSnapshot(`${fName} has nothing to sacrifice — free move (up to 2)`);
                     updateUI(); render();
                 } else {
-                    currentPlayer = currentPlayer === 1 ? 2 : 1;
+                    relinquished[currentPlayer] = true;
+                    saveSnapshot(`${fName} forced end (no escape)`);
+                    if (relinquished[1] && relinquished[2]) { gameState = 'END'; }
+                    else { currentPlayer = currentPlayer === 1 ? 2 : 1; }
                     updateUI(); render();
                 }
             }
