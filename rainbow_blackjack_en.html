@@ -1513,11 +1513,12 @@ function shareOnWhatsApp() {
     const shareUrl = /^(file|parados):$/.test(window.location.protocol) ? "https://game.ywesee.com/parados/" + (window.location.pathname.split("/").pop() || "index.html") : window.location.href;
     const msg = `Play Rainbow Blackjack: ${shareUrl}\n\nGet the Parados app:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
     if (navigator.share) { navigator.share({ text: msg }).catch(() => {}); return; }
-    const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
-    const inIOSApp = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.csvExport);
-    if (inIOSApp) { window.location.href = url; return; }
-    const w = window.open(url, '_blank');
-    if (!w) { window.location.href = url; }
+    // No share API (Android WebView, in-app browsers): copy to clipboard.
+    // Never wa.me — Android WebView can't dispatch whatsapp:// (ERR_UNKNOWN_URL_SCHEME).
+    const note = 'Message copied — paste it into WhatsApp.';
+    const fallback = () => { const ta = document.createElement('textarea'); ta.value = msg; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); let ok=false; try { ok = document.execCommand('copy'); } catch {} ta.remove(); if (ok) alert(note); else prompt(note, msg); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(msg).then(() => alert(note)).catch(fallback);
+    else fallback();
 }
 
 // ══════════════════════════════

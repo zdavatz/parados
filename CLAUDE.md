@@ -79,9 +79,9 @@ Every game has a Share-on-WhatsApp button right of the `<h1>` (green `#25D366`, 
 `shareOnWhatsApp()` flow:
 1. If `window.location.protocol === "file:"`, rewrite to `https://game.ywesee.com/parados/<filename>` (WebView container paths are useless to recipients). **Keep this guard for any new game.**
 2. Try `navigator.share({ text: msg })` first.
-3. Only if `navigator.share` is missing, fall back to `wa.me/?text=` (iOS: `window.location.href`; else `window.open`).
+3. If `navigator.share` is missing, copy `msg` to the clipboard and `alert()` the user to paste it into WhatsApp. **NEVER `wa.me` (Walter, 2026-05-31).**
 
-The `navigator.share` short-circuit prevents Android WebView from following `wa.me`'s redirect to `whatsapp://` and hitting `ERR_UNKNOWN_URL_SCHEME`. Do NOT reorder.
+**No `wa.me/?text=` anywhere — text shares too (Walter, 2026-05-31):** the old fallback redirected to `whatsapp://send/?text=…` and Android WebView (and some in-app browsers) can't dispatch the scheme → `net::ERR_UNKNOWN_URL_SCHEME` ("Web page not available"). The replacement is the same pattern as file shares: try `navigator.clipboard.writeText(msg)`, fall back to a hidden `<textarea>` + `document.execCommand('copy')`, then `alert()` a localized "Message copied — paste it into WhatsApp" (DE/EN/JP/CN/UA per file `lang=`). If even the textarea copy fails, `prompt(note, msg)` shows the text so the user can long-press to copy. Applied to all 17 game files (`democracy×3`, `kangaroo×5`, `divided_loyalties×2`, `makalaina×2`, `capovolto`, `frankenstein`, `rainbow_blackjack×3`). The `navigator.share` short-circuit stays first so iOS/Mac/desktop browsers keep the native share sheet — only the no-share fallback changed.
 
 For file shares (CSV / saved game JSON), use `navigator.share({ files:[file], title:'…' })` — no `text:`, no `wa.me` fallback. See divided_loyalties guardrails.
 
