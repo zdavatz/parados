@@ -2,109 +2,136 @@
 <html lang="en"><head><meta charset="utf-8">
 <title>Parados — Direct-Entry Links</title>
 <style>
-  @page { size: A4 landscape; margin: 1.4cm; }
-  body { font-family: 'Helvetica Neue', Arial, sans-serif; color:#111; font-size:10pt; }
-  h1 { font-size:18pt; margin:0 0 2px; }
-  h2 { font-size:13pt; margin:18px 0 2px; color:#1a5276; border-bottom:2px solid #1a5276; padding-bottom:2px; }
-  h3 { font-size:11pt; margin:10px 0 2px; color:#444; }
-  p.lede { color:#444; margin:0 0 6px; }
-  p.note { color:#555; font-style:italic; margin:4px 0 0; }
-  table { border-collapse:collapse; width:100%; margin:4px 0 6px; }
-  col.c-num { width:6%; } col.c-name { width:24%; }
-  col.c-slug { width:14%; } col.c-title { width:30%; }
-  col.c-url { width:70%; }
-  th, td { border:1px solid #ccc; padding:3px 6px; text-align:left; vertical-align:top; }
-  th { background:#eef3f8; font-size:9pt; }
-  td.u, td.slug { font-family:'Courier New', monospace; font-size:8.5pt; }
-  td.u { word-break:break-all; }
+  @page {
+    size: A4 landscape; margin: 14mm 16mm;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    font-family: 'Helvetica Neue', 'Segoe UI', 'Noto Sans', Arial, sans-serif;
+    color:#1b2430; font-size:9.5pt; line-height:1.35; margin:0;
+  }
+  h1 { font-size:21pt; font-weight:700; letter-spacing:-0.3px; margin:0 0 2px; color:#0f1b2d; }
+  .lede { color:#5a6b7b; margin:0 0 2px; font-size:10pt; }
+  .rule { height:3px; background:linear-gradient(90deg,#1a5276,#48a0c9); border-radius:2px; margin:8px 0 4px; }
+
+  h2 {
+    font-size:12.5pt; font-weight:700; margin:16px 0 6px; color:#0f1b2d;
+    border-left:5px solid #1a5276; padding:2px 0 2px 9px;
+  }
+  h3 { font-size:10.5pt; font-weight:600; margin:11px 0 3px; color:#1a5276; }
+  p.note { color:#6a7886; font-size:8.7pt; margin:3px 0 5px; }
+
+  table {
+    border-collapse:collapse; width:100%; table-layout:fixed; margin:3px 0 4px;
+  }
+  /* Shared grid → columns line up vertically across every table/page */
+  col.c-key { width:11%; }
+  col.c-label { width:31%; }
+  col.c-url { width:58%; }
+  thead { display:table-header-group; }     /* repeat header on page breaks */
+  tr { break-inside:avoid; }
+  th {
+    background:#1a5276; color:#fff; font-size:8.5pt; font-weight:600;
+    text-align:left; padding:5px 9px; letter-spacing:0.3px;
+  }
+  th:first-child { border-top-left-radius:4px; }
+  th:last-child { border-top-right-radius:4px; }
+  td { padding:4px 9px; vertical-align:middle; border-bottom:1px solid #e4e9ee; }
+  tbody tr:nth-child(even) { background:#f4f7fa; }
+  td.key { color:#34495e; font-weight:600; }
+  td.mono { font-family:'SF Mono','Consolas','Courier New',monospace; font-size:8.4pt; color:#1a5276; }
+  td.u { font-family:'SF Mono','Consolas','Courier New',monospace; font-size:8.2pt; word-break:break-all; }
   a { color:#1558b0; text-decoration:none; }
-  .foot { margin-top:14px; font-size:9pt; color:#666; }
+
+  .foot { margin-top:16px; padding-top:7px; border-top:1px solid #d7dee4; font-size:8.5pt; color:#7a8794; }
 </style></head><body>
 
 <h1>Parados — Direct-Entry Links</h1>
-<p class="lede">Click a link to open the game directly at the named starting position. The setup screen is skipped on match.</p>
+<p class="lede">Click any link to open the game directly at the named starting position — the setup screen is skipped on match.</p>
+<div class="rule"></div>
 
-<h2>Divided Loyalties — German (divided_loyalties.html)</h2>
-<table><colgroup><col class='c-num'><col class='c-name'><col class='c-url'></colgroup><thead><tr><th>#</th><th>Name</th><th>URL</th></tr></thead><tbody><tr><td>1</td><td>Up the Stairs</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties.html#up-the-stairs">https://game.ywesee.com/parados/divided_loyalties.html#up-the-stairs</a></td></tr>
-<tr><td>2</td><td>Octopus</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties.html#octopus">https://game.ywesee.com/parados/divided_loyalties.html#octopus</a></td></tr>
-<tr><td>3</td><td>Wind wheel</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties.html#wind-wheel">https://game.ywesee.com/parados/divided_loyalties.html#wind-wheel</a></td></tr>
-<tr><td>4</td><td>Gentle kiss</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties.html#gentle-kiss">https://game.ywesee.com/parados/divided_loyalties.html#gentle-kiss</a></td></tr>
-<tr><td>5</td><td>Utopia</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties.html#utopia">https://game.ywesee.com/parados/divided_loyalties.html#utopia</a></td></tr>
-<tr><td>6</td><td>E M 3 W</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties.html#e-m-3-w">https://game.ywesee.com/parados/divided_loyalties.html#e-m-3-w</a></td></tr>
-<tr><td>7</td><td>Pyramid</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties.html#pyramid">https://game.ywesee.com/parados/divided_loyalties.html#pyramid</a></td></tr>
-<tr><td>8</td><td>Horseshoes</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties.html#horseshoes">https://game.ywesee.com/parados/divided_loyalties.html#horseshoes</a></td></tr>
-<tr><td>9</td><td>SwissCross</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties.html#swisscross">https://game.ywesee.com/parados/divided_loyalties.html#swisscross</a></td></tr>
-<tr><td>10</td><td>Picasso</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties.html#picasso">https://game.ywesee.com/parados/divided_loyalties.html#picasso</a></td></tr>
-<tr><td>11</td><td>AlmostADiamond</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties.html#almostadiamond">https://game.ywesee.com/parados/divided_loyalties.html#almostadiamond</a></td></tr>
-<tr><td>12</td><td>Frankenstein</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties.html#frankenstein">https://game.ywesee.com/parados/divided_loyalties.html#frankenstein</a></td></tr></tbody></table>
+<h2>Divided Loyalties — German <span style="font-weight:400;color:#6a7886;">(divided_loyalties.html)</span></h2>
+<table><colgroup><col class='c-key'><col class='c-label'><col class='c-url'></colgroup><thead><tr><th>#</th><th>Name</th><th>URL</th></tr></thead><tbody><tr><td class='key'>1</td><td>Up the Stairs</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties.html#up-the-stairs">https://game.ywesee.com/parados/divided_loyalties.html#up-the-stairs</a></td></tr>
+<tr><td class='key'>2</td><td>Octopus</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties.html#octopus">https://game.ywesee.com/parados/divided_loyalties.html#octopus</a></td></tr>
+<tr><td class='key'>3</td><td>Wind wheel</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties.html#wind-wheel">https://game.ywesee.com/parados/divided_loyalties.html#wind-wheel</a></td></tr>
+<tr><td class='key'>4</td><td>Gentle kiss</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties.html#gentle-kiss">https://game.ywesee.com/parados/divided_loyalties.html#gentle-kiss</a></td></tr>
+<tr><td class='key'>5</td><td>Utopia</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties.html#utopia">https://game.ywesee.com/parados/divided_loyalties.html#utopia</a></td></tr>
+<tr><td class='key'>6</td><td>E M 3 W</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties.html#e-m-3-w">https://game.ywesee.com/parados/divided_loyalties.html#e-m-3-w</a></td></tr>
+<tr><td class='key'>7</td><td>Pyramid</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties.html#pyramid">https://game.ywesee.com/parados/divided_loyalties.html#pyramid</a></td></tr>
+<tr><td class='key'>8</td><td>Horseshoes</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties.html#horseshoes">https://game.ywesee.com/parados/divided_loyalties.html#horseshoes</a></td></tr>
+<tr><td class='key'>9</td><td>SwissCross</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties.html#swisscross">https://game.ywesee.com/parados/divided_loyalties.html#swisscross</a></td></tr>
+<tr><td class='key'>10</td><td>Picasso</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties.html#picasso">https://game.ywesee.com/parados/divided_loyalties.html#picasso</a></td></tr>
+<tr><td class='key'>11</td><td>AlmostADiamond</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties.html#almostadiamond">https://game.ywesee.com/parados/divided_loyalties.html#almostadiamond</a></td></tr>
+<tr><td class='key'>12</td><td>Frankenstein</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties.html#frankenstein">https://game.ywesee.com/parados/divided_loyalties.html#frankenstein</a></td></tr></tbody></table>
 <p class="note">Numeric shorthand also works: #1 … #12.</p>
 
-<h2>Divided Loyalties — English (divided_loyalties_en.html)</h2>
-<p class="note">Same anchors as the German version — position names are stored in English, so a German player can share a link with an English friend without translating the URL.</p>
-<table><colgroup><col class='c-num'><col class='c-name'><col class='c-url'></colgroup><thead><tr><th>#</th><th>Name</th><th>URL</th></tr></thead><tbody><tr><td>1</td><td>Up the Stairs</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties_en.html#up-the-stairs">https://game.ywesee.com/parados/divided_loyalties_en.html#up-the-stairs</a></td></tr>
-<tr><td>2</td><td>Octopus</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties_en.html#octopus">https://game.ywesee.com/parados/divided_loyalties_en.html#octopus</a></td></tr>
-<tr><td>3</td><td>Wind wheel</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties_en.html#wind-wheel">https://game.ywesee.com/parados/divided_loyalties_en.html#wind-wheel</a></td></tr>
-<tr><td>4</td><td>Gentle kiss</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties_en.html#gentle-kiss">https://game.ywesee.com/parados/divided_loyalties_en.html#gentle-kiss</a></td></tr>
-<tr><td>5</td><td>Utopia</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties_en.html#utopia">https://game.ywesee.com/parados/divided_loyalties_en.html#utopia</a></td></tr>
-<tr><td>6</td><td>E M 3 W</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties_en.html#e-m-3-w">https://game.ywesee.com/parados/divided_loyalties_en.html#e-m-3-w</a></td></tr>
-<tr><td>7</td><td>Pyramid</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties_en.html#pyramid">https://game.ywesee.com/parados/divided_loyalties_en.html#pyramid</a></td></tr>
-<tr><td>8</td><td>Horseshoes</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties_en.html#horseshoes">https://game.ywesee.com/parados/divided_loyalties_en.html#horseshoes</a></td></tr>
-<tr><td>9</td><td>SwissCross</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties_en.html#swisscross">https://game.ywesee.com/parados/divided_loyalties_en.html#swisscross</a></td></tr>
-<tr><td>10</td><td>Picasso</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties_en.html#picasso">https://game.ywesee.com/parados/divided_loyalties_en.html#picasso</a></td></tr>
-<tr><td>11</td><td>AlmostADiamond</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties_en.html#almostadiamond">https://game.ywesee.com/parados/divided_loyalties_en.html#almostadiamond</a></td></tr>
-<tr><td>12</td><td>Frankenstein</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties_en.html#frankenstein">https://game.ywesee.com/parados/divided_loyalties_en.html#frankenstein</a></td></tr></tbody></table>
+<h2>Divided Loyalties — English <span style="font-weight:400;color:#6a7886;">(divided_loyalties_en.html)</span></h2>
+<p class="note">Same anchors as the German version — position names are stored in English, so a German player can share a link with an English-speaking friend without translating the URL.</p>
+<table><colgroup><col class='c-key'><col class='c-label'><col class='c-url'></colgroup><thead><tr><th>#</th><th>Name</th><th>URL</th></tr></thead><tbody><tr><td class='key'>1</td><td>Up the Stairs</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties_en.html#up-the-stairs">https://game.ywesee.com/parados/divided_loyalties_en.html#up-the-stairs</a></td></tr>
+<tr><td class='key'>2</td><td>Octopus</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties_en.html#octopus">https://game.ywesee.com/parados/divided_loyalties_en.html#octopus</a></td></tr>
+<tr><td class='key'>3</td><td>Wind wheel</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties_en.html#wind-wheel">https://game.ywesee.com/parados/divided_loyalties_en.html#wind-wheel</a></td></tr>
+<tr><td class='key'>4</td><td>Gentle kiss</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties_en.html#gentle-kiss">https://game.ywesee.com/parados/divided_loyalties_en.html#gentle-kiss</a></td></tr>
+<tr><td class='key'>5</td><td>Utopia</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties_en.html#utopia">https://game.ywesee.com/parados/divided_loyalties_en.html#utopia</a></td></tr>
+<tr><td class='key'>6</td><td>E M 3 W</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties_en.html#e-m-3-w">https://game.ywesee.com/parados/divided_loyalties_en.html#e-m-3-w</a></td></tr>
+<tr><td class='key'>7</td><td>Pyramid</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties_en.html#pyramid">https://game.ywesee.com/parados/divided_loyalties_en.html#pyramid</a></td></tr>
+<tr><td class='key'>8</td><td>Horseshoes</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties_en.html#horseshoes">https://game.ywesee.com/parados/divided_loyalties_en.html#horseshoes</a></td></tr>
+<tr><td class='key'>9</td><td>SwissCross</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties_en.html#swisscross">https://game.ywesee.com/parados/divided_loyalties_en.html#swisscross</a></td></tr>
+<tr><td class='key'>10</td><td>Picasso</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties_en.html#picasso">https://game.ywesee.com/parados/divided_loyalties_en.html#picasso</a></td></tr>
+<tr><td class='key'>11</td><td>AlmostADiamond</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties_en.html#almostadiamond">https://game.ywesee.com/parados/divided_loyalties_en.html#almostadiamond</a></td></tr>
+<tr><td class='key'>12</td><td>Frankenstein</td><td class='u'><a href="https://game.ywesee.com/parados/divided_loyalties_en.html#frankenstein">https://game.ywesee.com/parados/divided_loyalties_en.html#frankenstein</a></td></tr></tbody></table>
 <p class="note">Numeric shorthand also works: #1 … #12.</p>
 
-<h2>The Impatient Kangaroo — DUK (German) / TIK (English) / localized names</h2>
-<p class="note">7 levels × 5 language variants. Slugs are identical across languages, so a German player can share a link with an English friend without translating the URL. The DUK acronym is German-only; English is rebranded TIK; JP/CN/UA use the full localized name.</p>
+<h2>The Impatient Kangaroo <span style="font-weight:400;color:#6a7886;">— DUK (DE) · TIK (EN) · localized names</span></h2>
+<p class="note">7 levels × 5 language variants. Slugs are identical across languages, so a link shares cleanly between players of different languages. The DUK acronym is German-only; English is rebranded TIK; JP/CN/UA use the full localized name.</p>
 
 <h3>German — DUK (kangaroo.html)</h3>
-<table><colgroup><col class='c-slug'><col class='c-title'><col class='c-url'></colgroup><thead><tr><th>Slug</th><th>Title</th><th>URL</th></tr></thead><tbody><tr><td class='slug'>first-steps</td><td>Stufe 1: Erste Schritte</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo.html#first-steps">https://game.ywesee.com/parados/kangaroo.html#first-steps</a></td></tr>
-<tr><td class='slug'>the-block</td><td>Stufe 2: Der Block</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo.html#the-block">https://game.ywesee.com/parados/kangaroo.html#the-block</a></td></tr>
-<tr><td class='slug'>shifting</td><td>Stufe 3: Verschieben</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo.html#shifting">https://game.ywesee.com/parados/kangaroo.html#shifting</a></td></tr>
-<tr><td class='slug'>staircase</td><td>Stufe 1: Treppe</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo.html#staircase">https://game.ywesee.com/parados/kangaroo.html#staircase</a></td></tr>
-<tr><td class='slug'>scattered</td><td>Stufe 2: Verstreut</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo.html#scattered">https://game.ywesee.com/parados/kangaroo.html#scattered</a></td></tr>
-<tr><td class='slug'>slant</td><td>Stufe 3: Schräglage</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo.html#slant">https://game.ywesee.com/parados/kangaroo.html#slant</a></td></tr>
-<tr><td class='slug'>the-cross</td><td>Stufe 1: Das Kreuz</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo.html#the-cross">https://game.ywesee.com/parados/kangaroo.html#the-cross</a></td></tr></tbody></table>
+<table><colgroup><col class='c-key'><col class='c-label'><col class='c-url'></colgroup><thead><tr><th>Slug</th><th>Title</th><th>URL</th></tr></thead><tbody><tr><td class='key mono'>first-steps</td><td>Stufe 1: Erste Schritte</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo.html#first-steps">https://game.ywesee.com/parados/kangaroo.html#first-steps</a></td></tr>
+<tr><td class='key mono'>the-block</td><td>Stufe 2: Der Block</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo.html#the-block">https://game.ywesee.com/parados/kangaroo.html#the-block</a></td></tr>
+<tr><td class='key mono'>shifting</td><td>Stufe 3: Verschieben</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo.html#shifting">https://game.ywesee.com/parados/kangaroo.html#shifting</a></td></tr>
+<tr><td class='key mono'>staircase</td><td>Stufe 1: Treppe</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo.html#staircase">https://game.ywesee.com/parados/kangaroo.html#staircase</a></td></tr>
+<tr><td class='key mono'>scattered</td><td>Stufe 2: Verstreut</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo.html#scattered">https://game.ywesee.com/parados/kangaroo.html#scattered</a></td></tr>
+<tr><td class='key mono'>slant</td><td>Stufe 3: Schräglage</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo.html#slant">https://game.ywesee.com/parados/kangaroo.html#slant</a></td></tr>
+<tr><td class='key mono'>the-cross</td><td>Stufe 1: Das Kreuz</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo.html#the-cross">https://game.ywesee.com/parados/kangaroo.html#the-cross</a></td></tr></tbody></table>
 
 <h3>English — TIK (kangaroo_en.html)</h3>
-<table><colgroup><col class='c-slug'><col class='c-title'><col class='c-url'></colgroup><thead><tr><th>Slug</th><th>Title</th><th>URL</th></tr></thead><tbody><tr><td class='slug'>first-steps</td><td>Level 1: First steps</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_en.html#first-steps">https://game.ywesee.com/parados/kangaroo_en.html#first-steps</a></td></tr>
-<tr><td class='slug'>the-block</td><td>Level 2: The Block</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_en.html#the-block">https://game.ywesee.com/parados/kangaroo_en.html#the-block</a></td></tr>
-<tr><td class='slug'>shifting</td><td>Level 3: Practice Moving</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_en.html#shifting">https://game.ywesee.com/parados/kangaroo_en.html#shifting</a></td></tr>
-<tr><td class='slug'>staircase</td><td>Level 1: Staircase</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_en.html#staircase">https://game.ywesee.com/parados/kangaroo_en.html#staircase</a></td></tr>
-<tr><td class='slug'>scattered</td><td>Level 2: Scattered</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_en.html#scattered">https://game.ywesee.com/parados/kangaroo_en.html#scattered</a></td></tr>
-<tr><td class='slug'>slant</td><td>Level 3: Diagonal</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_en.html#slant">https://game.ywesee.com/parados/kangaroo_en.html#slant</a></td></tr>
-<tr><td class='slug'>the-cross</td><td>Level 1: The Cross</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_en.html#the-cross">https://game.ywesee.com/parados/kangaroo_en.html#the-cross</a></td></tr></tbody></table>
+<table><colgroup><col class='c-key'><col class='c-label'><col class='c-url'></colgroup><thead><tr><th>Slug</th><th>Title</th><th>URL</th></tr></thead><tbody><tr><td class='key mono'>first-steps</td><td>Level 1: First steps</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_en.html#first-steps">https://game.ywesee.com/parados/kangaroo_en.html#first-steps</a></td></tr>
+<tr><td class='key mono'>the-block</td><td>Level 2: The Block</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_en.html#the-block">https://game.ywesee.com/parados/kangaroo_en.html#the-block</a></td></tr>
+<tr><td class='key mono'>shifting</td><td>Level 3: Practice Moving</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_en.html#shifting">https://game.ywesee.com/parados/kangaroo_en.html#shifting</a></td></tr>
+<tr><td class='key mono'>staircase</td><td>Level 1: Staircase</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_en.html#staircase">https://game.ywesee.com/parados/kangaroo_en.html#staircase</a></td></tr>
+<tr><td class='key mono'>scattered</td><td>Level 2: Scattered</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_en.html#scattered">https://game.ywesee.com/parados/kangaroo_en.html#scattered</a></td></tr>
+<tr><td class='key mono'>slant</td><td>Level 3: Diagonal</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_en.html#slant">https://game.ywesee.com/parados/kangaroo_en.html#slant</a></td></tr>
+<tr><td class='key mono'>the-cross</td><td>Level 1: The Cross</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_en.html#the-cross">https://game.ywesee.com/parados/kangaroo_en.html#the-cross</a></td></tr></tbody></table>
 
 <h3>Japanese (kangaroo_jp.html)</h3>
-<table><colgroup><col class='c-slug'><col class='c-title'><col class='c-url'></colgroup><thead><tr><th>Slug</th><th>Title</th><th>URL</th></tr></thead><tbody><tr><td class='slug'>first-steps</td><td>レベル 1: はじめてのステップ</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_jp.html#first-steps">https://game.ywesee.com/parados/kangaroo_jp.html#first-steps</a></td></tr>
-<tr><td class='slug'>the-block</td><td>レベル 2: ブロック</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_jp.html#the-block">https://game.ywesee.com/parados/kangaroo_jp.html#the-block</a></td></tr>
-<tr><td class='slug'>shifting</td><td>レベル 3: お皿を動かす練習</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_jp.html#shifting">https://game.ywesee.com/parados/kangaroo_jp.html#shifting</a></td></tr>
-<tr><td class='slug'>staircase</td><td>レベル 1: 階段</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_jp.html#staircase">https://game.ywesee.com/parados/kangaroo_jp.html#staircase</a></td></tr>
-<tr><td class='slug'>scattered</td><td>レベル 2: 散在</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_jp.html#scattered">https://game.ywesee.com/parados/kangaroo_jp.html#scattered</a></td></tr>
-<tr><td class='slug'>slant</td><td>レベル 3: 斜め</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_jp.html#slant">https://game.ywesee.com/parados/kangaroo_jp.html#slant</a></td></tr>
-<tr><td class='slug'>the-cross</td><td>レベル 1: クロス</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_jp.html#the-cross">https://game.ywesee.com/parados/kangaroo_jp.html#the-cross</a></td></tr></tbody></table>
+<table><colgroup><col class='c-key'><col class='c-label'><col class='c-url'></colgroup><thead><tr><th>Slug</th><th>Title</th><th>URL</th></tr></thead><tbody><tr><td class='key mono'>first-steps</td><td>レベル 1: はじめてのステップ</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_jp.html#first-steps">https://game.ywesee.com/parados/kangaroo_jp.html#first-steps</a></td></tr>
+<tr><td class='key mono'>the-block</td><td>レベル 2: ブロック</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_jp.html#the-block">https://game.ywesee.com/parados/kangaroo_jp.html#the-block</a></td></tr>
+<tr><td class='key mono'>shifting</td><td>レベル 3: お皿を動かす練習</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_jp.html#shifting">https://game.ywesee.com/parados/kangaroo_jp.html#shifting</a></td></tr>
+<tr><td class='key mono'>staircase</td><td>レベル 1: 階段</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_jp.html#staircase">https://game.ywesee.com/parados/kangaroo_jp.html#staircase</a></td></tr>
+<tr><td class='key mono'>scattered</td><td>レベル 2: 散在</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_jp.html#scattered">https://game.ywesee.com/parados/kangaroo_jp.html#scattered</a></td></tr>
+<tr><td class='key mono'>slant</td><td>レベル 3: 斜め</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_jp.html#slant">https://game.ywesee.com/parados/kangaroo_jp.html#slant</a></td></tr>
+<tr><td class='key mono'>the-cross</td><td>レベル 1: クロス</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_jp.html#the-cross">https://game.ywesee.com/parados/kangaroo_jp.html#the-cross</a></td></tr></tbody></table>
 
 <h3>Chinese (kangaroo_cn.html)</h3>
-<table><colgroup><col class='c-slug'><col class='c-title'><col class='c-url'></colgroup><thead><tr><th>Slug</th><th>Title</th><th>URL</th></tr></thead><tbody><tr><td class='slug'>first-steps</td><td>第1关：初出茅庐</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_cn.html#first-steps">https://game.ywesee.com/parados/kangaroo_cn.html#first-steps</a></td></tr>
-<tr><td class='slug'>the-block</td><td>第2关：方块阵</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_cn.html#the-block">https://game.ywesee.com/parados/kangaroo_cn.html#the-block</a></td></tr>
-<tr><td class='slug'>shifting</td><td>第3关：移动练习</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_cn.html#shifting">https://game.ywesee.com/parados/kangaroo_cn.html#shifting</a></td></tr>
-<tr><td class='slug'>staircase</td><td>关卡 1: 阶梯</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_cn.html#staircase">https://game.ywesee.com/parados/kangaroo_cn.html#staircase</a></td></tr>
-<tr><td class='slug'>scattered</td><td>关卡 2: 分散</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_cn.html#scattered">https://game.ywesee.com/parados/kangaroo_cn.html#scattered</a></td></tr>
-<tr><td class='slug'>slant</td><td>关卡 3: 对角</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_cn.html#slant">https://game.ywesee.com/parados/kangaroo_cn.html#slant</a></td></tr>
-<tr><td class='slug'>the-cross</td><td>第1关：十字路口</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_cn.html#the-cross">https://game.ywesee.com/parados/kangaroo_cn.html#the-cross</a></td></tr></tbody></table>
+<table><colgroup><col class='c-key'><col class='c-label'><col class='c-url'></colgroup><thead><tr><th>Slug</th><th>Title</th><th>URL</th></tr></thead><tbody><tr><td class='key mono'>first-steps</td><td>第1关：初出茅庐</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_cn.html#first-steps">https://game.ywesee.com/parados/kangaroo_cn.html#first-steps</a></td></tr>
+<tr><td class='key mono'>the-block</td><td>第2关：方块阵</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_cn.html#the-block">https://game.ywesee.com/parados/kangaroo_cn.html#the-block</a></td></tr>
+<tr><td class='key mono'>shifting</td><td>第3关：移动练习</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_cn.html#shifting">https://game.ywesee.com/parados/kangaroo_cn.html#shifting</a></td></tr>
+<tr><td class='key mono'>staircase</td><td>关卡 1: 阶梯</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_cn.html#staircase">https://game.ywesee.com/parados/kangaroo_cn.html#staircase</a></td></tr>
+<tr><td class='key mono'>scattered</td><td>关卡 2: 分散</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_cn.html#scattered">https://game.ywesee.com/parados/kangaroo_cn.html#scattered</a></td></tr>
+<tr><td class='key mono'>slant</td><td>关卡 3: 对角</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_cn.html#slant">https://game.ywesee.com/parados/kangaroo_cn.html#slant</a></td></tr>
+<tr><td class='key mono'>the-cross</td><td>第1关：十字路口</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_cn.html#the-cross">https://game.ywesee.com/parados/kangaroo_cn.html#the-cross</a></td></tr></tbody></table>
 
 <h3>Ukrainian (kangaroo_ua.html)</h3>
-<table><colgroup><col class='c-slug'><col class='c-title'><col class='c-url'></colgroup><thead><tr><th>Slug</th><th>Title</th><th>URL</th></tr></thead><tbody><tr><td class='slug'>first-steps</td><td>Рівень 1: Перші кроки</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_ua.html#first-steps">https://game.ywesee.com/parados/kangaroo_ua.html#first-steps</a></td></tr>
-<tr><td class='slug'>the-block</td><td>Рівень 2: Блок</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_ua.html#the-block">https://game.ywesee.com/parados/kangaroo_ua.html#the-block</a></td></tr>
-<tr><td class='slug'>shifting</td><td>Рівень 3: Практика пересування</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_ua.html#shifting">https://game.ywesee.com/parados/kangaroo_ua.html#shifting</a></td></tr>
-<tr><td class='slug'>staircase</td><td>Рівень 1: Сходинки</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_ua.html#staircase">https://game.ywesee.com/parados/kangaroo_ua.html#staircase</a></td></tr>
-<tr><td class='slug'>scattered</td><td>Рівень 2: Розкидані</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_ua.html#scattered">https://game.ywesee.com/parados/kangaroo_ua.html#scattered</a></td></tr>
-<tr><td class='slug'>slant</td><td>Рівень 3: Діагональ</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_ua.html#slant">https://game.ywesee.com/parados/kangaroo_ua.html#slant</a></td></tr>
-<tr><td class='slug'>the-cross</td><td>Рівень 1: Хрест</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_ua.html#the-cross">https://game.ywesee.com/parados/kangaroo_ua.html#the-cross</a></td></tr></tbody></table>
+<table><colgroup><col class='c-key'><col class='c-label'><col class='c-url'></colgroup><thead><tr><th>Slug</th><th>Title</th><th>URL</th></tr></thead><tbody><tr><td class='key mono'>first-steps</td><td>Рівень 1: Перші кроки</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_ua.html#first-steps">https://game.ywesee.com/parados/kangaroo_ua.html#first-steps</a></td></tr>
+<tr><td class='key mono'>the-block</td><td>Рівень 2: Блок</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_ua.html#the-block">https://game.ywesee.com/parados/kangaroo_ua.html#the-block</a></td></tr>
+<tr><td class='key mono'>shifting</td><td>Рівень 3: Практика пересування</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_ua.html#shifting">https://game.ywesee.com/parados/kangaroo_ua.html#shifting</a></td></tr>
+<tr><td class='key mono'>staircase</td><td>Рівень 1: Сходинки</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_ua.html#staircase">https://game.ywesee.com/parados/kangaroo_ua.html#staircase</a></td></tr>
+<tr><td class='key mono'>scattered</td><td>Рівень 2: Розкидані</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_ua.html#scattered">https://game.ywesee.com/parados/kangaroo_ua.html#scattered</a></td></tr>
+<tr><td class='key mono'>slant</td><td>Рівень 3: Діагональ</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_ua.html#slant">https://game.ywesee.com/parados/kangaroo_ua.html#slant</a></td></tr>
+<tr><td class='key mono'>the-cross</td><td>Рівень 1: Хрест</td><td class='u'><a href="https://game.ywesee.com/parados/kangaroo_ua.html#the-cross">https://game.ywesee.com/parados/kangaroo_ua.html#the-cross</a></td></tr></tbody></table>
 
 <p class="note">Shorthand &amp; variants for kangaroo: numeric #1 … #7 (index in LEVEL_DATABASE) works too. Levels with two starting positions accept a trailing <b>b</b> for variant B: #first-stepsb, #the-blockb, #shiftingb, #the-crossb.</p>
 
-<p class="foot">Generated 2026-05-31 — Parados repo: <a href="https://github.com/zdavatz/parados">https://github.com/zdavatz/parados</a></p>
+<p class="foot">Generated 2026-05-31 &nbsp;·&nbsp; Parados repo: <a href="https://github.com/zdavatz/parados">https://github.com/zdavatz/parados</a></p>
 
 </body></html>
