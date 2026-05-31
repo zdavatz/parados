@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DUK: Нетерпляче Кенгуру 🦘</title>
+    <title>Нетерпляче Кенгуру 🦘</title>
     <style>
         :root {
             --bg-color: #e3c4a8;
@@ -185,7 +185,7 @@
     </div>
 
     <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
-        <h1 style="margin:5px 0;">DUK 🦘<span id="position-title" style="color:#7f8c8d; font-weight:normal;"></span></h1>
+        <h1 style="margin:5px 0;">Нетерпляче Кенгуру 🦘<span id="position-title" style="color:#7f8c8d; font-weight:normal;"></span></h1>
         <button class="btn" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">Share on WhatsApp</button>
     </div>
     <div class="subtitle">Нетерпляче Кенгуру</div>
@@ -239,7 +239,7 @@
         </div>
 
         <div class="status-panel">
-            <div id="gameStatus" class="status-text">Завантаження DUK...</div>
+            <div id="gameStatus" class="status-text">Завантаження...</div>
             <div id="turnInfo" class="sub-status"></div>
             <div id="dishCount" class="sub-status"></div>
         </div>
@@ -1096,7 +1096,7 @@
     function setPositionTitle(label) {
         const pt = document.getElementById('position-title');
         if (pt) pt.textContent = label ? ' — ' + label : '';
-        document.title = label ? 'DUK — ' + label : 'DUK';
+        document.title = label ? 'Нетерпляче Кенгуру — ' + label : 'Нетерпляче Кенгуру';
     }
 
     // Hash format:
@@ -1130,7 +1130,7 @@
         const slug = currentLevelHash();
         if (slug) shareUrl += '#' + slug;
         const posLabel = currentMode === 'LEVEL' && currentLevelData ? ` — ${currentLevelData.name}` : '';
-        const msg = `Грати DUK — Нетерплячий кенгуру${posLabel}: ${shareUrl}\n\nЗавантажте додаток Parados:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
+        const msg = `Грати Нетерплячий кенгуру${posLabel}: ${shareUrl}\n\nЗавантажте додаток Parados:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
         if (navigator.share) { navigator.share({ text: msg }).catch(() => {}); return; }
         // No share API (Android WebView, in-app browsers): copy to clipboard.
         // Never wa.me — Android WebView can't dispatch whatsapp:// (ERR_UNKNOWN_URL_SCHEME).
