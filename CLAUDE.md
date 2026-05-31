@@ -93,7 +93,15 @@ For file shares (CSV / saved game JSON), use `navigator.share({ files:[file], ti
 
 **makalaina has no hash deep-links** — curated positions were removed (Walter's fairness rule lives in the opening sequence, not in disc layouts). `currentPosition` is still passed in the PeerJS `state_sync` payload but no longer drives any title or URL state.
 
-**Localized share messages:** kangaroo's `shareOnWhatsApp` message is localized per variant. DE uses "Spiele DUK — Das ungeduldige Känguru — Stufe X: …" + "Hol dir die Parados-App:"; EN uses "Play TIK — The Impatient Kangaroo — Level X: …" + "Get the Parados app:" (note: EN H1 is rebranded `TIK 🦘`, not DUK); JP, CN, UA each have their own localized verb and full game name. `setPositionTitle`'s `document.title` prefix is localized too (e.g. `せっかちなカンガルー — …` in JP).
+**Kangaroo branding per language — DUK is German-only (Walter, 2026-05-31):** `DUK` = **D**as **U**ngeduldige **K**änguru, an acronym that only parses in German, so it lives **only** in `kangaroo.html` (title, H1, `Lade DUK...`, `document.title`, share message). The other variants drop it:
+- **EN** (`kangaroo_en.html`) → rebranded **`TIK`** (The Impatient Kangaroo) in H1, `<title>`, `Loading TIK...`, `document.title` prefix, and share message.
+- **JP** (`kangaroo_jp.html`) → full name `せっかちなカンガルー`, no acronym.
+- **CN** (`kangaroo_cn.html`) → full name `急躁的袋鼠`, no acronym.
+- **UA** (`kangaroo_ua.html`) → full name `Нетерпляче Кенгуру`, no acronym (loading text is just `Завантаження...`).
+- **`index.html`** overview card heading uses the English **`TIK — The Impatient Kangaroo`**.
+**Don't reintroduce `DUK` outside `kangaroo.html`** — it confused non-German players. Cross-language URL **slugs** are unaffected (they're English mnemonics, see above); only the display branding is localized.
+
+**Localized share messages:** kangaroo's `shareOnWhatsApp` message is localized per variant. DE uses "Spiele DUK — Das ungeduldige Känguru — Stufe X: …" + "Hol dir die Parados-App:"; EN uses "Play TIK — The Impatient Kangaroo — Level X: …" + "Get the Parados app:"; JP, CN, UA each have their own localized verb and full game name. `setPositionTitle`'s `document.title` prefix is localized too (e.g. `せっかちなカンガルー — …` in JP).
 
 **Anchor links reference:** `docs/parados_anchor_links.pdf` lists every direct-entry URL across all games with clickable hyperlinks (60 anchors total: 12 DL-DE + 12 DL-EN + 7×5 DUK + repo link — DL has 12 starting positions as of 2026-05-16: a 4-round set (ids 1–6) + a 3-round set (ids 7–12); regenerate the PDF after adding/removing positions). Regenerate via LibreOffice from the source HTML — URLs must be wrapped in explicit `<a href>` tags or the `writer_pdf` filter won't emit `/URI` annotations and the links render as plain text.
 
