@@ -1133,7 +1133,7 @@
             const angle = Math.atan2(y2-y1, x2-x1);
             const off = cellSize * 0.50;
             const c = { x1: x1 + Math.cos(angle)*off, y1: y1 + Math.sin(angle)*off, x2: x2 - Math.cos(angle)*off, y2: y2 - Math.sin(angle)*off };
-            const collision = checkCollision(c, false);
+            const collision = checkCollision(c, false, row);
             if (cls.isRed) {
                 // Red may cut a scoring bridge at construction time, but cannot cross a
                 // cut line or another red bridge.
@@ -1392,7 +1392,7 @@
                 // (otherwise defensive structures could be unwound by the same color
                 // that built them). Red is tracked in activeBridges with
                 // player:'red' so red-vs-red collisions are detectable.
-                const collision = checkCollision(c, false);
+                const collision = checkCollision(c, false, row);
                 if (collision) {
                     if (collision.cut) return;          // can't cross an already-cut bridge
                     if (collision.player === 'red') return;  // red can't cut red
@@ -1408,7 +1408,7 @@
                 // red ones (nobody can)". A scoring bridge can only be cut by
                 // red AT CONSTRUCTION TIME of the red bridge — once red is on
                 // the board, scoring lines must route around it.
-                const collision = checkCollision(c, false);
+                const collision = checkCollision(c, false, row);
                 if (collision) return;  // can't cross any existing line (scoring, red, or cut)
                 const bId = Date.now();
                 activeBridges.push({id: bId, row, player: currentPlayer, coords: c, s, e, cut: false});
@@ -1434,9 +1434,18 @@
             }
         }
 
-        function checkCollision(c, skipRed) {
+        function checkCollision(c, skipRed, newRow) {
             for (let b of activeBridges) {
                 if (skipRed && b.player === 'red') continue;
+                // Two straight bridges that share a grid cell intersect ONLY at that
+                // cell, which the rules explicitly allow (single-stone overlap; sharing
+                // 2+ is rejected upstream by the shares-2+ guard). The offset-endpoint
+                // ccw test below can FALSE-POSITIVE a "crossing" right at a shared stone
+                // — most visibly a new diagonal bridge fanning out from a stone that
+                // already belongs to a red (or yellow/blue) bridge, refused since
+                // scoring now checks against red too (Walter, 2026-06-01). Skip any
+                // bridge sharing a cell with the candidate row so legal fan-outs build.
+                if (newRow && b.row.some(cell => newRow.includes(cell))) continue;
                 const ccw = (p,q,r) => (r.y-p.y)*(q.x-p.x) > (q.y-p.y)*(r.x-p.x);
                 const a={x:c.x1,y:c.y1}, b1={x:c.x2,y:c.y2}, c1={x:b.coords.x1,y:b.coords.y1}, d1={x:b.coords.x2,y:b.coords.y2};
                 if (ccw(a,c1,d1) !== ccw(b1,c1,d1) && ccw(a,b1,c1) !== ccw(a,b1,d1)) return b;
