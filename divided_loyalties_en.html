@@ -1375,12 +1375,16 @@
                 // (otherwise defensive structures could be unwound by the same color
                 // that built them). Red is tracked in activeBridges with
                 // player:'red' so red-vs-red collisions are detectable.
-                const collision = checkCollision(c, false, row);
-                if (collision) {
-                    if (collision.cut) return;          // can't cross an already-cut bridge
-                    if (collision.player === 'red') return;  // red can't cut red
-                    destroyBridge(collision.id);
-                }
+                // Red CUTS every scoring bridge it crosses — not just the first (Walter,
+                // 2026-06-02). checkCollision returned only one crossing, so a red diagonal
+                // slashing a blue + (a horizontal and a vertical bridge) cut at most one and
+                // the other stayed on the board AND scored. Red can cross neither an
+                // already-cut bridge nor another red bridge ("a red bridge can never be cut
+                // by any other bridge"); if any crossing is such, the whole red placement is
+                // illegal and nothing is cut.
+                const hits = bridgesCrossedBy(c, row);
+                if (hits.some(h => h.cut || h.player === 'red')) return;
+                hits.forEach(h => destroyBridge(h.id));
                 const bId = Date.now();
                 activeBridges.push({id: bId, row, player: 'red', coords: c, s, e, cut: false});
                 drawBridge(c, 'red', bId);
@@ -1417,35 +1421,44 @@
             }
         }
 
-        function checkCollision(c, skipRed, newRow) {
+        // EVERY active bridge the candidate line (`newRow` / offset coords `c`) crosses.
+        // Crossing at a shared stone is decided grid-exactly (Walter, 2026-06-02): two
+        // straight bridges meet in at most one point, so a shared grid cell IS their only
+        // intersection. Classify by WHERE the shared cell sits on the NEW bridge:
+        //   • all shared cells are ENDPOINTS of the new bridge → the two bridges fan out /
+        //     touch at that stone (legal single-stone overlap: a diagonal starting on a
+        //     stone already in another bridge, the end-to-end 5-stone column, an L-corner)
+        //     → NOT a crossing.
+        //   • a shared cell is INTERIOR to the new bridge → the line passes THROUGH the
+        //     other bridge there → a real crossing. The float ccw test below MISSES this
+        //     (the 0.5-cell endpoint offset makes the other segment stop short of the
+        //     shared stone — so a red diagonal whose middle stone sits on a yellow bridge
+        //     failed to register, hence failed to cut it).
+        //   • no shared cell → ccw catches true mid-gap diagonal×anti-diagonal crossings.
+        // (sharesTwoPlus upstream caps non-cut overlap at 1 cell.) Returns ALL crossings so
+        // red can cut every scoring bridge it slashes, not just the first.
+        function bridgesCrossedBy(c, newRow) {
+            const hits = [];
             for (let b of activeBridges) {
-                if (skipRed && b.player === 'red') continue;
-                // Shared-stone crossing test — grid-exact (Walter, 2026-06-02). Two
-                // straight bridges meet in at most one point, so a shared grid cell IS
-                // their only intersection. Classify by WHERE the shared cell sits on the
-                // NEW bridge:
-                //   • all shared cells are ENDPOINTS of the new bridge → the two bridges
-                //     fan out / touch at that stone (legal single-stone overlap, e.g. a
-                //     diagonal starting on a stone already in another bridge, or the
-                //     end-to-end 5-stone column). NOT a crossing → skip.
-                //   • a shared cell is INTERIOR to the new bridge → the new line passes
-                //     THROUGH the other bridge there → a genuine crossing (scoring is
-                //     blocked; red CUTS). The float ccw test below MISSES this: the
-                //     0.5-cell endpoint offset makes the other segment stop short of the
-                //     shared stone, so a red diagonal whose middle stone sits on a yellow
-                //     bridge failed to cut it. Decide it here by cell membership.
-                // (sharesTwoPlus upstream already caps non-cut overlap at 1 cell.)
                 if (newRow) {
                     const shared = b.row.filter(cell => newRow.includes(cell));
                     if (shared.length) {
                         if (shared.every(cell => cell === newRow[0] || cell === newRow[newRow.length - 1])) continue;
-                        return b;
+                        hits.push(b); continue;
                     }
                 }
                 const ccw = (p,q,r) => (r.y-p.y)*(q.x-p.x) > (q.y-p.y)*(r.x-p.x);
                 const a={x:c.x1,y:c.y1}, b1={x:c.x2,y:c.y2}, c1={x:b.coords.x1,y:b.coords.y1}, d1={x:b.coords.x2,y:b.coords.y2};
-                if (ccw(a,c1,d1) !== ccw(b1,c1,d1) && ccw(a,b1,c1) !== ccw(a,b1,d1)) return b;
+                if (ccw(a,c1,d1) !== ccw(b1,c1,d1) && ccw(a,b1,c1) !== ccw(a,b1,d1)) hits.push(b);
             }
+            return hits;
+        }
+
+        // First crossing only — used by scoring placement + the dot highlight, which just
+        // need "is this blocked". `skipRed` filters red bridges from the result.
+        function checkCollision(c, skipRed, newRow) {
+            const hits = bridgesCrossedBy(c, newRow);
+            for (const b of hits) { if (skipRed && b.player === 'red') continue; return b; }
             return null;
         }
 
