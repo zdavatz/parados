@@ -222,7 +222,7 @@
                 <li>A bridge must be placed in the same turn as the stone that completes the row.</li>
                 <li><strong>Bridges can't be extended later!</strong> — Walter. A new bridge cannot share <em>two or more stones</em> with any existing (non-cut) bridge. This blocks not only growing a 3 into a 4 later, but also overlapping 3-bridges along the same line (e.g., existing <em>[A,B,C]</em> + new <em>[B,C,D]</em> — would look like a 4 and is therefore forbidden). Single shared stones are still fine — that's how perpendicular crosses and the multi-bridge case work (a placement in the middle of 5 stones forms an upper and a lower 3-bridge sharing only the placed stone). If you instead only add a fourth stone to a row (without a prior 3-bridge), the option of a direct 4-bridge stays open — but then you risk the opponent cutting in between.</li>
                 <li><strong>How to place a bridge:</strong> <em>double-click</em> (or double-tap) the first stone of the row, then <em>double-click</em> the last stone. If the row is valid (3 or 4 stones, all in your colour group or all red, no two identical colours in a row), the bridge is drawn. A second double-click on the same stone clears the selection again.</li>
-                <li><strong>If you place on a dot (off-board cell), every bridge the stone completes is drawn automatically</strong> — a single placement can close <em>multiple</em> bridges at once (e.g. a 3-bridge above <em>and</em> a 3-bridge below the placed stone). If no bridge can be drawn (e.g. every justifying row would cross an opponent bridge), the placement is undone — off-board placements aren't allowed without an actual bridge. <strong>You can still override the last auto-drawn bridge:</strong> double-click the two endpoints of any other valid row that contains your just-placed stone — that bridge is replaced.</li>
+                <li><strong>If you place on a dot (off-board cell), the stone is only placed — no bridge is drawn automatically.</strong> You form the bridge you want yourself by double-click, exactly like any other bridge. This keeps you in full control of <em>which</em> bridge is made (e.g. a shorter 3 instead of a 4 that would cross an existing bridge). A dot only lights up — and only accepts a tile — where at least one valid bridge is possible. <strong>Off-board rule:</strong> a stone on a dot is legal only if a bridge actually runs through it that turn; if you end your turn without bridging it, the stone is taken back and the tile returned to your supply.</li>
             </ul>
 
             <h3>3. Red Bridges &amp; Cutting ("Cut")</h3>
@@ -993,37 +993,20 @@
             currentPlayer === 'blue' ? blueInv[selectedColor]-- : yellowInv[selectedColor]--;
             selectedColor = null;
             bridgeSelection = [];
-            // Off-board placements MUST form a bridge by rule, so auto-form (Walter, 2026-05-09).
-            // Walter, 2026-05-27: a single placement can complete MULTIPLE bridges
-            // (e.g. middle of a 5-stone column → upper 3-bridge + lower 3-bridge).
-            // findAutoBridges yields every justifying row through the placement; we
-            // try each and keep the ones that actually build. If none can be built
-            // (every candidate would cross an opponent bridge), the placement itself
-            // is illegal and we undo it — the off-board rule requires at least one
-            // bridge actually formed in the same turn.
-            // amendableBridgeId tracks the LAST auto-built bridge so the player can
-            // still override the system's pick via double-click (Walter, 2026-05-26).
+            // Off-board (dot) placements: NO auto-form (Walter, 2026-06-02). The player
+            // forms the justifying bridge(s) manually by double-clicking, exactly like
+            // on-board bridges — ONE tested code path, no guessing which / how many
+            // bridges to build. Auto-form used to build EVERY justifying row (preferring
+            // the longest 4 over a 3), which silently created bridges the player never
+            // wanted — including ones crossing an existing bridge at a shared stone, or a
+            // 4 where the player wanted the shorter 3. Walter: "only 1 bridge has to be
+            // placed, but the programme can't figure out which — so the player must keep
+            // control." The off-board rule (a dot stone is legal only if a bridge runs
+            // THROUGH it this turn) is enforced at endTurn: a dot stone with no such
+            // bridge is removed + the tile refunded. The placement gate above
+            // (wouldFormBridge) still guarantees at least one LEGAL bridge is possible
+            // before the stone may land on the dot, so the player always has a move.
             amendableBridgeId = null;
-            if (offBoardPlacement) {
-                const candidates = findAutoBridges(idx, currentPlayer);
-                let formedAny = false;
-                let lastFormedId = null;
-                for (const row of candidates) {
-                    const lenBefore = activeBridges.length;
-                    tryFormBridge(row[0], row[row.length - 1]);
-                    if (activeBridges.length > lenBefore) {
-                        lastFormedId = activeBridges[activeBridges.length - 1].id;
-                        formedAny = true;
-                    }
-                }
-                if (!formedAny) {
-                    // Every justifying row turned out unbuildable (usually because it
-                    // would cross an opponent's scoring bridge). Reject the placement.
-                    undo();
-                    return;
-                }
-                amendableBridgeId = lastFormedId;
-            }
             updateUI();
             saveGame();
         }
@@ -1482,7 +1465,13 @@
 
         function endTurn() {
             snapshot();
-            if (lastPlaced!==null && !allBoardIdx.includes(lastPlaced) && !bridgePlaced) {
+            // Off-board (dot) stone is legal only if a non-cut bridge actually runs
+            // THROUGH it this turn (Walter, 2026-06-02 — was: any bridgePlaced, which the
+            // manual flow could satisfy with an unrelated bridge). Otherwise remove it +
+            // refund the tile. With auto-form gone, this is the sole enforcement of the
+            // off-board rule.
+            if (lastPlaced!==null && !allBoardIdx.includes(lastPlaced)
+                && !activeBridges.some(b => !b.cut && b.row.includes(lastPlaced))) {
                 const c = grid[lastPlaced];
                 currentPlayer==='blue'?blueInv[c]++:yellowInv[c]++;
                 grid[lastPlaced]=null; document.getElementById('meta-grid').children[lastPlaced].innerHTML='';

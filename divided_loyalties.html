@@ -222,7 +222,7 @@
                 [cite_start]<li>Eine Brücke muss im selben Zug platziert werden wie der Stein, der die Reihe vervollständigt[cite: 33].</li>
                 <li><strong>Brücken können nicht später verlängert werden!</strong> — Walter. Eine neue Brücke darf mit keiner bereits liegenden (nicht geschnittenen) Brücke <em>zwei oder mehr Steine</em> teilen. Das verhindert nicht nur das nachträgliche Ausbauen einer 3er zur 4er, sondern auch überlappende 3er-Brücken in derselben Linie (z.B. bestehende <em>[A,B,C]</em> + neue <em>[B,C,D]</em> — sähe optisch aus wie eine 4er und ist deshalb verboten). Einzelne gemeinsame Steine sind weiterhin erlaubt — so funktionieren senkrechte Kreuzungen und die Mehrfach-Brücken-Logik (eine Platzierung mittendrin in 5 Steinen ergibt eine obere und eine untere 3er, die nur den platzierten Stein teilen). Setzt du dagegen erstmal nur den vierten Stein an die Reihe (ohne 3er-Brücke), bleibt dir die Option auf eine direkte 4er-Brücke offen — du musst dann aber riskieren, dass der Gegner zwischendurch schneidet.</li>
                 <li><strong>So setzt du eine Brücke:</strong> <em>Doppelklick</em> (oder Doppel-Tipp) auf den ersten Stein der Reihe, danach <em>Doppelklick</em> auf den letzten Stein. Wenn die Reihe gültig ist (3 oder 4 Steine, alle in deiner Farbgruppe oder alle rot, keine zwei gleichen Farben hintereinander), wird die Brücke gezogen. Ein zweiter Doppelklick auf denselben Stein hebt die Auswahl wieder auf.</li>
-                <li><strong>Setzt du auf einen Punkt (Außenfeld), werden alle Brücken automatisch gezogen, die der Stein vervollständigt</strong> — eine einzige Platzierung kann <em>mehrere</em> Brücken auf einmal abschließen (z.B. eine 3er-Brücke oberhalb <em>und</em> eine 3er-Brücke unterhalb des Steins). Lässt sich keine Brücke ziehen (z.B. weil jede mögliche Reihe von einer gegnerischen Brücke gekreuzt würde), wird die Platzierung rückgängig gemacht — Außenfeld-Platzierungen sind ohne tatsächliche Brücke nicht erlaubt. <strong>Du kannst die zuletzt gezogene automatische Brücke noch ändern:</strong> Doppelklick auf zwei Endsteine einer anderen gültigen Reihe, die deinen gerade platzierten Stein enthält — diese Brücke wird dann ersetzt.</li>
+                <li><strong>Setzt du auf einen Punkt (Außenfeld), wird der Stein nur platziert — keine Brücke wird automatisch gezogen.</strong> Du ziehst die gewünschte Brücke selbst per Doppelklick, genau wie jede andere Brücke. So behältst du die volle Kontrolle, <em>welche</em> Brücke entsteht (z.B. eine kürzere 3er statt einer 4er, die eine bestehende Brücke kreuzen würde). Ein Punkt leuchtet nur dort auf — und nimmt nur dort einen Stein an — wo mindestens eine gültige Brücke möglich ist. <strong>Außenfeld-Regel:</strong> ein Stein auf einem Punkt ist nur erlaubt, wenn in diesem Zug tatsächlich eine Brücke durch ihn verläuft; beendest du den Zug ohne ihn zu verbrücken, wird der Stein zurückgenommen und der Spielstein zurückgelegt.</li>
             </ul>
 
             <h3>3. Rote Brücken & Schneiden ("Cut")</h3>
@@ -993,37 +993,20 @@
             currentPlayer === 'blue' ? blueInv[selectedColor]-- : yellowInv[selectedColor]--;
             selectedColor = null;
             bridgeSelection = [];
-            // Off-board placements MUST form a bridge by rule, so auto-form (Walter, 2026-05-09).
-            // Walter, 2026-05-27: a single placement can complete MULTIPLE bridges
-            // (e.g. middle of a 5-stone column → upper 3-bridge + lower 3-bridge).
-            // findAutoBridges yields every justifying row through the placement; we
-            // try each and keep the ones that actually build. If none can be built
-            // (every candidate would cross an opponent bridge), the placement itself
-            // is illegal and we undo it — the off-board rule requires at least one
-            // bridge actually formed in the same turn.
-            // amendableBridgeId tracks the LAST auto-built bridge so the player can
-            // still override the system's pick via double-click (Walter, 2026-05-26).
+            // Off-board (dot) placements: NO auto-form (Walter, 2026-06-02). The player
+            // forms the justifying bridge(s) manually by double-clicking, exactly like
+            // on-board bridges — ONE tested code path, no guessing which / how many
+            // bridges to build. Auto-form used to build EVERY justifying row (preferring
+            // the longest 4 over a 3), which silently created bridges the player never
+            // wanted — including ones crossing an existing bridge at a shared stone, or a
+            // 4 where the player wanted the shorter 3. Walter: "only 1 bridge has to be
+            // placed, but the programme can't figure out which — so the player must keep
+            // control." The off-board rule (a dot stone is legal only if a bridge runs
+            // THROUGH it this turn) is enforced at endTurn: a dot stone with no such
+            // bridge is removed + the tile refunded. The placement gate above
+            // (wouldFormBridge) still guarantees at least one LEGAL bridge is possible
+            // before the stone may land on the dot, so the player always has a move.
             amendableBridgeId = null;
-            if (offBoardPlacement) {
-                const candidates = findAutoBridges(idx, currentPlayer);
-                let formedAny = false;
-                let lastFormedId = null;
-                for (const row of candidates) {
-                    const lenBefore = activeBridges.length;
-                    tryFormBridge(row[0], row[row.length - 1]);
-                    if (activeBridges.length > lenBefore) {
-                        lastFormedId = activeBridges[activeBridges.length - 1].id;
-                        formedAny = true;
-                    }
-                }
-                if (!formedAny) {
-                    // Every justifying row turned out unbuildable (usually because it
-                    // would cross an opponent's scoring bridge). Reject the placement.
-                    undo();
-                    return;
-                }
-                amendableBridgeId = lastFormedId;
-            }
             updateUI();
             saveGame();
         }
@@ -1481,7 +1464,13 @@
 
         function endTurn() {
             snapshot();
-            if (lastPlaced!==null && !allBoardIdx.includes(lastPlaced) && !bridgePlaced) {
+            // Off-board (dot) stone is legal only if a non-cut bridge actually runs
+            // THROUGH it this turn (Walter, 2026-06-02 — was: any bridgePlaced, which the
+            // manual flow could satisfy with an unrelated bridge). Otherwise remove it +
+            // refund the tile. With auto-form gone, this is the sole enforcement of the
+            // off-board rule.
+            if (lastPlaced!==null && !allBoardIdx.includes(lastPlaced)
+                && !activeBridges.some(b => !b.cut && b.row.includes(lastPlaced))) {
                 const c = grid[lastPlaced];
                 currentPlayer==='blue'?blueInv[c]++:yellowInv[c]++;
                 grid[lastPlaced]=null; document.getElementById('meta-grid').children[lastPlaced].innerHTML='';
