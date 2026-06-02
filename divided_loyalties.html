@@ -142,6 +142,7 @@
         <div id="ui-panel">
             <button class="btn" onclick="toggleRules(true)">📜 AUSFÜHRLICHE REGELN</button>
             <div id="turn-indicator" class="current-player blue-turn" style="margin-top:15px;">BLAU AM ZUG</div>
+            <div id="bridge-hint" style="display:none; margin-top:8px; padding:8px 10px; border-radius:8px; background:#5d4037; color:#fff; font-size:0.85em; line-height:1.35; text-align:center;"></div>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-weight:bold; font-size:0.9em;">
                 <div style="text-align:center;">BLAU<div style="font-weight:normal; font-size:0.85em; margin-top:2px;">Brücken <span id="blue-score">0</span> · Regionen <span id="blue-region-score">0</span></div></div>
                 <div style="text-align:center;">GELB<div style="font-weight:normal; font-size:0.85em; margin-top:2px;">Brücken <span id="yellow-score">0</span> · Regionen <span id="yellow-region-score">0</span></div></div>
@@ -289,6 +290,10 @@
         // the player may double-click to amend it (Walter, 2026-05-26: "the player can change
         // the auto-bridge by double-clicking, just like any other bridge"). Reset on endTurn.
         let amendableBridgeId = null;
+        // Why the last manual bridge double-click was refused (Walter, 2026-06-02).
+        // tryFormBridge sets this on every reject path; handleStoneDblClick shows it
+        // beside the red flash so the player isn't left with „keine Ahnung warum".
+        let bridgeRefuseReason = '';
         let cellSize = 44, gapSize = 2, padSize = 10;
         let undoStack = [];           // TUK-style history: snapshot before each user-input mutation
         let currentPosition = null;   // the {name, boards, dots, ...} the current game started from
@@ -1132,18 +1137,23 @@
             return ok;
         }
 
-        // Multi-bridge auto-form (Walter, 2026-05-27). When a stone is placed on a dot,
-        // the system forms ALL bridges that placement justifies — not just the best one.
-        // For each of the 4 directions we collect:
-        //   - every valid "before" row (idx is the LAST cell — bridge extends backward), 4 then 3
-        //   - every valid "after"  row (idx is the FIRST cell — bridge extends forward), 4 then 3
-        // A before+after pair shares only idx, so both can coexist visually (lines go opposite
-        // ways); the 4/3 pair on one end is mutually exclusive (the 3 is offered only as a
-        // fallback if the 4 can't build — tryFormBridge's shares-2+ guard enforces this).
-        // If neither endpoint-row is valid in a direction, we fall back to ONE "middle" row
-        // (idx not at either end) so 3-stone lines with the placement in the middle still
-        // get a bridge. The caller then runs each through tryFormBridge — any that would
-        // collide with an opponent's bridge are silently skipped.
+        // Every valid 3-/4-bridge that runs THROUGH idx — in any of the 4 directions, with
+        // idx at ANY position in the row (first, interior, or last). Auto-form is gone
+        // (Walter, 2026-06-02), so findAutoBridges is now purely the "does at least one
+        // legal bridge pass through this dot?" enumerator behind wouldFormBridge — the
+        // off-board placement gate + turquoise highlight. The caller runs each row through
+        // bridgeWouldForm (which mirrors tryFormBridge's accept/reject, incl. collisions),
+        // so a dot lights up / accepts a tile iff SOME bridge there is actually buildable.
+        //
+        // WHY every position: the old code only offered END-anchored rows (idx first or
+        // last) and fell back to ONE middle row solely when NO end row existed. So a bridge
+        // with idx in the MIDDLE was SHADOWED whenever a collision-blocked end-/4-row also
+        // existed — the dot then wrongly refused a buildable tile. Walter, 2026-06-02:
+        // „a 3 bridge from the lower left purple to the upper right orange ... was not
+        // accepted" — the RED stone he placed was the CENTRE of purple-RED-orange, and a
+        // blocked end-anchored candidate on the same diagonal hid it. Offering EVERY
+        // candidate row and letting bridgeWouldForm filter removes all shadowing; there is
+        // no over-building risk since findAutoBridges no longer builds anything.
         function findAutoBridges(idx, player) {
             const dirs = [[1,0],[0,1],[1,1],[1,-1]];
             const isValidCandidate = (row) => {
@@ -1164,46 +1174,18 @@
             };
             const result = [];
             for (const dir of dirs) {
-                // Collect EVERY valid "before" row (idx = LAST cell) and "after" row
-                // (idx = FIRST cell), longest first. Walter, 2026-06-01: we used to keep
-                // only the LONGEST of each — but if that 4-row crossed an existing bridge
-                // (so tryFormBridge rejected it on collision) the buildable shorter 3-row
-                // was never offered, and the dot stayed turquoise yet refused the tile.
-                // Pushing both lengths lets handleClick fall back to the 3; tryFormBridge's
-                // "shares 2+ stones" guard stops the 4 from also spawning its contained 3
-                // when the 4 itself builds. Order (4 before 3) preserves "longest wins".
-                let anyEnd = false;
                 for (const len of [4, 3]) {
-                    const x0 = (idx % GRID_W) - (len - 1) * dir[0];
-                    const y0 = Math.floor(idx / GRID_W) - (len - 1) * dir[1];
-                    if (x0 < 0 || y0 < 0 || x0 >= GRID_W || y0 >= GRID_H) continue;
-                    const start = y0 * GRID_W + x0;
-                    const row = getRowCells(start, dir, len);
-                    if (row && row[row.length - 1] === idx && isValidCandidate(row)) { result.push(row); anyEnd = true; }
-                }
-                for (const len of [4, 3]) {
-                    const row = getRowCells(idx, dir, len);
-                    if (row && row[0] === idx && isValidCandidate(row)) { result.push(row); anyEnd = true; }
-                }
-                if (!anyEnd) {
-                    // No end-anchored row in this direction — fall back to one middle row
-                    // (idx in the interior) so a line centered on the placement still bridges.
-                    let middle = null;
-                    for (const len of [4, 3]) {
-                        for (let off = 1; off < len - 1; off++) {
-                            const x0 = (idx % GRID_W) - off * dir[0];
-                            const y0 = Math.floor(idx / GRID_W) - off * dir[1];
-                            if (x0 < 0 || y0 < 0 || x0 >= GRID_W || y0 >= GRID_H) continue;
-                            const start = y0 * GRID_W + x0;
-                            const row = getRowCells(start, dir, len);
-                            if (row && row[off] === idx && isValidCandidate(row)) {
-                                middle = row;
-                                break;
-                            }
-                        }
-                        if (middle) break;
+                    // idx may sit at any offset within the row — try them all so a
+                    // placement in the MIDDLE of a bridge is never shadowed by an
+                    // end-anchored candidate on the same line.
+                    for (let off = 0; off < len; off++) {
+                        const x0 = (idx % GRID_W) - off * dir[0];
+                        const y0 = Math.floor(idx / GRID_W) - off * dir[1];
+                        if (x0 < 0 || y0 < 0 || x0 >= GRID_W || y0 >= GRID_H) continue;
+                        const start = y0 * GRID_W + x0;
+                        const row = getRowCells(start, dir, len);
+                        if (row && row[off] === idx && isValidCandidate(row)) result.push(row);
                     }
-                    if (middle) result.push(middle);
                 }
             }
             return result;
@@ -1241,6 +1223,7 @@
             // 3rd-click guard: with 2 already ringed, refuse a new one + flash hint.
             if (bridgeSelection.length >= 2) {
                 flashStoneInvalid(idx);
+                showBridgeHint('Schon zwei Steine gewählt — hebe zuerst einen auf (nochmals anklicken).');
                 return;
             }
             // Add this stone to the selection.
@@ -1283,15 +1266,18 @@
             if (succeeded) {
                 bridgeSelection = [];
                 renderBridgePending();
+                showBridgeHint('');
                 saveGame();
                 return;
             }
             // Failure: restore via undo (brings the auto-bridge back if amend was
             // attempted, and restores bridgeSelection=[s,e] so both rings show).
             // Then flash the last-clicked stone red so the player knows that pairing
-            // was the rejected one.
+            // was the rejected one, and show WHY (set by tryFormBridge) so the
+            // rejection isn't a mystery (Walter, 2026-06-02).
             undo();
             flashStoneInvalid(idx);
+            showBridgeHint(bridgeRefuseReason);
         }
 
         // Fully remove a bridge from activeBridges + its SVG line. Unlike destroyBridge
@@ -1320,6 +1306,20 @@
             setTimeout(() => tile.classList.remove('bridge-rejected'), 600);
         }
 
+        // Show (or hide, when msg is empty) a brief reason next to the red flash so a
+        // refused bridge double-click isn't silent (Walter, 2026-06-02 — „Keine Ahnung
+        // warum"). Auto-hides after a few seconds; a new attempt replaces it at once.
+        let bridgeHintTimer = null;
+        function showBridgeHint(msg) {
+            const el = document.getElementById('bridge-hint');
+            if (!el) return;
+            if (bridgeHintTimer) { clearTimeout(bridgeHintTimer); bridgeHintTimer = null; }
+            if (!msg) { el.style.display = 'none'; return; }
+            el.textContent = msg;
+            el.style.display = 'block';
+            bridgeHintTimer = setTimeout(() => { el.style.display = 'none'; }, 5000);
+        }
+
         function renderBridgePending() {
             const meta = document.getElementById('meta-grid');
             const total = GRID_W * GRID_H;
@@ -1338,10 +1338,10 @@
 
         function tryFormBridge(s, e) {
             const row = getRow(s, e);
-            if (!row) return;
-            if (row.length !== 3 && row.length !== 4) return;
+            if (!row) { bridgeRefuseReason = 'Die beiden Steine liegen nicht in einer geraden Linie (waagrecht, senkrecht oder diagonal).'; return; }
+            if (row.length !== 3 && row.length !== 4) { bridgeRefuseReason = 'Eine Brücke verbindet genau 3 oder 4 Steine in einer Reihe.'; return; }
             const cls = classifyRow(row, currentPlayer);
-            if (!cls) return;
+            if (!cls) { bridgeRefuseReason = 'Keine gültige Reihe: die Farben passen nicht zusammen oder zwei gleiche Farben liegen nebeneinander.'; return; }
             // Walter, 2026-05-27: a new bridge cannot share 2+ stones with any
             // active (non-cut) bridge. „Brücken können nicht später verlängert
             // werden!" — Walter. This covers three cases at once: re-forming the
@@ -1355,7 +1355,7 @@
                 for (const c of row) if (b.row.includes(c)) shared++;
                 return shared >= 2;
             });
-            if (sharesTwoPlus) return;
+            if (sharesTwoPlus) { bridgeRefuseReason = 'Brücken können nicht verlängert oder über eine bestehende Brücke doppelt gebaut werden.'; return; }
             const step = cellSize + gapSize;
             const x1 = (s%GRID_W)*step+cellSize/2, y1 = Math.floor(s/GRID_W)*step+cellSize/2;
             const x2 = (e%GRID_W)*step+cellSize/2, y2 = Math.floor(e/GRID_W)*step+cellSize/2;
@@ -1376,7 +1376,7 @@
                 // by any other bridge"); if any crossing is such, the whole red placement is
                 // illegal and nothing is cut.
                 const hits = bridgesCrossedBy(row);
-                if (hits.some(h => h.cut || h.player === 'red')) return;
+                if (hits.some(h => h.cut || h.player === 'red')) { bridgeRefuseReason = 'Eine rote Brücke kann keine andere rote oder bereits geschnittene Brücke kreuzen.'; return; }
                 hits.forEach(h => destroyBridge(h.id));
                 const bId = Date.now();
                 activeBridges.push({id: bId, row, player: 'red', coords: c, s, e, cut: false});
@@ -1389,12 +1389,13 @@
                 // red AT CONSTRUCTION TIME of the red bridge — once red is on
                 // the board, scoring lines must route around it.
                 const collision = checkCollision(row, false);
-                if (collision) return;  // can't cross any existing line (scoring, red, or cut)
+                if (collision) { bridgeRefuseReason = 'Diese Brücke würde eine bestehende Brücke kreuzen — niemand darf eine andere Brücke überqueren.'; return; }  // can't cross any existing line (scoring, red, or cut)
                 const bId = Date.now();
                 activeBridges.push({id: bId, row, player: currentPlayer, coords: c, s, e, cut: false});
                 drawBridge(c, currentPlayer, bId);
                 bridgePlaced = true;
             }
+            bridgeRefuseReason = '';
             updateScore();
         }
 
