@@ -220,7 +220,7 @@
                 <li><strong>Separate display:</strong> bridge and region points are shown separately — add them yourself at the end.</li>
                 <li><strong>Important:</strong> two identical colours may not lie directly next to each other.</li>
                 <li>A bridge must be placed in the same turn as the stone that completes the row.</li>
-                <li><strong>Bridges can't be extended later!</strong> — Walter. A new bridge cannot share <em>two or more stones</em> with any existing (non-cut) bridge. This blocks not only growing a 3 into a 4 later, but also overlapping 3-bridges along the same line (e.g., existing <em>[A,B,C]</em> + new <em>[B,C,D]</em> — would look like a 4 and is therefore forbidden). Single shared stones are still fine — that's how perpendicular crosses and the multi-bridge case work (a placement in the middle of 5 stones forms an upper and a lower 3-bridge sharing only the placed stone). If you instead only add a fourth stone to a row (without a prior 3-bridge), the option of a direct 4-bridge stays open — but then you risk the opponent cutting in between.</li>
+                <li><strong>Bridges can't be extended later!</strong> — Walter. A new bridge cannot share <em>two or more stones</em> with any existing (non-cut) bridge. This blocks not only growing a 3 into a 4 later, but also overlapping 3-bridges along the same line (e.g., existing <em>[A,B,C]</em> + new <em>[B,C,D]</em> — would look like a 4 and is therefore forbidden). Single shared stones are allowed only as a <em>junction</em> — the shared stone must be the <em>end</em> of at least one of the two bridges (a fan-out, an L or T, or two 3-bridges end-to-end down a line sharing only the middle stone). A bridge running straight <em>through</em> another (a +/× with the shared stone in the middle of both) is <em>not</em> allowed — see rule 3: nobody covers or crosses another bridge. If you instead only add a fourth stone to a row (without a prior 3-bridge), the option of a direct 4-bridge stays open — but then you risk the opponent cutting in between.</li>
                 <li><strong>How to place a bridge:</strong> <em>double-click</em> (or double-tap) the first stone of the row, then <em>double-click</em> the last stone. If the row is valid (3 or 4 stones, all in your colour group or all red, no two identical colours in a row), the bridge is drawn. A second double-click on the same stone clears the selection again.</li>
                 <li><strong>If you place on a dot (off-board cell), the stone is only placed — no bridge is drawn automatically.</strong> You form the bridge you want yourself by double-click, exactly like any other bridge. This keeps you in full control of <em>which</em> bridge is made (e.g. a shorter 3 instead of a 4 that would cross an existing bridge). A dot only lights up — and only accepts a tile — where at least one valid bridge is possible. <strong>Off-board rule:</strong> a stone on a dot is legal only if a bridge actually runs through it that turn; if you end your turn without bridging it, the stone is taken back and the tile returned to your supply.</li>
             </ul>
@@ -228,11 +228,11 @@
             <h3>3. Red Bridges &amp; Cutting ("Cut")</h3>
             <ul>
                 <li>Red bridges are used for defence.</li>
-                <li>When a red bridge crosses a blue/yellow one, the latter loses its value.</li>
+                <li>When a red bridge crosses blue/yellow bridges, <em>every</em> one it crosses loses its value — red cuts all of them in that placement, not just the first.</li>
                 <li><strong>Nobody crosses an existing bridge:</strong> blue or yellow bridges <em>cannot</em> retroactively cross a red (or any other) bridge — they must route around it. A red bridge can only cut a scoring one <em>at the moment red is placed</em>; once on the board, red locks its line for everyone (Walter, 2026-05-27).</li>
                 <li><strong>Red can't cut red:</strong> a new red bridge is rejected if it would cross an existing red bridge — otherwise no defensive structures would be possible (Walter).</li>
                 <li><strong>Geometry:</strong> bridges can only be cut at their <em>inner</em> cells; the endpoints are immune.</li>
-                <li>Diagonals can cross between endpoint and inner cell.</li>
+                <li>A crossing only happens at an <em>inner</em> cell or between cells — never at an endpoint (there bridges merely meet: an allowed junction). Only red may cross like this, and it cuts; a red bridge is also refused if its path would cross another red <em>or</em> an already-cut bridge.</li>
                 <li><strong>Cut bridges stay on the board:</strong> a cut bridge is drawn grey and dashed — it loses both its bridge and its region points, but stays physically in play and still blocks anything you'd want to build across it (whether scoring or red).</li>
             </ul>
 
@@ -1109,21 +1109,15 @@
                 return shared >= 2;
             });
             if (sharesTwoPlus) return false;
-            const s = row[0], e = row[row.length - 1];
-            const step = cellSize + gapSize;
-            const x1 = (s%GRID_W)*step+cellSize/2, y1 = Math.floor(s/GRID_W)*step+cellSize/2;
-            const x2 = (e%GRID_W)*step+cellSize/2, y2 = Math.floor(e/GRID_W)*step+cellSize/2;
-            const angle = Math.atan2(y2-y1, x2-x1);
-            const off = cellSize * 0.50;
-            const c = { x1: x1 + Math.cos(angle)*off, y1: y1 + Math.sin(angle)*off, x2: x2 - Math.cos(angle)*off, y2: y2 - Math.sin(angle)*off };
-            const collision = checkCollision(c, false, row);
-            if (cls.isRed) {
-                // Red may cut a scoring bridge at construction time, but cannot cross a
-                // cut line or another red bridge.
-                return !(collision && (collision.cut || collision.player === 'red'));
-            }
-            // Scoring bridge: cannot cross ANY existing line (scoring, red, or cut).
-            return !collision;
+            // Mirror tryFormBridge EXACTLY so highlight ⟺ build (Walter, 2026-06-02): test
+            // ALL crossings, not just the first. A red bridge is legal iff NONE of the
+            // bridges it crosses is cut or red (it cuts the scoring ones); a scoring bridge
+            // is legal iff it crosses nothing. (Using checkCollision — first crossing only —
+            // diverged for red when the first crossing was a cuttable scoring bridge but a
+            // later crossing was red/cut: the dot would highlight yet the placement refuse.)
+            const hits = bridgesCrossedBy(row);
+            if (cls.isRed) return !hits.some(h => h.cut || h.player === 'red');
+            return hits.length === 0;
         }
 
         // Would placing `color` at empty cell `idx` form a valid bridge for the current player?
@@ -1382,7 +1376,7 @@
                 // already-cut bridge nor another red bridge ("a red bridge can never be cut
                 // by any other bridge"); if any crossing is such, the whole red placement is
                 // illegal and nothing is cut.
-                const hits = bridgesCrossedBy(c, row);
+                const hits = bridgesCrossedBy(row);
                 if (hits.some(h => h.cut || h.player === 'red')) return;
                 hits.forEach(h => destroyBridge(h.id));
                 const bId = Date.now();
@@ -1395,7 +1389,7 @@
                 // red ones (nobody can)". A scoring bridge can only be cut by
                 // red AT CONSTRUCTION TIME of the red bridge — once red is on
                 // the board, scoring lines must route around it.
-                const collision = checkCollision(c, false, row);
+                const collision = checkCollision(row, false);
                 if (collision) return;  // can't cross any existing line (scoring, red, or cut)
                 const bId = Date.now();
                 activeBridges.push({id: bId, row, player: currentPlayer, coords: c, s, e, cut: false});
@@ -1421,44 +1415,60 @@
             }
         }
 
-        // EVERY active bridge the candidate line (`newRow` / offset coords `c`) crosses.
-        // Crossing at a shared stone is decided grid-exactly (Walter, 2026-06-02): two
-        // straight bridges meet in at most one point, so a shared grid cell IS their only
-        // intersection. Classify by WHERE the shared cell sits on the NEW bridge:
-        //   • all shared cells are ENDPOINTS of the new bridge → the two bridges fan out /
-        //     touch at that stone (legal single-stone overlap: a diagonal starting on a
-        //     stone already in another bridge, the end-to-end 5-stone column, an L-corner)
-        //     → NOT a crossing.
-        //   • a shared cell is INTERIOR to the new bridge → the line passes THROUGH the
-        //     other bridge there → a real crossing. The float ccw test below MISSES this
-        //     (the 0.5-cell endpoint offset makes the other segment stop short of the
-        //     shared stone — so a red diagonal whose middle stone sits on a yellow bridge
-        //     failed to register, hence failed to cut it).
-        //   • no shared cell → ccw catches true mid-gap diagonal×anti-diagonal crossings.
-        // (sharesTwoPlus upstream caps non-cut overlap at 1 cell.) Returns ALL crossings so
-        // red can cut every scoring bridge it slashes, not just the first.
-        function bridgesCrossedBy(c, newRow) {
-            const hits = [];
-            for (let b of activeBridges) {
-                if (newRow) {
-                    const shared = b.row.filter(cell => newRow.includes(cell));
-                    if (shared.length) {
-                        if (shared.every(cell => cell === newRow[0] || cell === newRow[newRow.length - 1])) continue;
-                        hits.push(b); continue;
-                    }
+        // Doubled-grid occupancy of a straight bridge: every stone center PLUS the midpoint
+        // of each edge between consecutive stones, in coordinates scaled ×2 so all points
+        // are integers. Stone centers land on (even,even); edge midpoints carry an odd
+        // component, so the two kinds can never collide. This lets us detect crossings AND
+        // covers with EXACT integer math — no floating point. `end` marks the bridge's two
+        // endpoint stones.
+        function bridgeDoubledInfo(row) {
+            const m = new Map();
+            for (let i = 0; i < row.length; i++) {
+                const x = row[i] % GRID_W, y = Math.floor(row[i] / GRID_W);
+                m.set((2*x) + ',' + (2*y), { stone: true, end: i === 0 || i === row.length - 1 });
+                if (i < row.length - 1) {
+                    const nx = row[i+1] % GRID_W, ny = Math.floor(row[i+1] / GRID_W);
+                    m.set((x+nx) + ',' + (y+ny), { stone: false, end: false });  // edge midpoint
                 }
-                const ccw = (p,q,r) => (r.y-p.y)*(q.x-p.x) > (q.y-p.y)*(r.x-p.x);
-                const a={x:c.x1,y:c.y1}, b1={x:c.x2,y:c.y2}, c1={x:b.coords.x1,y:b.coords.y1}, d1={x:b.coords.x2,y:b.coords.y2};
-                if (ccw(a,c1,d1) !== ccw(b1,c1,d1) && ccw(a,b1,c1) !== ccw(a,b1,d1)) hits.push(b);
+            }
+            return m;
+        }
+
+        // Every active bridge whose drawn line the candidate `row` CROSSES or COVERS — grid
+        // exact (Walter, 2026-06-02: "yellow and blue bridges cannot cut or cover ANY other
+        // bridge, and red cannot cover other red"). Two straight bridges legally meet ONLY
+        // at a junction — a shared STONE that is an endpoint of at least one of them
+        // (fan-out, T, or L; the line that ends there does not pass through). A conflict is:
+        //   • a shared EDGE MIDPOINT  → a mid-gap diagonal crossing OR a collinear cover; or
+        //   • a shared STONE interior to BOTH bridges → one line passes straight through the
+        //     other (an X / + centred on a stone).
+        // This replaces the old floating-point ccw test, which MISSED through-stone crossings
+        // and (because of the 0.5-cell endpoint offset) some near-endpoint diagonal crossings
+        // — the "yellow covers blue / yellow covers red" bugs. Matches the drawn geometry
+        // exactly (the 0.43-edge offset never reaches an edge midpoint). Returns ALL conflicts
+        // so red can cut every scoring bridge it slashes, not just the first.
+        function bridgesCrossedBy(newRow) {
+            const hits = [];
+            if (!newRow) return hits;
+            const nInfo = bridgeDoubledInfo(newRow);
+            for (const b of activeBridges) {
+                const eInfo = bridgeDoubledInfo(b.row);
+                let conflict = false;
+                for (const [key, n] of nInfo) {
+                    const e = eInfo.get(key);
+                    if (!e) continue;                                  // no shared point here
+                    if (!n.stone) { conflict = true; break; }          // shared edge midpoint
+                    if (!n.end && !e.end) { conflict = true; break; }  // shared stone interior to both
+                }
+                if (conflict) hits.push(b);
             }
             return hits;
         }
 
-        // First crossing only — used by scoring placement + the dot highlight, which just
-        // need "is this blocked". `skipRed` filters red bridges from the result.
-        function checkCollision(c, skipRed, newRow) {
-            const hits = bridgesCrossedBy(c, newRow);
-            for (const b of hits) { if (skipRed && b.player === 'red') continue; return b; }
+        // First conflict only — used by scoring placement + the dot highlight, which just
+        // need "is this blocked?". `skipRed` filters red bridges from the result.
+        function checkCollision(newRow, skipRed) {
+            for (const b of bridgesCrossedBy(newRow)) { if (skipRed && b.player === 'red') continue; return b; }
             return null;
         }
 
