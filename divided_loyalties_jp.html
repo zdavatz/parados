@@ -1,0 +1,2115 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Divided Loyalties: エピック・マスター・エディション</title>
+    <style>
+        :root {
+            --bg: #3d5245; --panel: #4d6758;
+            --blue: #2196F3; --yellow: #FFEB3B;
+            --red: #F44336; --green: #2E7D32; --purple: #BA68C8; --orange: #FFA726;
+            --cs: 44px;
+            --gap: 2px;
+            --pad: 10px;
+            --tile-size: calc(var(--cs) - 4px);
+            --step: calc(var(--cs) + var(--gap));
+        }
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #f5f5f5; display: flex; flex-direction: column; align-items: center; margin: 0; padding: 10px; min-height: 100vh; }
+        h1 { font-size: 1.5em; margin: 5px 0; }
+        #game-layout { display: flex; align-items: flex-start; flex-wrap: wrap; justify-content: center; gap: 15px; width: 100%; }
+        #meta-grid { display: grid; grid-template-columns: repeat(11, var(--cs)); grid-template-rows: repeat(11, var(--cs)); gap: var(--gap); position: relative; background: #fff; padding: var(--pad); border-radius: 4px; }
+        .cell { width: var(--cs); height: var(--cs); display: flex; align-items: center; justify-content: center; position: relative; }
+        .on-board { cursor: pointer; }
+        /* Off-board cells default to nothing — no grid, no dot. The placement dot
+           appears only on cells the position designer (Walter) explicitly marked. */
+        .off-board { background: transparent; cursor: pointer; }
+        .off-board.has-dot::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: rgba(0,0,0,0.45); transition: all 0.2s; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+        .off-board.has-dot:has(.tile)::before { display: none; }
+        .off-board.has-dot.valid-placement { background: rgba(100, 255, 218, 0.18); box-shadow: inset 0 0 10px rgba(100, 255, 218, 0.4); border-radius: 4px; animation: dotPulse 1.4s ease-in-out infinite; }
+        .off-board.has-dot.valid-placement::before { width: 14px; height: 14px; background: rgba(100, 255, 218, 0.95); box-shadow: 0 0 6px rgba(100, 255, 218, 0.9); }
+        @keyframes dotPulse {
+            0%, 100% { box-shadow: inset 0 0 8px rgba(100, 255, 218, 0.35); }
+            50%      { box-shadow: inset 0 0 16px rgba(100, 255, 218, 0.85); }
+        }
+
+        /* All-gray boards (3 shades, no near-black/near-white). Per Walter:
+           3x3 darkest, 3x2 (W) middle, 3x4 (G) lightest — stones carry the color. */
+        .on-board.large  { background: #3a3a3a; border: 1px solid rgba(255,255,255,0.08); }
+        .on-board.small  { background: #6a6a6a; border: 1px solid rgba(255,255,255,0.10); }
+        .on-board.medium { background: #9a9a9a; border: 1px solid rgba(0,0,0,0.12); }
+
+        /* Outer frames: subtle, contrast direction depends on fill */
+        .on-board.large[data-outer~="N"]  { border-top:    2px solid rgba(255,255,255,0.35); }
+        .on-board.large[data-outer~="S"]  { border-bottom: 2px solid rgba(255,255,255,0.35); }
+        .on-board.large[data-outer~="W"]  { border-left:   2px solid rgba(255,255,255,0.35); }
+        .on-board.large[data-outer~="E"]  { border-right:  2px solid rgba(255,255,255,0.35); }
+        .on-board.small[data-outer~="N"]  { border-top:    2px solid rgba(255,255,255,0.25); }
+        .on-board.small[data-outer~="S"]  { border-bottom: 2px solid rgba(255,255,255,0.25); }
+        .on-board.small[data-outer~="W"]  { border-left:   2px solid rgba(255,255,255,0.25); }
+        .on-board.small[data-outer~="E"]  { border-right:  2px solid rgba(255,255,255,0.25); }
+        .on-board.medium[data-outer~="N"] { border-top:    2px solid rgba(0,0,0,0.30); }
+        .on-board.medium[data-outer~="S"] { border-bottom: 2px solid rgba(0,0,0,0.30); }
+        .on-board.medium[data-outer~="W"] { border-left:   2px solid rgba(0,0,0,0.30); }
+        .on-board.medium[data-outer~="E"] { border-right:  2px solid rgba(0,0,0,0.30); }
+        .tile { width: var(--tile-size); height: var(--tile-size); border-radius: 3px; z-index: 15; box-shadow: 0 4px 8px rgba(0,0,0,0.6), inset 0 2px 3px rgba(255,255,255,0.3); animation: placeTile 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes placeTile { from { transform: scale(1.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .tile.blue { background: var(--blue); } .tile.yellow { background: var(--yellow); }
+        .tile.red { background: var(--red); } .tile.green { background: var(--green); }
+        .tile.purple { background: var(--purple); } .tile.orange { background: var(--orange); }
+        .tile.bridge-pending { outline: 3px solid #64ffda; outline-offset: 1px; box-shadow: 0 0 0 2px rgba(100,255,218,0.45), 0 4px 8px rgba(0,0,0,0.6); }
+        .tile.bridge-rejected { animation: rejectFlash 0.55s ease-out; }
+        @keyframes rejectFlash { 0% { outline: 3px solid #D32F2F; outline-offset: 1px; box-shadow: 0 0 0 4px rgba(211,47,47,0.55), 0 0 14px rgba(255,23,68,0.7); } 100% { outline: 0 solid transparent; box-shadow: none; } }
+        #ui-panel { width: 100%; max-width: 340px; padding: 15px; background: var(--panel); border-radius: 8px; border: 1px solid #3d5245; }
+        .current-player { font-size: 1.1em; margin-bottom: 12px; padding: 10px; border-radius: 4px; text-align: center; font-weight: bold; }
+        .blue-turn { background: #1565C0; color: white; } .yellow-turn { background: #fbc02d; color: #333; }
+        #bridge-layer { position: absolute; top: var(--pad); left: var(--pad); width: calc(100% - 2 * var(--pad)); height: calc(100% - 2 * var(--pad)); pointer-events: none; z-index: 20; }
+        .bridge-line { stroke-linecap: butt; transition: stroke 0.5s; }
+        .flash-red { animation: flashRed 0.7s; }
+        @keyframes flashRed { 0% { stroke: white; stroke-width: 12; } 50% { stroke: #ff1744; stroke-width: 15; } 100% { stroke: #555; stroke-width: 6; } }
+        .btn { background: #6d4c41; color: white; border: none; padding: 12px; border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 8px; font-size: 0.95em; }
+        .inv-slot { background: rgba(0,0,0,0.2); padding: 6px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+        .inv-tile { width: 28px; height: 28px; border-radius: 2px; cursor: pointer; border: 2px solid transparent; }
+        .inv-tile.blue { background: var(--blue); } .inv-tile.yellow { background: var(--yellow); }
+        .inv-tile.red { background: var(--red); } .inv-tile.green { background: var(--green); }
+        .inv-tile.purple { background: var(--purple); } .inv-tile.orange { background: var(--orange); }
+        .inv-tile.selected { border-color: white; transform: scale(1.1); }
+        .inv-name { font-size: 0.65em; opacity: 0.85; }
+        .inv-count { font-size: 0.85em; font-weight: bold; }
+
+        /* Setup overlay */
+        #setup-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 3000; justify-content: center; align-items: center; }
+        .setup-box { background: #fdfcf0; color: #222; padding: 25px; border-radius: 12px; max-width: 600px; width: 92%; max-height: 85vh; overflow-y: auto; line-height: 1.5; }
+        .setup-box h2 { margin-top: 0; border-bottom: 2px solid #3d5245; padding-bottom: 10px; }
+        #position-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 15px; }
+        .position-btn { padding: 18px 10px; background: #3d5245; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1em; text-align: left; }
+        .position-btn:hover { background: #4d6758; }
+        .position-btn .sub { display: block; font-weight: normal; font-size: 0.85em; opacity: 0.8; margin-top: 3px; }
+
+        /* Modal Styling */
+        #rules-modal, #share-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-box { background: #fdfcf0; color: #222; padding: 25px; border-radius: 12px; max-width: 650px; width: 92%; max-height: 85vh; overflow-y: auto; line-height: 1.6; font-size: 0.95em; }
+        .modal-box h2 { border-bottom: 2px solid #6d4c41; padding-bottom: 10px; }
+        .modal-box h3 { margin-top: 20px; color: #5d4037; }
+        .badge { padding: 2px 6px; border-radius: 3px; font-weight: bold; color: white; }
+
+        @media (max-width: 600px) {
+            #game-layout { flex-direction: column; align-items: center; }
+            #ui-panel { max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
+        <h1 style="margin:5px 0;">DIVIDED LOYALTIES<span id="position-title" style="color:#bdbdbd; font-weight:normal;"></span></h1>
+        <button class="btn" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="openShareDialog()">WhatsApp で共有</button>
+    </div>
+
+    <div id="share-modal" onclick="closeShareDialog()">
+        <div class="modal-box" onclick="event.stopPropagation()" style="max-width:480px;">
+            <h2>📤 WhatsApp で共有</h2>
+            <p style="margin:10px 0 0;">現在の配置へのリンクを送信します。</p>
+            <label id="share-include-row" style="display:flex; align-items:flex-start; gap:10px; padding:12px; background:#f5f3e8; border-radius:6px; cursor:pointer; margin:14px 0;">
+                <input type="checkbox" id="share-include-state" style="width:18px; height:18px; margin-top:3px;">
+                <div>
+                    <strong>配置を CSV として添付</strong>
+                    <div style="font-size:0.85em; color:#5d4037; margin-top:4px;">スタート配置を CSV ファイルとして WhatsApp メッセージに添付し、受信者が同じ配置を読み込めるようにします。</div>
+                </div>
+            </label>
+            <div style="display:flex; gap:10px; justify-content:flex-end;">
+                <button class="btn" style="width:auto; background:#8d6e63; margin-top:0;" onclick="closeShareDialog()">キャンセル</button>
+                <button class="btn" style="width:auto; background:#25D366; color:white; margin-top:0;" onclick="submitShareDialog()">送信</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="setup-overlay">
+        <div class="setup-box">
+            <h2>スタート配置を選ぶ</h2>
+            <p style="margin:8px 0 0;">スタート配置を1つ選んでください。盤面上にボードのコマがそれに従って配置されます。</p>
+            <div id="position-grid"></div>
+        </div>
+    </div>
+
+    <div id="game-layout">
+        <div style="position: relative;">
+            <div id="meta-grid"></div>
+            <svg id="bridge-layer"></svg>
+        </div>
+
+        <div id="ui-panel">
+            <button class="btn" onclick="toggleRules(true)">📜 詳しいルール</button>
+            <div id="turn-indicator" class="current-player blue-turn" style="margin-top:15px;">青のターン</div>
+            <div id="bridge-hint" style="display:none; margin-top:8px; padding:8px 10px; border-radius:8px; background:#5d4037; color:#fff; font-size:0.85em; line-height:1.35; text-align:center;"></div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-weight:bold; font-size:0.9em;">
+                <div style="text-align:center;">青<div style="font-weight:normal; font-size:0.85em; margin-top:2px;">橋 <span id="blue-score">0</span> · 領域 <span id="blue-region-score">0</span></div></div>
+                <div style="text-align:center;">黄<div style="font-weight:normal; font-size:0.85em; margin-top:2px;">橋 <span id="yellow-score">0</span> · 領域 <span id="yellow-region-score">0</span></div></div>
+            </div>
+            <div id="inventory-container" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0;"></div>
+            <button class="btn" style="background: #455a64;" onclick="endTurn()">ターン終了</button>
+            <button class="btn" id="undo-btn" style="background: #5d4037;" onclick="undo()">↶ 手を戻す</button>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px;">
+                <button class="btn" style="background: #00695c; margin-top:0;" onclick="exportGameJSON()" title="ゲーム状態をファイルに保存">💾 保存</button>
+                <button class="btn" style="background: #00695c; margin-top:0;" onclick="triggerImportGame()" title="ゲーム状態をファイルから読み込み">📂 読込</button>
+            </div>
+            <button class="btn" style="background: #3d5245;" onclick="showSetup()">新しいゲーム</button>
+            <input type="file" id="import-game-input" accept=".json,application/json" style="display:none;" onchange="handleImportGameFile(event)">
+        </div>
+    </div>
+
+    <div id="editor-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.92); z-index:2500; overflow-y:auto; padding:15px 8px;">
+        <div style="max-width:880px; margin:0 auto; background:#fdfcf0; color:#222; padding:18px; border-radius:10px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+                <h2 style="margin:0; font-size:1.2em;">エディター — カスタムスタート配置</h2>
+                <input id="editor-name" type="text" placeholder="配置名" style="flex:1; min-width:160px; padding:8px; font-size:1em; border:1px solid #ccc; border-radius:4px;">
+                <label style="font-size:0.9em; color:#444; display:flex; align-items:center; gap:6px;">
+                    幅:
+                    <select id="editor-size-w" style="padding:6px; font-size:0.95em; border:1px solid #ccc; border-radius:4px;" onchange="setEditorGridDim('w', this.value)"></select>
+                </label>
+                <label style="font-size:0.9em; color:#444; display:flex; align-items:center; gap:6px;">
+                    高さ:
+                    <select id="editor-size-h" style="padding:6px; font-size:0.95em; border:1px solid #ccc; border-radius:4px;" onchange="setEditorGridDim('h', this.value)"></select>
+                </label>
+            </div>
+            <div style="font-size:0.85em; color:#555; margin-bottom:8px;">ボードを選び（S = 3×3 濃い、W = ピラミッド型 中間、G = 3×4 明るい）、セルをタップします。同じ種類のボードが複数あっても（例: S1, S2, …）それぞれ別々に扱われます。幅と高さは異なっていてもかまいません（例: 15×9）。<strong>• ドット</strong>ブラシを使うと、橋を完成させる場合に石を置けるセルを指定できます。指定しなければそのセルは空のままです。</div>
+            <div id="editor-brush-bar" style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px;"></div>
+            <div style="background:#fff; padding:10px; border-radius:6px; display:flex; justify-content:center; overflow:auto; border:1px solid #ccc;">
+                <div id="editor-grid" style="display:grid; gap:2px; background:transparent; padding:4px; border-radius:4px;"></div>
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; justify-content:center;">
+                <button class="btn" style="width:auto; background:#3d5245;" onclick="saveCustomPosition()">💾 保存（ブラウザ内）</button>
+                <button class="btn" style="width:auto; background:#25D366;" onclick="shareEditorViaWhatsApp()">📤 WhatsApp で共有</button>
+                <button class="btn" style="width:auto; background:#6d4c41;" onclick="exportEditorCSV()">📋 CSV として書き出し</button>
+                <button class="btn" style="width:auto; background:#455a64;" onclick="closeEditor()">✕ 閉じる</button>
+            </div>
+            <p style="font-size:0.82em; color:#666; margin-top:12px; line-height:1.5;">
+                <strong>保存</strong>は配置をブラウザ内にローカル保存します。保存後、選択画面に ★ 付きで表示されます。<strong>CSV として</strong>は <code>divided_loyalties_starting_positions.csv</code> に追記できるブロックを作成します（すべてのプレイヤー向け）。
+            </p>
+        </div>
+    </div>
+
+    <div id="csv-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.92); z-index:3500; justify-content:center; align-items:center; padding:15px;">
+        <div style="background:#fdfcf0; color:#222; padding:20px; border-radius:10px; max-width:720px; width:100%;">
+            <h3 style="margin-top:0;">CSV ブロック</h3>
+            <p style="font-size:0.9em; margin:6px 0 10px;">このブロックをコピーして <code>divided_loyalties_starting_positions.csv</code> に追記してください。必要に応じて <code>position_id</code> を次の空き番号に調整してください。</p>
+            <textarea id="csv-output" readonly style="width:100%; height:240px; font-family:monospace; font-size:0.85em; padding:8px; border:1px solid #ccc; border-radius:4px;"></textarea>
+            <div style="display:flex; gap:8px; margin-top:10px; justify-content:flex-end;">
+                <button class="btn" style="width:auto; background:#3d5245;" onclick="copyCSVToClipboard()">クリップボードにコピー</button>
+                <button class="btn" style="width:auto; background:#455a64;" onclick="document.getElementById('csv-modal').style.display='none'">閉じる</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="rules-modal" onclick="toggleRules(false)">
+        <div class="modal-box" onclick="event.stopPropagation()">
+            <h2>📜 ルール（エピック版）</h2>
+
+            <h3>1. カラーグループ（カラー +）</h3>
+            <p>各プレイヤーは、カラーホイール上で隣り合う色相からなる「カラー +」を使います:</p>
+            <ul>
+                <li><strong>青 +</strong>: <span class="badge" style="background:var(--blue)">青</span>、<span class="badge" style="background:var(--purple)">紫</span>、<span class="badge" style="background:var(--green)">緑</span>。</li>
+                <li><strong>黄 +</strong>: <span class="badge" style="background:var(--yellow); color:black">黄</span>、<span class="badge" style="background:var(--orange)">オレンジ</span>、<span class="badge" style="background:var(--green)">緑</span>。</li>
+                <li><strong>赤 +（破壊）</strong>: <span class="badge" style="background:var(--red)">赤</span>、<span class="badge" style="background:var(--purple)">紫</span>、<span class="badge" style="background:var(--orange)">オレンジ</span>。</li>
+            </ul>
+
+            <h3>2. 橋の建設と得点</h3>
+            <ul>
+                <li><strong>橋の得点:</strong> 石3個の列は1点（3橋）、石4個の列は2点（4橋）になります。</li>
+                <li><strong>領域ボーナス:</strong> ある領域（S1、G4 … のようなボード）であなたが<em>最初</em>に架けた橋は1点の追加点になります。ただし、その橋がそのボードの<em>内側</em>のセルを完全に覆う場合に限ります（端点は線が半分しか覆わないためカウントされません）。</li>
+                <li><strong>別々の表示:</strong> 橋の点と領域の点は別々に表示されます。最後にご自分で合計してください。</li>
+                <li><strong>重要:</strong> 同じ色が2つ直接隣り合ってはいけません。</li>
+                <li>橋は、その列を完成させた石を置いたのと同じターンに架けなければなりません。</li>
+                <li><strong>橋は後から延長できません！</strong> — Walter。新しい橋は、既存の（切断されていない）橋と<em>2個以上の石</em>を共有できません。これは、後から3を4に伸ばすことだけでなく、同じ線上で3橋を重ねること（例: 既存の <em>[A,B,C]</em> ＋ 新しい <em>[B,C,D]</em> — 4のように見えるため禁止）も防ぎます。石1個だけの共有は<em>接合点</em>としてのみ許されます。共有される石は、2本の橋のうち少なくとも一方の<em>端</em>でなければなりません（扇形、L字やT字、あるいは中央の石だけを共有して一直線に端どうしでつながる2本の3橋）。ある橋がもう一方を一直線に<em>貫いて</em>通る（共有石が両方の中央にある +/× の形）のは<em>許されません</em> — ルール3を参照: 誰も他の橋を覆ったり横切ったりできません。代わりに列に4個目の石を加えるだけにすれば（先に3橋を架けずに）、直接4橋にする選択肢は残ります。ただしその場合、相手にその間を切断される危険があります。</li>
+                <li><strong>橋の架け方:</strong> 列の最初の石を<em>ダブルクリック</em>（またはダブルタップ）し、次に最後の石を<em>ダブルクリック</em>します。その列が有効なら（石3個か4個、すべて自分のカラーグループかすべて赤、同じ色が連続しない）、橋が描かれます。同じ石をもう一度ダブルクリックすると選択が解除されます。</li>
+                <li><strong>ドット（盤外のセル）に置いた場合、石が置かれるだけで、橋は自動的には描かれません。</strong> 他の橋と同じように、ダブルクリックで自分の望む橋を自分で架けます。これにより、<em>どの</em>橋を作るかを完全に自分でコントロールできます（例: 既存の橋を横切る4の代わりに、より短い3を選ぶ）。ドットが光って——そしてコマを受け入れて——くれるのは、少なくとも1本の有効な橋が可能な場所だけです。<strong>盤外ルール:</strong> ドット上の石は、そのターンに実際に橋がそこを通る場合にのみ有効です。橋を架けずにターンを終えると、石は取り戻され、コマは手元に戻されます。</li>
+            </ul>
+
+            <h3>3. 赤い橋と切断（「カット」）</h3>
+            <ul>
+                <li>赤い橋は防御に使います。</li>
+                <li>赤い橋が青/黄の橋を横切ると、横切られた<em>すべて</em>の橋が得点を失います。赤はその配置で、最初の1本だけでなく、横切ったすべてを切断します。</li>
+                <li><strong>誰も既存の橋を横切れません:</strong> 青や黄の橋は、後から赤（や他の）橋を横切ることは<em>できません</em>。迂回しなければなりません。赤い橋が得点する橋を切断できるのは<em>赤が置かれた瞬間</em>だけです。盤上に置かれた後は、赤はその線を誰に対しても封鎖します（Walter、2026-05-27）。</li>
+                <li><strong>赤は赤を切断できません:</strong> 新しい赤い橋が既存の赤い橋を横切る場合は拒否されます。そうでなければ防御構造を築くことができなくなるためです（Walter）。</li>
+                <li><strong>幾何:</strong> 橋は<em>内側</em>のセルでのみ切断できます。端点は無敵です。</li>
+                <li>横切りは<em>内側</em>のセルかセルとセルの間でのみ起こり、端点では決して起こりません（そこでは橋は単に出会うだけ: 許される接合点です）。このように横切れるのは赤だけで、横切ると切断します。赤い橋は、その経路が別の赤<em>または</em>すでに切断された橋を横切る場合も拒否されます。</li>
+                <li><strong>切断された橋は盤上に残ります:</strong> 切断された橋は灰色の破線で描かれます。橋の点と領域の点の両方を失いますが、物理的には盤上に残り、その上に架けようとするもの（得点する橋でも赤でも）を依然として妨げます。</li>
+            </ul>
+
+            <h3>4. 盤外のセルとボード</h3>
+            <ul>
+                <li><strong>ドット（•）:</strong> 小さなドットはボードの外側のセルを示します。そのようなドットのセルに石を置けるのは、<em>同じターンに橋を完成させる</em>場合<em>のみ</em>です。</li>
+                <li><strong>1つの列の石が複数、盤外にあってもかまいません</strong> — それぞれが自分自身の橋を完成させて置かれていれば。したがって、後の列が2つや3つの「ドットの」石を通って架かることもあります。</li>
+                <li>Andres Kuusk（抽象ゲームの世界チャンピオン）は、このルールを「素晴らしいルール」と呼んでいます :-)</li>
+            </ul>
+
+            <h3>5. 3つのセット（手持ち）</h3>
+            <ul>
+                <li>各プレイヤーは36個の石を一度に受け取るのではなく、<strong>12個ずつ3セット</strong>に分けて受け取ります。</li>
+                <li><strong>青:</strong> 1セットあたり 青4、紫3、緑2、赤2、オレンジ1。</li>
+                <li><strong>黄:</strong> 1セットあたり 黄4、オレンジ3、緑2、赤2、紫1。</li>
+                <li>プレイヤーが12個すべての石を置くと、自動的に次のセットを受け取ります。セットの数は配置によって異なります。「4ラウンドゲーム」は4セットにわたり（表示は「Set 1/4 … 4/4」）、「3ラウンドゲーム」は3セットです。現在のカウントはプレイヤーのターンに表示されます。</li>
+                <li>終盤のヒント: セットの切り替えごと（12手目、24手目、… の後）に戦術が目に見えて変わります。最後のセットの後に手持ちに残っているものが、しばしば勝敗を決めます。</li>
+            </ul>
+
+            <h3>6. 手戻しと保存</h3>
+            <ul>
+                <li><strong>↶ 手を戻す:</strong> このボタンをクリックするたびに、1つの操作が取り消されます — 石が手持ちに戻り、橋が取り除かれ、プレイヤーのターンが復元されます。好きなだけ、ゲームの最初まで遡って押せます。</li>
+                <li><strong>自動保存:</strong> 現在のゲームはブラウザに自動保存されます。ページを閉じて後で開き直すと、スタートメニューの一番上に「▶ 前回のゲームを再開」が表示されます。</li>
+                <li><strong>💾 保存 / 📂 読込:</strong> ゲーム状態を JSON ファイルとしてダウンロードしたり、以前保存したファイルを読み込んだりします。</li>
+                <li><strong>WhatsApp で共有（上部）:</strong> 現在の配置へのリンクを送信します。「配置を CSV として添付」オプションを使うと、スタート配置も CSV ファイルとして添付され、受信者が同じ配置を読み込めます。</li>
+            </ul>
+
+            <button class="btn" onclick="toggleRules(false)">閉じる</button>
+        </div>
+    </div>
+
+    <script>
+        let GRID_W = 11, GRID_H = 11;  // recomputed per position from CSV (max(x)+2, max(y)+2)
+        const COLOR_NAMES_DE = { blue:'青', yellow:'黄', purple:'紫', orange:'オレンジ', green:'緑', red:'赤' };
+        // Walter's "Sätze" rule: each player gets 12 stones at a time. Empties trigger an
+        // auto-refill in endTurn until batch === TOTAL_BATCHES — creating inflection points
+        // (around moves 12, 24, …) that change the late-game tactics.
+        // TOTAL_BATCHES varies by position group: the 4-round set (ids 1–6) plays FOUR rounds
+        // (4×12=48 stones), the 3-round set (ids 7–12) + customs play THREE (3×12=36). It is set
+        // per game in startWithPosition() via roundsForPosition(). Walter, 2026-06-01: Wind wheel
+        // (a 4-round position) was wrongly stopping after 3 rounds because this was hardcoded to 3.
+        const BLUE_BATCH = {blue:4, purple:3, green:2, red:2, orange:1};
+        const YELLOW_BATCH = {yellow:4, orange:3, green:2, red:2, purple:1};
+        // Built-ins split into a 4-round set (ids 1–6, index 0–5) and a 3-round set (ids 7–12);
+        // the boundary is the design convention, not stored in the CSV — change FOUR_ROUND_COUNT
+        // if it ever moves. Used by both showSetup() (section headers) and roundsForPosition().
+        const FOUR_ROUND_COUNT = 6;
+        let TOTAL_BATCHES = 3;   // set per position in startWithPosition()
+        let currentPlayer = 'blue', selectedColor = null, lastPlaced = null, bridgePlaced = false, moveState = 'tile';
+        let grid = Array(GRID_W * GRID_H).fill(null), blueInv = {...BLUE_BATCH}, yellowInv = {...YELLOW_BATCH};
+        let blueBatch = 1, yellowBatch = 1;
+        let activeBridges = [], bridgeSelection = [], bridgeScore = {blue:0, yellow:0}, regionScore = {blue:0, yellow:0};
+        // If a stone placed on a dot auto-formed a bridge this turn, this is its id —
+        // the player may double-click to amend it (Walter, 2026-05-26: "the player can change
+        // the auto-bridge by double-clicking, just like any other bridge"). Reset on endTurn.
+        let amendableBridgeId = null;
+        // Why the last manual bridge double-click was refused (Walter, 2026-06-02).
+        // tryFormBridge sets this on every reject path; handleStoneDblClick shows it
+        // beside the red flash so the player isn't left with „keine Ahnung warum".
+        let bridgeRefuseReason = '';
+        let cellSize = 44, gapSize = 2, padSize = 10;
+        let undoStack = [];           // TUK-style history: snapshot before each user-input mutation
+        let currentPosition = null;   // the {name, boards, dots, ...} the current game started from
+
+        // Embedded copy of divided_loyalties_starting_positions.csv — this is what
+        // ships inside iOS/Android/Rust app bundles where fetch('…csv') over file://
+        // either fails or has no CSV next to the HTML. The external CSV file is kept
+        // in the repo for dev convenience (Walter edits it directly); when you change
+        // one, sync the other. parsePositionsCSV is hoisted so we can call it here.
+        const EMBEDDED_POSITIONS_CSV = `position_id,position_name,row,c0,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,c15,c16
+1,Up the Stairs,0,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+1,Up the Stairs,1,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+1,Up the Stairs,2,.,.,.,.,.,.,.,.,.,.,.,.,.,o,.
+1,Up the Stairs,3,.,.,.,.,.,.,.,.,.,.,.,.,o,W4,o
+1,Up the Stairs,4,.,.,.,.,.,.,.,.,.,.,.,o,W4,W4,o
+1,Up the Stairs,5,.,.,.,.,.,.,.,.,.,.,o,W4,W4,W4,o
+1,Up the Stairs,6,.,.,.,.,.,.,.,.,.,o,W3,o,o,S3,o
+1,Up the Stairs,7,.,.,.,.,.,.,.,.,o,W3,W3,S3,S3,S3,o
+1,Up the Stairs,8,.,.,.,.,.,.,.,o,W3,W3,W3,o,o,S3,o
+1,Up the Stairs,9,.,.,.,.,.,.,o,W2,o,o,S2,G1,G1,G1,o
+1,Up the Stairs,10,.,.,.,.,.,o,W2,W2,S2,S2,S2,o,o,G1,o
+1,Up the Stairs,11,.,.,.,.,o,W2,W2,W2,o,o,S2,G1,G1,G1,o
+1,Up the Stairs,12,.,.,.,o,W1,o,o,S1,G2,G2,G2,o,o,W5,o
+1,Up the Stairs,13,.,.,o,W1,W1,S1,S1,S1,o,o,G2,o,W5,W5,o
+1,Up the Stairs,14,.,o,W1,W1,W1,o,o,S1,G2,G2,G2,W5,W5,W5,o
+1,Up the Stairs,15,.,.,o,o,o,.,.,o,o,o,o,.,o,o,.
+2,Octopus,0,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+2,Octopus,1,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+2,Octopus,2,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+2,Octopus,3,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+2,Octopus,4,.,.,.,o,o,o,.,.,o,o,o,o,.,o,o,.
+2,Octopus,5,.,.,o,S1,S1,S1,o,o,S1,S1,S1,S1,o,S1,S1,o
+2,Octopus,6,.,.,o,S1,o,S1,o,o,S1,o,o,o,o,o,S1,o
+2,Octopus,7,.,.,o,S1,o,G1,G1,G1,S1,G1,G1,G1,S1,S1,S1,o
+2,Octopus,8,.,.,o,o,o,G1,G1,G1,.,G1,G1,G1,o,o,o,.
+2,Octopus,9,.,o,S1,S1,S1,G1,G1,G1,S1,G1,G1,G1,o,S1,o,.
+2,Octopus,10,.,o,S1,o,o,o,o,o,S1,o,o,S1,o,S1,o,.
+2,Octopus,11,.,o,S1,S1,o,S1,S1,S1,S1,o,o,S1,S1,S1,o,.
+2,Octopus,12,.,.,o,o,.,o,o,o,o,.,.,o,o,o,.,.
+3,Wind wheel,0,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+3,Wind wheel,1,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+3,Wind wheel,2,.,.,.,.,.,o,o,o,.,.,.,.,.,.,.
+3,Wind wheel,3,.,.,.,.,o,S1,S1,S1,o,o,o,o,.,.,.
+3,Wind wheel,4,.,.,.,.,o,o,S1,S1,o,G2,G2,G2,o,o,.
+3,Wind wheel,5,.,.,.,o,G1,G3,G1,S1,o,G2,G2,G2,o,S2,o
+3,Wind wheel,6,.,.,.,o,G1,G1,G1,o,o,G2,G2,G2,S2,S2,o
+3,Wind wheel,7,.,.,.,o,G1,G1,G1,W1,W1,W1,o,S2,S2,S2,o
+3,Wind wheel,8,.,.,.,o,o,o,o,W1,W1,W1,o,o,o,o,.
+3,Wind wheel,9,.,.,o,S4,S4,S4,o,W1,W1,W1,G3,G3,G3,o,.
+3,Wind wheel,10,.,.,o,S4,S4,G4,G4,G4,o,o,G3,G3,G3,o,.
+3,Wind wheel,11,.,.,o,S4,o,G4,G4,G4,o,S3,G3,G3,G3,o,.
+3,Wind wheel,12,.,.,.,o,o,G4,G4,G4,o,S3,S3,o,o,.,.
+3,Wind wheel,13,.,.,.,.,.,o,o,o,o,S3,S3,S3,o,.,.
+3,Wind wheel,14,.,.,.,.,.,.,.,.,.,o,o,o,.,.,.
+4,Gentle kiss,0,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+4,Gentle kiss,1,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+4,Gentle kiss,2,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+4,Gentle kiss,3,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+4,Gentle kiss,4,.,.,.,o,o,o,.,.,.,o,o,o,.,.,.,.
+4,Gentle kiss,5,.,.,o,S2,S2,S2,o,o,o,W2,W2,W2,o,.,.,.
+4,Gentle kiss,6,.,.,o,S2,S2,S2,G1,G1,G1,W2,W2,W2,G4,o,.,.
+4,Gentle kiss,7,.,.,o,S2,S2,S2,G1,G1,o,W2,W2,W2,G4,G4,o,.
+4,Gentle kiss,8,.,.,.,o,o,o,G1,o,o,W2,W2,W2,G4,G4,G4,o
+4,Gentle kiss,9,.,.,o,G3,G3,G3,W1,W1,W1,o,o,G2,o,o,o,.
+4,Gentle kiss,10,.,.,.,o,G3,G3,W1,W1,W1,o,G2,G2,S1,S1,S1,o
+4,Gentle kiss,11,.,.,.,.,o,G3,W1,W1,W1,G2,G2,G2,S1,S1,S1,o
+4,Gentle kiss,12,.,.,.,.,.,o,W1,W1,W1,o,o,o,S1,S1,S1,o
+4,Gentle kiss,13,.,.,.,.,.,.,o,o,o,.,.,.,o,o,o,.
+5,Utopia,0,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+5,Utopia,1,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+5,Utopia,2,.,.,.,.,.,o,o,o,.,.,o,.,.,.,.
+5,Utopia,3,.,.,.,.,o,S1,S1,S1,o,o,S2,o,o,.,.
+5,Utopia,4,.,.,.,.,o,S1,S1,o,o,S2,S2,G2,G2,o,.
+5,Utopia,5,.,.,.,o,o,S1,o,o,S2,S2,S2,G2,G2,o,.
+5,Utopia,6,.,.,o,W1,W1,W1,W1,o,o,o,o,G2,G2,o,.
+5,Utopia,7,.,.,o,W1,W1,W1,W1,G1,G1,G1,o,G2,G2,o,.
+5,Utopia,8,.,.,o,W1,W1,W1,W1,G1,G1,G1,W2,W2,W2,W2,o
+5,Utopia,9,.,.,.,o,G2,G2,o,G1,G1,G1,W2,W2,W2,W2,o
+5,Utopia,10,.,.,.,o,G2,G2,o,o,o,o,W2,W2,W2,W2,o
+5,Utopia,11,.,.,.,o,G2,G2,S3,S3,S3,o,o,S4,o,o,.
+5,Utopia,12,.,.,.,o,G2,G2,S3,S3,o,o,S4,S4,o,.,.
+5,Utopia,13,.,.,.,.,o,o,S3,o,o,S4,S4,S4,o,.,.
+5,Utopia,14,.,.,.,.,.,.,o,.,.,o,o,o,.,.,.
+6,E M 3 W,0,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+6,E M 3 W,1,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+6,E M 3 W,2,.,.,.,o,o,.,o,o,o,o,o,.,o,o,.
+6,E M 3 W,3,.,.,o,S1,S1,o,G1,G1,G1,G1,G1,o,S2,S2,o
+6,E M 3 W,4,.,.,o,S1,S1,o,G1,o,G1,o,G1,o,S2,S2,o
+6,E M 3 W,5,.,.,.,o,o,o,G1,o,G1,o,G1,o,o,o,.
+6,E M 3 W,6,.,.,o,G2,G2,G2,o,o,o,o,o,G3,G3,G3,o
+6,E M 3 W,7,.,.,o,G2,o,o,o,W1,W1,W1,o,o,o,G3,o
+6,E M 3 W,8,.,.,o,G2,G2,G2,o,W1,W1,W1,o,G3,G3,G3,o
+6,E M 3 W,9,.,.,o,G2,o,o,o,W1,W1,W1,o,o,o,G3,o
+6,E M 3 W,10,.,.,o,G2,G2,G2,o,o,o,o,o,G3,G3,G3,o
+6,E M 3 W,11,.,.,.,o,o,o,G4,o,G4,o,G4,o,o,o,.
+6,E M 3 W,12,.,.,o,S3,S3,o,G4,o,G4,o,G4,o,S4,S4,o
+6,E M 3 W,13,.,.,o,S3,S3,o,G4,G4,G4,G4,G4,o,S4,S4,o
+6,E M 3 W,14,.,.,.,o,o,.,o,o,o,o,o,.,o,o,.
+7,Pyramid,0,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+7,Pyramid,1,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+7,Pyramid,2,.,.,.,.,.,.,.,.,o,.,.,.,.,.,.,.,.
+7,Pyramid,3,.,.,.,.,.,.,.,o,S5,o,.,.,.,.,.,.,.
+7,Pyramid,4,.,.,.,.,.,.,o,S5,o,S5,o,.,.,.,.,.,.
+7,Pyramid,5,.,.,.,.,.,o,S5,S5,o,S5,S5,o,.,.,.,.,.
+7,Pyramid,6,.,.,.,.,o,W1,W1,W1,o,W1,W1,W1,o,.,.,.,.
+7,Pyramid,7,.,.,.,o,o,W1,W1,W1,o,W2,W2,W2,o,o,.,.,.
+7,Pyramid,8,.,.,o,G2,G2,G2,o,G2,G2,G2,o,G2,G2,G2,o,.,.
+7,Pyramid,9,.,o,o,G1,G1,G1,o,G2,G2,G2,o,G3,G3,G3,o,o,.
+7,Pyramid,10,o,S1,S1,S1,o,S1,S1,S1,o,S1,S1,S1,o,S1,S1,S1,o
+7,Pyramid,11,o,S1,S1,S1,o,S2,S2,S2,o,S3,S3,S3,o,S4,S4,S4,o
+7,Pyramid,12,.,o,o,o,.,o,o,o,.,o,o,o,.,o,o,o,.
+8,Horseshoes,0,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+8,Horseshoes,1,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+8,Horseshoes,2,.,.,.,.,.,.,.,o,.,o,.,.,.,.,.
+8,Horseshoes,3,.,.,.,.,.,.,o,S1,o,S1,o,.,.,.,.
+8,Horseshoes,4,.,.,.,.,.,o,G4,S1,o,S1,G1,o,.,.,.
+8,Horseshoes,5,.,.,.,.,o,G4,G4,S1,S1,S1,G1,G1,o,.,.
+8,Horseshoes,6,.,.,.,o,G4,G4,o,o,o,o,o,G1,G1,o,.
+8,Horseshoes,7,.,.,o,S4,S4,S4,o,W5,W5,W5,o,S2,S2,S2,o
+8,Horseshoes,8,.,.,.,o,o,S4,o,W5,W5,W5,o,S2,o,o,.
+8,Horseshoes,9,.,.,o,S4,S4,S4,o,W5,W5,W5,o,S2,S2,S2,o
+8,Horseshoes,10,.,.,.,o,G3,G3,o,o,o,o,o,G2,G2,o,.
+8,Horseshoes,11,.,.,.,.,o,G3,G3,S3,S3,S3,G2,G2,o,.,.
+8,Horseshoes,12,.,.,.,.,.,o,G3,S3,o,S3,G2,o,.,.,.
+8,Horseshoes,13,.,.,.,.,.,.,o,S3,o,S3,o,.,.,.,.
+8,Horseshoes,14,.,.,.,.,.,.,.,o,.,o,.,.,.,.,.
+9,SwissCross,0,.,.,.,.,.,.,.,.,.,.,.,.,.
+9,SwissCross,1,.,.,.,.,.,.,.,.,.,.,.,.,.
+9,SwissCross,2,.,.,.,.,o,.,o,.,.,.,.,.,.
+9,SwissCross,3,.,.,.,o,G1,o,G2,o,o,.,.,.,.
+9,SwissCross,4,.,.,o,G1,G1,o,G2,G2,W1,o,.,.,.
+9,SwissCross,5,.,.,.,o,G1,W4,G2,W1,W1,W1,o,.,.
+9,SwissCross,6,.,.,.,o,W4,W4,W4,o,W1,o,S3,o,.
+9,SwissCross,7,.,.,.,.,o,W4,o,S1,o,S3,S3,S3,o
+9,SwissCross,8,.,.,.,o,S2,o,S1,S1,S1,o,S3,o,.
+9,SwissCross,9,.,.,o,S2,S2,S2,o,S1,o,W3,o,.,.
+9,SwissCross,10,.,.,.,o,S2,o,W1,o,W3,W3,W3,o,.
+9,SwissCross,11,.,.,.,.,o,W1,W1,W1,G3,W3,G4,o,.
+9,SwissCross,12,.,.,.,.,.,o,W1,G3,G3,o,G4,G4,o
+9,SwissCross,13,.,.,.,.,.,.,o,o,G3,o,G4,o,.
+9,SwissCross,14,.,.,.,.,.,.,.,.,o,.,o,.,.
+10,Picasso,0,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+10,Picasso,1,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+10,Picasso,2,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+10,Picasso,3,.,.,.,.,.,.,o,.,o,.,.,.,.,.
+10,Picasso,4,.,.,.,.,.,o,G3,o,W5,o,o,.,.,.
+10,Picasso,5,.,.,.,.,o,G3,G3,G3,W5,W5,W5,o,.,.
+10,Picasso,6,.,.,.,o,G3,G3,G3,o,o,o,W5,W5,o,.
+10,Picasso,7,.,.,.,.,o,G3,o,S2,S2,S2,W5,S2,o,.
+10,Picasso,8,.,.,.,o,W4,o,o,o,o,S2,S2,S2,o,.
+10,Picasso,9,.,.,o,W4,W4,W4,W4,o,G1,S2,o,o,G2,o
+10,Picasso,10,.,.,.,o,o,o,W4,G1,G1,o,G2,G2,G2,o
+10,Picasso,11,.,.,.,o,S1,G1,G1,G1,W1,W1,o,o,G2,o
+10,Picasso,12,.,.,o,S1,S1,o,o,o,o,W1,W1,o,G2,o
+10,Picasso,13,.,.,o,S1,S1,S1,o,.,.,o,W1,W1,o,.
+10,Picasso,14,.,.,o,S1,S1,o,.,.,.,.,o,W1,o,.
+10,Picasso,15,.,.,.,o,o,.,.,.,.,.,.,o,.,.
+11,AlmostADiamond,0,.,.,.,.,.,.,.,.,.,.,.,.,.
+11,AlmostADiamond,1,.,.,.,.,.,.,.,o,.,.,.,.,.
+11,AlmostADiamond,2,.,.,.,.,.,.,o,S2,o,.,.,.,.
+11,AlmostADiamond,3,.,.,.,.,.,o,S2,G2,S2,o,.,.,.
+11,AlmostADiamond,4,.,.,.,.,o,S2,G2,W1,G2,S2,o,.,.
+11,AlmostADiamond,5,.,.,.,o,S2,o,W1,S1,W1,o,S2,o,.
+11,AlmostADiamond,6,.,.,o,S2,G1,W1,S1,o,S1,W1,G3,S2,o
+11,AlmostADiamond,7,.,.,o,G1,W1,S1,o,.,o,S1,W1,G3,o
+11,AlmostADiamond,8,.,.,o,S3,G1,W1,S1,o,S1,W1,G3,S3,o
+11,AlmostADiamond,9,.,.,.,o,S3,o,W1,S1,W1,o,S3,o,.
+11,AlmostADiamond,10,.,.,.,.,o,S3,G4,W1,G4,S3,o,.,.
+11,AlmostADiamond,11,.,.,.,.,.,o,S3,G4,S3,o,.,.,.
+11,AlmostADiamond,12,.,.,.,.,.,.,o,S3,o,.,.,.,.
+11,AlmostADiamond,13,.,.,.,.,.,.,.,o,.,.,.,.,.
+12,Frankenstein,0,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+12,Frankenstein,1,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+12,Frankenstein,2,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+12,Frankenstein,3,.,.,.,.,.,.,o,o,o,o,o,.,.,.,.
+12,Frankenstein,4,.,.,.,.,.,o,W3,W3,W3,W3,W3,o,.,.,.
+12,Frankenstein,5,.,.,.,.,o,W3,W3,o,o,o,W3,W3,o,.,.
+12,Frankenstein,6,.,.,.,o,o,o,W3,o,.,o,W3,o,o,o,.
+12,Frankenstein,7,.,.,o,G2,G2,G2,W3,o,.,o,W3,G1,G1,G1,o
+12,Frankenstein,8,.,.,o,G2,o,S1,S1,S1,o,S2,S2,S2,o,G1,o
+12,Frankenstein,9,.,.,o,G2,o,S1,S1,S1,o,S2,S2,S2,o,G1,o
+12,Frankenstein,10,.,.,o,G2,o,S1,S1,S1,o,S2,S2,S2,o,G1,o
+12,Frankenstein,11,.,.,.,o,.,o,o,W1,o,W2,o,o,.,o,.
+12,Frankenstein,12,.,.,.,.,.,o,W1,W1,o,W2,W2,o,.,.,.
+12,Frankenstein,13,.,.,.,.,o,W1,W1,W1,o,W2,W2,W2,o,.,.
+12,Frankenstein,14,.,.,.,.,.,o,o,o,.,o,o,o,.,.,.
+`;
+        const HARDCODED_POSITIONS = parsePositionsCSV(EMBEDDED_POSITIONS_CSV);
+
+        let STARTING_POSITIONS = HARDCODED_POSITIONS;
+        let boards = [];           // array of flat-index arrays, one per board
+        let boardTokens = [];      // parallel array of token strings (for color class)
+        let allBoardIdx = [];
+        let playDots = new Set();  // flat-indices of off-board cells that show a placement dot
+
+        function calcCellSize() {
+            const vw = window.innerWidth - 20;
+            const vh = window.innerHeight - 80;
+            const maxByWidth = Math.floor((vw - 2 * padSize - (GRID_W - 1) * gapSize) / GRID_W);
+            const maxByHeight = Math.floor((vh - 2 * padSize - (GRID_H - 1) * gapSize) / GRID_H);
+            cellSize = Math.max(16, Math.min(maxByWidth, maxByHeight, 44));
+            document.documentElement.style.setProperty('--cs', cellSize + 'px');
+        }
+
+        function redrawBridges() {
+            const svg = document.getElementById('bridge-layer');
+            svg.innerHTML = '';
+            const step = cellSize + gapSize;
+            for (const b of activeBridges) {
+                const x1 = (b.s % GRID_W) * step + cellSize / 2, y1 = Math.floor(b.s / GRID_W) * step + cellSize / 2;
+                const x2 = (b.e % GRID_W) * step + cellSize / 2, y2 = Math.floor(b.e / GRID_W) * step + cellSize / 2;
+                const angle = Math.atan2(y2 - y1, x2 - x1);
+                const off = cellSize * 0.50;
+                b.coords = { x1: x1 + Math.cos(angle) * off, y1: y1 + Math.sin(angle) * off, x2: x2 - Math.cos(angle) * off, y2: y2 - Math.sin(angle) * off };
+                drawBridge(b.coords, b.player, b.id, b.cut);
+            }
+        }
+
+        function onResize() {
+            calcCellSize();
+            redrawBridges();
+        }
+        window.addEventListener('resize', onResize);
+
+        function init() {
+            calcCellSize();
+            const container = document.getElementById('meta-grid');
+            container.style.gridTemplateColumns = `repeat(${GRID_W}, var(--cs))`;
+            container.style.gridTemplateRows = `repeat(${GRID_H}, var(--cs))`;
+
+            // Map each on-board cell to its board (first-write-wins on overlap)
+            const cellBoard = {};
+            boards.forEach((b, idx) => b.forEach(ci => { if (!(ci in cellBoard)) cellBoard[ci] = idx; }));
+            // Size class: prefer S/W/G token prefix, fall back to cell count
+            // 9=large (black), 7–12=medium (grey), ≤6=small (white)
+            const classFromToken = (tok) => {
+                if (!tok) return null;
+                const ch = tok[0].toUpperCase();
+                if (ch === 'S') return 'large';
+                if (ch === 'G') return 'medium';
+                if (ch === 'W') return 'small';
+                return null;
+            };
+            const sizeOf = (n) => n === 9 ? 'large' : (n >= 7 ? 'medium' : 'small');
+            const boardSize = boards.map((b, idx) => classFromToken(boardTokens[idx]) || sizeOf(b.length));
+
+            const total = GRID_W * GRID_H;
+            for(let i=0; i<total; i++) {
+                const c = document.createElement('div');
+                const bIdx = cellBoard[i];
+                if (bIdx !== undefined) {
+                    c.className = `cell on-board ${boardSize[bIdx]}`;
+                    const row = Math.floor(i/GRID_W), col = i%GRID_W, outers = [];
+                    if (row === 0             || cellBoard[i-GRID_W] !== bIdx) outers.push('N');
+                    if (row === GRID_H - 1    || cellBoard[i+GRID_W] !== bIdx) outers.push('S');
+                    if (col === 0             || cellBoard[i-1]         !== bIdx) outers.push('W');
+                    if (col === GRID_W - 1 || cellBoard[i+1]         !== bIdx) outers.push('E');
+                    c.setAttribute('data-outer', outers.join(' '));
+                } else {
+                    c.className = 'cell off-board';
+                    if (playDots.has(i)) c.classList.add('has-dot');
+                }
+                c.onclick = () => handleClick(i);
+                c.ondblclick = () => handleStoneDblClick(i);
+                container.appendChild(c);
+            }
+            updateUI();
+        }
+
+        function toggleRules(s) { document.getElementById('rules-modal').style.display = s ? 'flex' : 'none'; }
+
+        function showSetup() {
+            const pt = document.getElementById('position-title');
+            if (pt) pt.textContent = '';
+            document.title = 'Divided Loyalties';
+            const g = document.getElementById('position-grid');
+            g.innerHTML = '';
+            if (hasSavedGame()) {
+                const wrap = document.createElement('div');
+                wrap.style.gridColumn = '1 / -1';
+                wrap.style.display = 'flex';
+                wrap.style.gap = '8px';
+                const cont = document.createElement('button');
+                cont.className = 'position-btn';
+                cont.style.flex = '1';
+                cont.style.background = '#00695c';
+                cont.innerHTML = '▶ 前回のゲームを再開<span class="sub">前回のセーブから続ける</span>';
+                cont.onclick = () => { if (loadGameFromStorage()) document.getElementById('setup-overlay').style.display = 'none'; };
+                const drop = document.createElement('button');
+                drop.textContent = '🗑';
+                drop.title = '保存したゲームを破棄';
+                drop.style.cssText = 'background:#8d6e63; color:white; border:none; padding:0 14px; border-radius:8px; cursor:pointer; font-size:1.1em;';
+                drop.onclick = () => { if (confirm('保存したゲームを本当に破棄しますか？')) { clearSavedGame(); showSetup(); } };
+                wrap.appendChild(cont); wrap.appendChild(drop);
+                g.appendChild(wrap);
+            }
+            const customs = loadCustomPositions();
+            const all = STARTING_POSITIONS.concat(customs);
+            // FOUR_ROUND_COUNT (module-level) splits the built-ins into the 4-round set
+            // (section header "4-Round Game") and the 3-round set ("3-Round Game").
+            all.forEach((p, i) => {
+                const isCustom = !!p.customId;
+                let hdrText = null;
+                if (i === 0) hdrText = '4ラウンドゲーム';
+                else if (i === FOUR_ROUND_COUNT && STARTING_POSITIONS.length > FOUR_ROUND_COUNT) hdrText = '3ラウンドゲーム';
+                else if (i === STARTING_POSITIONS.length && customs.length) hdrText = 'カスタム配置';
+                if (hdrText) {
+                    const hdr = document.createElement('div');
+                    hdr.textContent = hdrText;
+                    hdr.style.cssText = 'grid-column:1 / -1; margin:12px 0 2px; font-weight:bold; font-size:0.95em; color:#3d5245; border-bottom:1px solid #c9c6ad; padding-bottom:4px;';
+                    g.appendChild(hdr);
+                }
+                const wrapper = document.createElement('div');
+                wrapper.style.position = 'relative';
+                const b = document.createElement('button');
+                b.className = 'position-btn';
+                b.style.width = '100%';
+                const prefix = isCustom ? '★ ' : `${i+1}: `;
+                b.innerHTML = `${prefix}${p.name}<span class="sub">${p.sub || ''}</span>`;
+                b.onclick = () => startWithPosition(p);
+                wrapper.appendChild(b);
+                const editBtn = document.createElement('button');
+                editBtn.textContent = '✏';
+                editBtn.title = isCustom ? '編集' : 'テンプレートとして開く';
+                editBtn.style.cssText = 'position:absolute; top:6px; right:34px; background:rgba(255,255,255,0.25); color:white; border:none; padding:3px 7px; border-radius:3px; cursor:pointer; font-size:0.9em; line-height:1;';
+                editBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    if (isCustom) { openEditor(p); }
+                    else { openEditor({ name: p.name + ' (copy)', sub: 'Custom position', boards: p.boards, customId: null }); }
+                };
+                wrapper.appendChild(editBtn);
+                if (!isCustom) {
+                    const linkBtn = document.createElement('button');
+                    linkBtn.textContent = '🔗';
+                    linkBtn.title = '直接リンクをコピー';
+                    linkBtn.style.cssText = 'position:absolute; top:6px; right:6px; background:rgba(255,255,255,0.25); color:white; border:none; padding:3px 6px; border-radius:3px; cursor:pointer; font-size:0.85em; line-height:1;';
+                    linkBtn.onclick = (e) => { e.stopPropagation(); copyPositionLink(p); };
+                    wrapper.appendChild(linkBtn);
+                }
+                if (isCustom) {
+                    // shift edit btn left to make room for share btn
+                    editBtn.style.right = '62px';
+                    const shareBtn = document.createElement('button');
+                    shareBtn.textContent = '📤';
+                    shareBtn.title = 'WhatsApp で共有';
+                    shareBtn.style.cssText = 'position:absolute; top:6px; right:34px; background:#25D366; color:white; border:none; padding:3px 6px; border-radius:3px; cursor:pointer; font-size:0.85em; line-height:1;';
+                    shareBtn.onclick = (e) => { e.stopPropagation(); shareCustomPositionViaWhatsApp(p); };
+                    wrapper.appendChild(shareBtn);
+                    const delBtn = document.createElement('button');
+                    delBtn.textContent = '✕';
+                    delBtn.title = '削除';
+                    delBtn.style.cssText = 'position:absolute; top:6px; right:6px; background:rgba(244,67,54,0.65); color:white; border:none; padding:3px 7px; border-radius:3px; cursor:pointer; font-size:0.9em; line-height:1;';
+                    delBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        if (confirm(`配置「${p.name}」を削除しますか？`)) {
+                            deleteCustomPosition(p.customId);
+                            showSetup();
+                        }
+                    };
+                    wrapper.appendChild(delBtn);
+                }
+                g.appendChild(wrapper);
+            });
+            const newBtn = document.createElement('button');
+            newBtn.className = 'position-btn';
+            newBtn.style.cssText = 'background:#6d4c41; grid-column:1 / -1;';
+            newBtn.innerHTML = `➕ 新しい配置を作成<span class="sub">エディターを開く</span>`;
+            newBtn.onclick = () => openEditor(null);
+            g.appendChild(newBtn);
+            document.getElementById('setup-overlay').style.display = 'flex';
+        }
+
+        function startWith(idx) {
+            startWithPosition(STARTING_POSITIONS[idx]);
+        }
+
+        // How many rounds (batches of 12 stones) this position plays. Built-in positions
+        // 1–6 are the 4-round set; the 3-round set (7–12) and all custom positions play 3.
+        // Matched by name so it survives JSON round-trips — resume/import pass a *copy* of
+        // the position object, not the STARTING_POSITIONS reference. Walter, 2026-06-01.
+        function roundsForPosition(pos) {
+            if (!pos || pos.customId) return 3;
+            const idx = STARTING_POSITIONS.findIndex(p => p.name === pos.name);
+            return (idx >= 0 && idx < FOUR_ROUND_COUNT) ? 4 : 3;
+        }
+
+        function startWithPosition(pos) {
+            currentPosition = pos;
+            TOTAL_BATCHES = roundsForPosition(pos);   // 4 for ids 1–6, else 3
+            undoStack = [];
+            const pt = document.getElementById('position-title');
+            if (pt) pt.textContent = pos && pos.name ? ' — ' + pos.name : '';
+            if (pos && pos.name) document.title = 'Divided Loyalties — ' + pos.name;
+            // Normalize: each entry becomes {token, cells:[[x,y],…]}. Hardcoded uses plain [x,y][]
+            // arrays; derive a token from cell count for those (9→'S', 7-12→'G', ≤6→'W').
+            const norm = pos.boards.map(b => {
+                if (Array.isArray(b)) {
+                    const n = b.length;
+                    const tok = n === 9 ? 'S' : (n >= 7 ? 'G' : 'W');
+                    return { token: tok, cells: b };
+                }
+                return b;
+            });
+            const positionDots = pos.dots || [];
+            // Compute grid size from max (x,y) across all boards AND dots; +2 margin
+            let maxX = 0, maxY = 0;
+            norm.forEach(b => b.cells.forEach(([x,y]) => {
+                if (x > maxX) maxX = x;
+                if (y > maxY) maxY = y;
+            }));
+            positionDots.forEach(([x,y]) => {
+                if (x > maxX) maxX = x;
+                if (y > maxY) maxY = y;
+            });
+            GRID_W = maxX + 2;
+            GRID_H = maxY + 2;
+            boards = norm.map(b => b.cells.map(([x,y]) => y * GRID_W + x));
+            boardTokens = norm.map(b => b.token);
+            allBoardIdx = [].concat(...boards);
+            playDots = new Set(positionDots.map(([x,y]) => y * GRID_W + x));
+            grid = Array(GRID_W * GRID_H).fill(null);
+            currentPlayer = 'blue';
+            selectedColor = null;
+            lastPlaced = null;
+            bridgePlaced = false;
+            moveState = 'tile';
+            blueInv = {...BLUE_BATCH};
+            yellowInv = {...YELLOW_BATCH};
+            blueBatch = 1; yellowBatch = 1;
+            activeBridges = [];
+            bridgeSelection = [];
+            amendableBridgeId = null;
+            bridgeScore = {blue:0, yellow:0};
+            regionScore = {blue:0, yellow:0};
+            document.getElementById('meta-grid').innerHTML = '';
+            document.getElementById('bridge-layer').innerHTML = '';
+            document.getElementById('setup-overlay').style.display = 'none';
+            init();
+            updateScore();
+            saveGame();
+        }
+
+        function openShareDialog() {
+            const cb = document.getElementById('share-include-state');
+            const row = document.getElementById('share-include-row');
+            const hasState = !!currentPosition;
+            cb.checked = false;
+            cb.disabled = !hasState;
+            row.style.opacity = hasState ? '1' : '0.55';
+            row.style.cursor = hasState ? 'pointer' : 'not-allowed';
+            document.getElementById('share-modal').style.display = 'flex';
+        }
+
+        function closeShareDialog() {
+            document.getElementById('share-modal').style.display = 'none';
+        }
+
+        function submitShareDialog() {
+            const include = document.getElementById('share-include-state').checked && !!currentPosition;
+            closeShareDialog();
+            if (include) shareCurrentPositionAsCSV();
+            else shareOnWhatsApp();
+        }
+
+        async function shareCurrentPositionAsCSV() {
+            if (!currentPosition) { shareOnWhatsApp(); return; }
+            const { paint, gridW } = positionToPaint(currentPosition);
+            const csv = buildPositionCSV(paint, gridW, currentPosition.name);
+            await shareCSVViaWhatsApp(currentPosition.name, csv);
+        }
+
+        function shareOnWhatsApp() {
+            let shareUrl = /^(file|parados):$/.test(window.location.protocol) ? "https://game.ywesee.com/parados/" + (window.location.pathname.split("/").pop() || "index.html") : window.location.href.split('#')[0];
+            if (currentPosition && !currentPosition.customId) {
+                shareUrl += '#' + slugifyName(currentPosition.name);
+            }
+            const posLabel = currentPosition && !currentPosition.customId ? ` — ${currentPosition.name}` : '';
+            const msg = `Divided Loyalties をプレイ${posLabel}: ${shareUrl}\n\nParados アプリを入手:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
+            if (navigator.share) { navigator.share({ text: msg }).catch(() => {}); return; }
+            // No share API (Android WebView, in-app browsers): copy to clipboard.
+            // Never wa.me — Android WebView can't dispatch whatsapp:// (ERR_UNKNOWN_URL_SCHEME).
+            const note = 'メッセージをコピーしました。WhatsApp に貼り付けてください。';
+            const fallback = () => { const ta = document.createElement('textarea'); ta.value = msg; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); let ok=false; try { ok = document.execCommand('copy'); } catch {} ta.remove(); if (ok) alert(note); else prompt(note, msg); };
+            if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(msg).then(() => alert(note)).catch(fallback);
+            else fallback();
+        }
+
+        // Loyalty sets — a bridge is valid if all stones lie in the current player's set
+        // (= scoring bridge) OR all lie in the red set (= defensive cut).
+        const SETS = { blue: ['blue','purple','green'], yellow: ['yellow','orange','green'], red: ['red','purple','orange'] };
+
+        // --- UNDO + SAVE -----------------------------------------------------
+        // Snapshot the full mutable game state. Called BEFORE each user-input
+        // mutation (handleClick, second-leg of handleStoneDblClick, endTurn).
+        // tryFormBridge does NOT snapshot — its caller does.
+        function snapshot() {
+            undoStack.push({
+                grid: [...grid],
+                blueInv: {...blueInv},
+                yellowInv: {...yellowInv},
+                currentPlayer, selectedColor, lastPlaced, bridgePlaced, moveState,
+                blueBatch, yellowBatch,
+                bridgeSelection: [...bridgeSelection],
+                bridgeScore: {...bridgeScore}, regionScore: {...regionScore},
+                activeBridges: JSON.parse(JSON.stringify(activeBridges)),
+                amendableBridgeId,
+            });
+        }
+
+        function undo() {
+            if (undoStack.length === 0) return;
+            const s = undoStack.pop();
+            grid = s.grid;
+            blueInv = s.blueInv; yellowInv = s.yellowInv;
+            currentPlayer = s.currentPlayer; selectedColor = s.selectedColor;
+            lastPlaced = s.lastPlaced; bridgePlaced = s.bridgePlaced; moveState = s.moveState;
+            blueBatch = s.blueBatch; yellowBatch = s.yellowBatch;
+            bridgeSelection = s.bridgeSelection;
+            bridgeScore = s.bridgeScore; regionScore = s.regionScore;
+            activeBridges = s.activeBridges;
+            amendableBridgeId = s.amendableBridgeId == null ? null : s.amendableBridgeId;
+            rerenderAllTiles();
+            redrawBridges();
+            renderBridgePending();
+            updateUI();
+            updateScore();
+            saveGame();
+        }
+
+        function rerenderAllTiles() {
+            const meta = document.getElementById('meta-grid');
+            const total = GRID_W * GRID_H;
+            for (let i = 0; i < total; i++) {
+                const cell = meta.children[i];
+                if (!cell) continue;
+                cell.innerHTML = '';
+                if (grid[i]) {
+                    const t = document.createElement('div');
+                    t.className = `tile ${grid[i]}`;
+                    cell.appendChild(t);
+                }
+            }
+        }
+
+        const SAVEGAME_KEY = 'dl_savegame';
+
+        function saveGame() {
+            if (!currentPosition) return;
+            try {
+                const state = {
+                    version: 1,
+                    position: currentPosition,
+                    grid, blueInv, yellowInv,
+                    currentPlayer, selectedColor, lastPlaced, bridgePlaced, moveState,
+                    blueBatch, yellowBatch,
+                    activeBridges, bridgeScore, regionScore,
+                    amendableBridgeId,
+                };
+                localStorage.setItem(SAVEGAME_KEY, JSON.stringify(state));
+            } catch (e) { console.warn('saveGame failed:', e); }
+        }
+
+        function hasSavedGame() {
+            return !!localStorage.getItem(SAVEGAME_KEY);
+        }
+
+        function clearSavedGame() {
+            localStorage.removeItem(SAVEGAME_KEY);
+        }
+
+        // Apply a saved state on top of an already-set-up position. Caller must have
+        // run startWithPosition(state.position) first so the grid + boards exist.
+        function applySavedState(state) {
+            grid = state.grid;
+            blueInv = state.blueInv; yellowInv = state.yellowInv;
+            currentPlayer = state.currentPlayer; selectedColor = state.selectedColor;
+            lastPlaced = state.lastPlaced; bridgePlaced = state.bridgePlaced;
+            moveState = state.moveState;
+            blueBatch = state.blueBatch; yellowBatch = state.yellowBatch;
+            activeBridges = state.activeBridges || [];
+            amendableBridgeId = state.amendableBridgeId == null ? null : state.amendableBridgeId;
+            bridgeScore = state.bridgeScore || {blue:0,yellow:0};
+            regionScore = state.regionScore || {blue:0,yellow:0};
+            rerenderAllTiles();
+            redrawBridges();
+            updateUI();
+            updateScore();
+        }
+
+        function loadGameFromStorage() {
+            const raw = localStorage.getItem(SAVEGAME_KEY);
+            if (!raw) return false;
+            try {
+                const state = JSON.parse(raw);
+                if (!state || !state.position) return false;
+                startWithPosition(state.position, /*skipReset=*/false);
+                applySavedState(state);
+                undoStack = [];  // fresh undo stack — saved game starts a new session
+                return true;
+            } catch (e) { console.error('loadGameFromStorage failed:', e); return false; }
+        }
+
+        function exportGameJSON() {
+            if (!currentPosition) { alert('書き出せる進行中のゲームがありません。'); return; }
+            const state = {
+                version: 1,
+                position: currentPosition,
+                grid, blueInv, yellowInv,
+                currentPlayer, selectedColor, lastPlaced, bridgePlaced, moveState,
+                blueBatch, yellowBatch,
+                activeBridges, bridgeScore, regionScore,
+            };
+            const now = new Date();
+            const pad = n => String(n).padStart(2, '0');
+            const stamp = `${pad(now.getDate())}.${pad(now.getMonth()+1)}.${now.getFullYear()}_${pad(now.getHours())}${pad(now.getMinutes())}`;
+            const safe = (currentPosition.name || 'game').replace(/[^\w\-äöüÄÖÜß]+/g, '_');
+            const filename = `divided_loyalties_${safe}_${stamp}.json`;
+            const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = filename;
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 5000);
+        }
+
+        async function shareGameJSONViaWhatsApp() {
+            if (!currentPosition) { alert('共有できる進行中のゲームがありません。'); return; }
+            const state = {
+                version: 1, position: currentPosition,
+                grid, blueInv, yellowInv,
+                currentPlayer, selectedColor, lastPlaced, bridgePlaced, moveState,
+                blueBatch, yellowBatch,
+                activeBridges, bridgeScore, regionScore,
+            };
+            const safe = (currentPosition.name || 'game').replace(/[^\w\-äöüÄÖÜß]+/g, '_');
+            const filename = `divided_loyalties_${safe}.json`;
+            const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+            try {
+                if (navigator.canShare) {
+                    const file = new File([blob], filename, { type: 'application/json' });
+                    if (navigator.canShare({ files: [file] })) {
+                        // No `text:` — Android WhatsApp tends to drop the file when both
+                        // text and file are present (Walter, 2026-05-11). Keep only a
+                        // short title hint for the share sheet.
+                        await navigator.share({ files: [file], title: `Divided Loyalties: ${currentPosition.name}` });
+                        return;
+                    }
+                }
+            } catch (e) {
+                if (e && e.name === 'AbortError') return;
+                console.warn('share failed:', e);
+            }
+            // Fallback: download the JSON. We deliberately do NOT redirect the page
+            // to wa.me here — Walter (2026-05-11): "when I tried to save it on WhatsApp,
+            // it disappeared" — the old wa.me redirect navigated away from the game.
+            // The game stays visible; the user attaches the downloaded file manually.
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = filename;
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 5000);
+            alert(`ゲーム状態「${filename}」をダウンロードしました。\n\n手動で WhatsApp を開き、ファイルを添付してください。ゲームはこのまま開いたままです。`);
+        }
+
+        function triggerImportGame() {
+            document.getElementById('import-game-input').click();
+        }
+
+        function handleImportGameFile(ev) {
+            const file = ev.target.files && ev.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                try {
+                    const state = JSON.parse(e.target.result);
+                    if (!state || !state.position) throw new Error('Invalid format');
+                    startWithPosition(state.position);
+                    applySavedState(state);
+                    undoStack = [];
+                    saveGame();
+                } catch (err) {
+                    alert('ゲーム状態を読み込めませんでした: ' + err.message);
+                }
+                ev.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        function handleClick(idx) {
+            if (grid[idx] || !selectedColor) return;
+            const cell = document.getElementById('meta-grid').children[idx];
+            // Off-board placement: only on dot cells, only if it forms a bridge.
+            const offBoardPlacement = cell.classList.contains('off-board');
+            if (offBoardPlacement) {
+                if (!cell.classList.contains('has-dot')) return;
+                if (!wouldFormBridge(idx, selectedColor)) return;
+            }
+            snapshot();
+            grid[idx] = selectedColor;
+            lastPlaced = idx;
+            renderTile(idx, selectedColor);
+            currentPlayer === 'blue' ? blueInv[selectedColor]-- : yellowInv[selectedColor]--;
+            selectedColor = null;
+            bridgeSelection = [];
+            // Off-board (dot) placements: NO auto-form (Walter, 2026-06-02). The player
+            // forms the justifying bridge(s) manually by double-clicking, exactly like
+            // on-board bridges — ONE tested code path, no guessing which / how many
+            // bridges to build. Auto-form used to build EVERY justifying row (preferring
+            // the longest 4 over a 3), which silently created bridges the player never
+            // wanted — including ones crossing an existing bridge at a shared stone, or a
+            // 4 where the player wanted the shorter 3. Walter: "only 1 bridge has to be
+            // placed, but the programme can't figure out which — so the player must keep
+            // control." The off-board rule (a dot stone is legal only if a bridge runs
+            // THROUGH it this turn) is enforced at endTurn: a dot stone with no such
+            // bridge is removed + the tile refunded. The placement gate above
+            // (wouldFormBridge) still guarantees at least one LEGAL bridge is possible
+            // before the stone may land on the dot, so the player always has a move.
+            amendableBridgeId = null;
+            updateUI();
+            saveGame();
+        }
+
+        function getCoord(i) { return {x: i%GRID_W, y: Math.floor(i/GRID_W)}; }
+
+        function getRow(s, e) {
+            const c1 = getCoord(s), c2 = getCoord(e);
+            const dx = Math.sign(c2.x-c1.x), dy = Math.sign(c2.y-c1.y), dist = Math.max(Math.abs(c2.x-c1.x), Math.abs(c2.y-c1.y));
+            if (c1.x!==c2.x && c1.y!==c2.y && Math.abs(c2.x-c1.x)!==Math.abs(c2.y-c1.y)) return null;
+            let r = []; for(let i=0; i<=dist; i++) r.push((c1.y+i*dy)*GRID_W + (c1.x+i*dx));
+            return r;
+        }
+
+        // Build a row of `len` indices starting at flat index `start` in direction `dir = [dx,dy]`.
+        // Returns the index array, or null if it would run off the grid.
+        function getRowCells(start, dir, len) {
+            const x0 = start % GRID_W, y0 = Math.floor(start / GRID_W);
+            const cells = [];
+            for (let i = 0; i < len; i++) {
+                const x = x0 + i * dir[0];
+                const y = y0 + i * dir[1];
+                if (x < 0 || x >= GRID_W || y < 0 || y >= GRID_H) return null;
+                cells.push(y * GRID_W + x);
+            }
+            return cells;
+        }
+
+        // Does this row (filled with stones) form a valid bridge for `player`?
+        // Returns { isRed, isScoring } or null. Enforces no two adjacent same colors.
+        // (Off-board tiles in a row are always OK — placement-time already required
+        // each off-board stone to complete a bridge of its own. Walter, 2026-05-26.)
+        function classifyRow(row, player) {
+            const colors = row.map(i => grid[i]);
+            if (colors.includes(null)) return null;
+            for (let i = 0; i < colors.length - 1; i++) if (colors[i] === colors[i+1]) return null;
+            const isRed = colors.every(c => SETS.red.includes(c));
+            const isScoring = colors.every(c => SETS[player].includes(c));
+            if (!isRed && !isScoring) return null;
+            return { isRed, isScoring };
+        }
+
+        // Find the best valid 3- or 4-row containing `idx` for `player`.
+        // Prefers 4 over 3, scoring over red (defensive). Returns
+        // { row, isRed, isScoring } or null.
+        // NOTE (Walter, 2026-06-01): no longer used by wouldFormBridge() — it was
+        // collision-blind, which caused the "highlighted dot won't accept a tile" bug.
+        // The placement gate + dot highlight now go through findAutoBridges + bridgeWouldForm.
+        // Kept for reference / potential reuse.
+        function findBridgeContaining(idx, player) {
+            const dirs = [[1,0],[0,1],[1,1],[1,-1]];
+            let best = null;
+            for (const dir of dirs) {
+                for (const len of [4, 3]) {
+                    for (let off = 0; off < len; off++) {
+                        const x0 = (idx % GRID_W) - off * dir[0];
+                        const y0 = Math.floor(idx / GRID_W) - off * dir[1];
+                        if (x0 < 0 || y0 < 0 || x0 >= GRID_W || y0 >= GRID_H) continue;
+                        const start = y0 * GRID_W + x0;
+                        const row = getRowCells(start, dir, len);
+                        if (!row || !row.includes(idx)) continue;
+                        const cls = classifyRow(row, player);
+                        if (!cls) continue;
+                        // Walter, 2026-05-27: a new bridge cannot share 2+ stones with
+                        // any active (non-cut) bridge. Subsumes the older "no 3→4
+                        // extension" + "no duplicate row" rules and also blocks the
+                        // overlapping case (existing [A,B,C] + new [B,C,D]), which
+                        // visually looks like an extension. Single-stone overlap is
+                        // still fine — that's how perpendicular crosses and the
+                        // 5-stone multi-bridge case both work.
+                        const sharesTwoPlus = activeBridges.some(b => {
+                            if (b.cut) return false;
+                            let shared = 0;
+                            for (const c of row) if (b.row.includes(c)) shared++;
+                            return shared >= 2;
+                        });
+                        if (sharesTwoPlus) continue;
+                        const score = (len === 4 ? 100 : 50) + (cls.isScoring ? 10 : 0);
+                        if (!best || score > best.score) best = { row, isRed: cls.isRed, isScoring: cls.isScoring, score };
+                    }
+                }
+            }
+            return best;
+        }
+
+        // Pure predicate: would tryFormBridge actually create (or keep, for a red cut) a
+        // bridge along `row`? Mirrors tryFormBridge's accept/reject decision WITHOUT mutating
+        // activeBridges or touching the SVG. Walter, 2026-06-01: wouldFormBridge() used the
+        // collision-blind findBridgeContaining, so a dot whose only justifying line crosses an
+        // existing bridge was still highlighted turquoise — yet the placement (which IS
+        // collision-checked) refused the tile. Now both use the same collision-aware test.
+        function bridgeWouldForm(row) {
+            if (!row || (row.length !== 3 && row.length !== 4)) return false;
+            const cls = classifyRow(row, currentPlayer);
+            if (!cls) return false;
+            const sharesTwoPlus = activeBridges.some(b => {
+                if (b.cut) return false;
+                let shared = 0;
+                for (const c of row) if (b.row.includes(c)) shared++;
+                return shared >= 2;
+            });
+            if (sharesTwoPlus) return false;
+            // Mirror tryFormBridge EXACTLY so highlight ⟺ build (Walter, 2026-06-02): test
+            // ALL crossings, not just the first. A red bridge is legal iff NONE of the
+            // bridges it crosses is cut or red (it cuts the scoring ones); a scoring bridge
+            // is legal iff it crosses nothing. (Using checkCollision — first crossing only —
+            // diverged for red when the first crossing was a cuttable scoring bridge but a
+            // later crossing was red/cut: the dot would highlight yet the placement refuse.)
+            const hits = bridgesCrossedBy(row);
+            if (cls.isRed) return !hits.some(h => h.cut || h.player === 'red');
+            return hits.length === 0;
+        }
+
+        // Would placing `color` at empty cell `idx` form a valid bridge for the current player?
+        // Used both to validate dot placement (handleClick gate) and to highlight valid dots.
+        // Uses the SAME candidate enumeration + collision-aware test as the actual auto-form,
+        // so a highlighted (turquoise) dot is guaranteed to accept the tile. Walter, 2026-06-01.
+        function wouldFormBridge(idx, color) {
+            if (grid[idx] !== null) return false;
+            grid[idx] = color;
+            const ok = findAutoBridges(idx, currentPlayer).some(row => bridgeWouldForm(row));
+            grid[idx] = null;
+            return ok;
+        }
+
+        // Every valid 3-/4-bridge that runs THROUGH idx — in any of the 4 directions, with
+        // idx at ANY position in the row (first, interior, or last). Auto-form is gone
+        // (Walter, 2026-06-02), so findAutoBridges is now purely the "does at least one
+        // legal bridge pass through this dot?" enumerator behind wouldFormBridge — the
+        // off-board placement gate + turquoise highlight. The caller runs each row through
+        // bridgeWouldForm (which mirrors tryFormBridge's accept/reject, incl. collisions),
+        // so a dot lights up / accepts a tile iff SOME bridge there is actually buildable.
+        //
+        // WHY every position: the old code only offered END-anchored rows (idx first or
+        // last) and fell back to ONE middle row solely when NO end row existed. So a bridge
+        // with idx in the MIDDLE was SHADOWED whenever a collision-blocked end-/4-row also
+        // existed — the dot then wrongly refused a buildable tile. Walter, 2026-06-02:
+        // „a 3 bridge from the lower left purple to the upper right orange ... was not
+        // accepted" — the RED stone he placed was the CENTRE of purple-RED-orange, and a
+        // blocked end-anchored candidate on the same diagonal hid it. Offering EVERY
+        // candidate row and letting bridgeWouldForm filter removes all shadowing; there is
+        // no over-building risk since findAutoBridges no longer builds anything.
+        function findAutoBridges(idx, player) {
+            const dirs = [[1,0],[0,1],[1,1],[1,-1]];
+            const isValidCandidate = (row) => {
+                if (!row) return false;
+                if (!classifyRow(row, player)) return false;
+                // Walter, 2026-05-27: reject any row that shares 2+ stones with an
+                // existing non-cut bridge. Subsumes "same row already built" and
+                // "would extend a 3 to a 4" and also blocks overlapping 3-bridges
+                // along the same line (which look like extensions).
+                const sharesTwoPlus = activeBridges.some(b => {
+                    if (b.cut) return false;
+                    let shared = 0;
+                    for (const c of row) if (b.row.includes(c)) shared++;
+                    return shared >= 2;
+                });
+                if (sharesTwoPlus) return false;
+                return true;
+            };
+            const result = [];
+            for (const dir of dirs) {
+                for (const len of [4, 3]) {
+                    // idx may sit at any offset within the row — try them all so a
+                    // placement in the MIDDLE of a bridge is never shadowed by an
+                    // end-anchored candidate on the same line.
+                    for (let off = 0; off < len; off++) {
+                        const x0 = (idx % GRID_W) - off * dir[0];
+                        const y0 = Math.floor(idx / GRID_W) - off * dir[1];
+                        if (x0 < 0 || y0 < 0 || x0 >= GRID_W || y0 >= GRID_H) continue;
+                        const start = y0 * GRID_W + x0;
+                        const row = getRowCells(start, dir, len);
+                        if (row && row[off] === idx && isValidCandidate(row)) result.push(row);
+                    }
+                }
+            }
+            return result;
+        }
+
+        // Manual bridge — TOGGLE selection model (Walter, 2026-05-27).
+        //   - Each double-click on a stone toggles its cyan ring (add or remove).
+        //   - When exactly 2 stones are ringed, the bridge auto-attempts.
+        //       * success → both rings clear, bridge drawn.
+        //       * failure → both rings STAY visible, the most-recent stone briefly
+        //         flashes red so the player sees the click was registered AND
+        //         that this specific pairing was rejected. Player can deselect
+        //         either ringed stone (toggle off) or swap one out.
+        //   - 3rd click while 2 are ringed: ignored + brief red flash on the
+        //     would-be-third stone (deselect one of the existing rings first).
+        // Walter's reasoning: the previous "second click immediately fires"
+        // behavior meant the second stone never visibly got a ring, so players
+        // couldn't tell their click had landed. With the toggle model the player
+        // can also reject *either* stone individually — sometimes you realize
+        // both your picks were wrong and want to start fresh.
+        //
+        // Amend mode (Walter, 2026-05-26): if the placed stone was on a dot and the
+        // system auto-drew a bridge (amendableBridgeId is set), the 2-stone attempt
+        // for a row that still contains lastPlaced REPLACES the auto-bridge — the
+        // auto one is removed first so the new endpoints can claim the same or a
+        // different row through the placement.
+        function handleStoneDblClick(idx) {
+            if (grid[idx] === null || grid[idx] === undefined) return;
+            // Toggle: clicking a ringed stone deselects it.
+            if (bridgeSelection.includes(idx)) {
+                bridgeSelection = bridgeSelection.filter(i => i !== idx);
+                renderBridgePending();
+                return;
+            }
+            // 3rd-click guard: with 2 already ringed, refuse a new one + flash hint.
+            if (bridgeSelection.length >= 2) {
+                flashStoneInvalid(idx);
+                showBridgeHint('すでに石を2つ選択しています。まず1つの選択を解除してください（もう一度クリック）。');
+                return;
+            }
+            // Add this stone to the selection.
+            bridgeSelection.push(idx);
+            renderBridgePending();
+            if (bridgeSelection.length < 2) return;
+            // Two stones ringed — attempt the bridge.
+            const [s, e] = bridgeSelection;
+            // Snapshot AFTER both stones are added (so undo restores both rings on failure).
+            snapshot();
+            const lenBefore = activeBridges.length;
+            const bridgePlacedBefore = bridgePlaced;
+            let succeeded = false;
+            let triedAmend = false;
+            if (amendableBridgeId !== null) {
+                const proposedRow = getRow(s, e);
+                if (proposedRow && proposedRow.includes(lastPlaced)) {
+                    triedAmend = true;
+                    removeBridgeById(amendableBridgeId);
+                    amendableBridgeId = null;
+                    bridgePlaced = false;
+                    tryFormBridge(s, e);
+                    if (activeBridges.length > lenBefore) {
+                        amendableBridgeId = activeBridges[activeBridges.length - 1].id;
+                        updateScore();
+                        succeeded = true;
+                    } else if (bridgePlaced) {
+                        // a red bridge was placed (no push to activeBridges) — accept it
+                        updateScore();
+                        succeeded = true;
+                    }
+                }
+            }
+            if (!triedAmend) {
+                tryFormBridge(s, e);
+                if (activeBridges.length > lenBefore || (bridgePlaced && !bridgePlacedBefore)) {
+                    succeeded = true;
+                }
+            }
+            if (succeeded) {
+                bridgeSelection = [];
+                renderBridgePending();
+                showBridgeHint('');
+                saveGame();
+                return;
+            }
+            // Failure: restore via undo (brings the auto-bridge back if amend was
+            // attempted, and restores bridgeSelection=[s,e] so both rings show).
+            // Then flash the last-clicked stone red so the player knows that pairing
+            // was the rejected one, and show WHY (set by tryFormBridge) so the
+            // rejection isn't a mystery (Walter, 2026-06-02).
+            undo();
+            flashStoneInvalid(idx);
+            showBridgeHint(bridgeRefuseReason);
+        }
+
+        // Fully remove a bridge from activeBridges + its SVG line. Unlike destroyBridge
+        // (which marks cut:true and keeps the line dashed), this is used by the amend
+        // flow to replace an auto-bridge with a player-chosen one.
+        function removeBridgeById(id) {
+            const i = activeBridges.findIndex(b => b.id === id);
+            if (i < 0) return;
+            activeBridges.splice(i, 1);
+            const l = document.getElementById('line-' + id);
+            if (l) l.remove();
+        }
+
+        // Brief red flash on a stone whose double-click couldn't form a valid bridge.
+        // Walter, 2026-05-27: silent rejection used to make players think their click
+        // was ignored; this acknowledges the click while leaving the rule in force.
+        function flashStoneInvalid(idx) {
+            const cell = document.getElementById('meta-grid').children[idx];
+            if (!cell) return;
+            const tile = cell.querySelector('.tile');
+            if (!tile) return;
+            tile.classList.remove('bridge-rejected');
+            // Force reflow so the animation restarts if the same stone is flashed twice in a row.
+            void tile.offsetWidth;
+            tile.classList.add('bridge-rejected');
+            setTimeout(() => tile.classList.remove('bridge-rejected'), 600);
+        }
+
+        // Show (or hide, when msg is empty) a brief reason next to the red flash so a
+        // refused bridge double-click isn't silent (Walter, 2026-06-02 — „Keine Ahnung
+        // warum"). Auto-hides after a few seconds; a new attempt replaces it at once.
+        let bridgeHintTimer = null;
+        function showBridgeHint(msg) {
+            const el = document.getElementById('bridge-hint');
+            if (!el) return;
+            if (bridgeHintTimer) { clearTimeout(bridgeHintTimer); bridgeHintTimer = null; }
+            if (!msg) { el.style.display = 'none'; return; }
+            el.textContent = msg;
+            el.style.display = 'block';
+            bridgeHintTimer = setTimeout(() => { el.style.display = 'none'; }, 5000);
+        }
+
+        function renderBridgePending() {
+            const meta = document.getElementById('meta-grid');
+            const total = GRID_W * GRID_H;
+            for (let i = 0; i < total; i++) {
+                const cell = meta.children[i];
+                if (!cell) continue;
+                // Use querySelector('.tile') rather than firstChild so this is robust
+                // regardless of any other children that might appear in the cell
+                // (e.g., future overlays, off-board dot markers).
+                const tile = cell.querySelector('.tile');
+                if (!tile) continue;
+                if (bridgeSelection.includes(i)) tile.classList.add('bridge-pending');
+                else tile.classList.remove('bridge-pending');
+            }
+        }
+
+        function tryFormBridge(s, e) {
+            const row = getRow(s, e);
+            if (!row) { bridgeRefuseReason = '2つの石が一直線（横・縦・斜め）に並んでいません。'; return; }
+            if (row.length !== 3 && row.length !== 4) { bridgeRefuseReason = '橋はちょうど3個または4個の石を一列につなぎます。'; return; }
+            const cls = classifyRow(row, currentPlayer);
+            if (!cls) { bridgeRefuseReason = '有効な列ではありません: 色の組み合わせが合わないか、同じ色が2つ隣り合っています。'; return; }
+            // Walter, 2026-05-27: a new bridge cannot share 2+ stones with any
+            // active (non-cut) bridge. "Bridges cannot be extended later!" —
+            // Walter. This covers three cases at once: re-forming the same row,
+            // extending a 3 to a 4 (existing 3 ⊂ new 4), and overlapping
+            // 3-bridges along the same line (e.g., existing [A,B,C] + new
+            // [B,C,D] visually look like a 4). Single-stone overlap is still
+            // allowed, which is how perpendicular crosses and the multi-bridge
+            // case work.
+            const sharesTwoPlus = activeBridges.some(b => {
+                if (b.cut) return false;
+                let shared = 0;
+                for (const c of row) if (b.row.includes(c)) shared++;
+                return shared >= 2;
+            });
+            if (sharesTwoPlus) { bridgeRefuseReason = '橋は延長できず、既存の橋の上に二度目を架けることもできません。'; return; }
+            const step = cellSize + gapSize;
+            const x1 = (s%GRID_W)*step+cellSize/2, y1 = Math.floor(s/GRID_W)*step+cellSize/2;
+            const x2 = (e%GRID_W)*step+cellSize/2, y2 = Math.floor(e/GRID_W)*step+cellSize/2;
+            const angle = Math.atan2(y2-y1, x2-x1);
+            const off = cellSize * 0.50;
+            const c = { x1: x1 + Math.cos(angle)*off, y1: y1 + Math.sin(angle)*off, x2: x2 - Math.cos(angle)*off, y2: y2 - Math.sin(angle)*off };
+            if (cls.isRed) {
+                // Red sees ALL bridges (red AND scoring) when checking collisions —
+                // Walter, 2026-05-27: a red bridge cannot cut another red bridge
+                // (otherwise defensive structures could be unwound by the same color
+                // that built them). Red is tracked in activeBridges with
+                // player:'red' so red-vs-red collisions are detectable.
+                // Red CUTS every scoring bridge it crosses — not just the first (Walter,
+                // 2026-06-02). checkCollision returned only one crossing, so a red diagonal
+                // slashing a blue + (a horizontal and a vertical bridge) cut at most one and
+                // the other stayed on the board AND scored. Red can cross neither an
+                // already-cut bridge nor another red bridge ("a red bridge can never be cut
+                // by any other bridge"); if any crossing is such, the whole red placement is
+                // illegal and nothing is cut.
+                const hits = bridgesCrossedBy(row);
+                if (hits.some(h => h.cut || h.player === 'red')) { bridgeRefuseReason = '赤い橋は、別の赤い橋やすでに切断された橋を横切ることはできません。'; return; }
+                hits.forEach(h => destroyBridge(h.id));
+                const bId = Date.now();
+                activeBridges.push({id: bId, row, player: 'red', coords: c, s, e, cut: false});
+                drawBridge(c, 'red', bId);
+                bridgePlaced = true;
+            } else {
+                // Scoring bridges see ALL bridges (red AND scoring) — Walter,
+                // 2026-05-27: "the yellow or blue bridges cannot cross over the
+                // red ones (nobody can)". A scoring bridge can only be cut by
+                // red AT CONSTRUCTION TIME of the red bridge — once red is on
+                // the board, scoring lines must route around it.
+                const collision = checkCollision(row, false);
+                if (collision) { bridgeRefuseReason = 'この橋は既存の橋を横切ってしまいます。誰も他の橋を横切ることはできません。'; return; }  // can't cross any existing line (scoring, red, or cut)
+                const bId = Date.now();
+                activeBridges.push({id: bId, row, player: currentPlayer, coords: c, s, e, cut: false});
+                drawBridge(c, currentPlayer, bId);
+                bridgePlaced = true;
+            }
+            bridgeRefuseReason = '';
+            updateScore();
+        }
+
+        // Highlight every dot cell where placing the currently-selected color would
+        // complete a bridge — like Kangy's landing spots. Cleared when no color is selected.
+        function updateDotHighlights() {
+            const meta = document.getElementById('meta-grid');
+            const total = GRID_W * GRID_H;
+            for (let i = 0; i < total; i++) {
+                const cell = meta.children[i];
+                if (!cell) continue;
+                if (selectedColor && cell.classList.contains('has-dot') && wouldFormBridge(i, selectedColor)) {
+                    cell.classList.add('valid-placement');
+                } else {
+                    cell.classList.remove('valid-placement');
+                }
+            }
+        }
+
+        // Doubled-grid occupancy of a straight bridge: every stone center PLUS the midpoint
+        // of each edge between consecutive stones, in coordinates scaled ×2 so all points
+        // are integers. Stone centers land on (even,even); edge midpoints carry an odd
+        // component, so the two kinds can never collide. This lets us detect crossings AND
+        // covers with EXACT integer math — no floating point. `end` marks the bridge's two
+        // endpoint stones.
+        function bridgeDoubledInfo(row) {
+            const m = new Map();
+            for (let i = 0; i < row.length; i++) {
+                const x = row[i] % GRID_W, y = Math.floor(row[i] / GRID_W);
+                m.set((2*x) + ',' + (2*y), { stone: true, end: i === 0 || i === row.length - 1 });
+                if (i < row.length - 1) {
+                    const nx = row[i+1] % GRID_W, ny = Math.floor(row[i+1] / GRID_W);
+                    m.set((x+nx) + ',' + (y+ny), { stone: false, end: false });  // edge midpoint
+                }
+            }
+            return m;
+        }
+
+        // Every active bridge whose drawn line the candidate `row` CROSSES or COVERS — grid
+        // exact (Walter, 2026-06-02: "yellow and blue bridges cannot cut or cover ANY other
+        // bridge, and red cannot cover other red"). Two straight bridges legally meet ONLY
+        // at a junction — a shared STONE that is an endpoint of at least one of them
+        // (fan-out, T, or L; the line that ends there does not pass through). A conflict is:
+        //   • a shared EDGE MIDPOINT  → a mid-gap diagonal crossing OR a collinear cover; or
+        //   • a shared STONE interior to BOTH bridges → one line passes straight through the
+        //     other (an X / + centred on a stone).
+        // This replaces the old floating-point ccw test, which MISSED through-stone crossings
+        // and (because of the 0.5-cell endpoint offset) some near-endpoint diagonal crossings
+        // — the "yellow covers blue / yellow covers red" bugs. Matches the drawn geometry
+        // exactly (the 0.43-edge offset never reaches an edge midpoint). Returns ALL conflicts
+        // so red can cut every scoring bridge it slashes, not just the first.
+        function bridgesCrossedBy(newRow) {
+            const hits = [];
+            if (!newRow) return hits;
+            const nInfo = bridgeDoubledInfo(newRow);
+            for (const b of activeBridges) {
+                const eInfo = bridgeDoubledInfo(b.row);
+                let conflict = false;
+                for (const [key, n] of nInfo) {
+                    const e = eInfo.get(key);
+                    if (!e) continue;                                  // no shared point here
+                    if (!n.stone) { conflict = true; break; }          // shared edge midpoint
+                    if (!n.end && !e.end) { conflict = true; break; }  // shared stone interior to both
+                }
+                if (conflict) hits.push(b);
+            }
+            return hits;
+        }
+
+        // First conflict only — used by scoring placement + the dot highlight, which just
+        // need "is this blocked?". `skipRed` filters red bridges from the result.
+        function checkCollision(newRow, skipRed) {
+            for (const b of bridgesCrossedBy(newRow)) { if (skipRed && b.player === 'red') continue; return b; }
+            return null;
+        }
+
+        function drawBridge(c, type, id, isCut) {
+            const svg = document.getElementById('bridge-layer');
+            const l = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            l.setAttribute("x1", c.x1); l.setAttribute("y1", c.y1); l.setAttribute("x2", c.x2); l.setAttribute("y2", c.y2);
+            if (isCut) {
+                l.setAttribute("stroke", "#555");
+                l.setAttribute("stroke-dasharray", "5");
+            } else {
+                l.setAttribute("stroke", type==='red'?'#D32F2F':(type==='blue'?'#1976D2':'#FDD835'));
+            }
+            l.setAttribute("stroke-width", isCut ? "6" : "4"); l.classList.add('bridge-line'); l.id = 'line-' + id;
+            svg.appendChild(l);
+        }
+
+        // Cut a bridge: it stays in activeBridges (so checkCollision still sees it
+        // and blocks anything from being built across it — Walter's clarification),
+        // but is marked cut:true so recomputeScores skips it for both bridge and
+        // region points. The line element survives the SVG; it animates flash-red
+        // and settles to gray dashed.
+        function destroyBridge(id) {
+            const b = activeBridges.find(b => b.id === id);
+            if (!b || b.cut) return;
+            b.cut = true;
+            const l = document.getElementById('line-' + id);
+            if (l) { l.classList.add('flash-red'); setTimeout(() => { l.setAttribute("stroke", "#555"); l.setAttribute("stroke-dasharray", "5"); l.setAttribute("stroke-width", "6"); }, 600); }
+        }
+
+        function endTurn() {
+            snapshot();
+            // Off-board (dot) stone is legal only if a non-cut bridge actually runs
+            // THROUGH it this turn (Walter, 2026-06-02 — was: any bridgePlaced, which the
+            // manual flow could satisfy with an unrelated bridge). Otherwise remove it +
+            // refund the tile. With auto-form gone, this is the sole enforcement of the
+            // off-board rule.
+            if (lastPlaced!==null && !allBoardIdx.includes(lastPlaced)
+                && !activeBridges.some(b => !b.cut && b.row.includes(lastPlaced))) {
+                const c = grid[lastPlaced];
+                currentPlayer==='blue'?blueInv[c]++:yellowInv[c]++;
+                grid[lastPlaced]=null; document.getElementById('meta-grid').children[lastPlaced].innerHTML='';
+            }
+            currentPlayer = currentPlayer==='blue'?'yellow':'blue';
+            maybeRefillBatch();
+            moveState='tile'; lastPlaced=null; bridgePlaced=false; bridgeSelection=[]; amendableBridgeId=null; updateUI();
+            saveGame();
+        }
+
+        function totalInv(inv) { return Object.values(inv).reduce((a,b)=>a+b, 0); }
+        function maybeRefillBatch() {
+            if (totalInv(blueInv) === 0 && blueBatch < TOTAL_BATCHES) { blueBatch++; blueInv = {...BLUE_BATCH}; }
+            if (totalInv(yellowInv) === 0 && yellowBatch < TOTAL_BATCHES) { yellowBatch++; yellowInv = {...YELLOW_BATCH}; }
+        }
+
+        function renderTile(i, c) {
+            const t = document.createElement('div'); t.className = `tile ${c}`;
+            document.getElementById('meta-grid').children[i].appendChild(t);
+        }
+
+        // Map a cell flat-index to its region/board token, or null if the cell is off-board.
+        function getBoardTokenForCell(cellIdx) {
+            for (let i = 0; i < boards.length; i++) if (boards[i].includes(cellIdx)) return boardTokens[i];
+            return null;
+        }
+
+        // Recompute both bridge and region points from scratch. Cut bridges (`b.cut === true`)
+        // contribute nothing — both their bridge-points (1 or 2) and their region claim
+        // disappear (Walter, 2026-05-08). Region bonus: the FIRST non-cut bridge per
+        // (player × region/token) whose inner cells (= row.slice(1,-1), excluding the two
+        // endpoints which the bridge line only half-covers) include a cell in that region.
+        function recomputeScores() {
+            bridgeScore = { blue: 0, yellow: 0 };
+            regionScore = { blue: 0, yellow: 0 };
+            const claimed = { blue: new Set(), yellow: new Set() };
+            for (const b of activeBridges) {
+                if (b.cut) continue;
+                if (b.player === 'red') continue;  // red bridges are defensive — no score
+                bridgeScore[b.player] += (b.row.length === 3 ? 1 : 2);
+                const inner = b.row.slice(1, -1);
+                for (const cellIdx of inner) {
+                    const token = getBoardTokenForCell(cellIdx);
+                    if (!token) continue;
+                    if (!claimed[b.player].has(token)) {
+                        claimed[b.player].add(token);
+                        regionScore[b.player]++;
+                    }
+                }
+            }
+        }
+
+        function updateScore() {
+            recomputeScores();
+            document.getElementById('blue-score').innerText = bridgeScore.blue;
+            document.getElementById('yellow-score').innerText = bridgeScore.yellow;
+            document.getElementById('blue-region-score').innerText = regionScore.blue;
+            document.getElementById('yellow-region-score').innerText = regionScore.yellow;
+        }
+
+        function updateUI() {
+            const turn = document.getElementById('turn-indicator');
+            const batch = currentPlayer === 'blue' ? blueBatch : yellowBatch;
+            const batchLabel = `Set ${batch}/${TOTAL_BATCHES}` + (batch === TOTAL_BATCHES ? '（最後）' : '');
+            turn.innerHTML = (currentPlayer === 'blue' ? "青" : "黄") + "のターン"
+                + `<div style="font-size:0.7em;font-weight:normal;opacity:0.85;margin-top:2px;">${batchLabel}</div>`;
+            turn.className = `current-player ${currentPlayer}-turn`;
+            const inv = document.getElementById('inventory-container');
+            inv.innerHTML = '';
+            const t = currentPlayer==='blue'?blueInv:yellowInv;
+            Object.keys(t).forEach(c => {
+                if(t[c]>0) {
+                    const s = document.createElement('div'); s.className='inv-slot';
+                    s.style.cursor = 'pointer';
+                    s.onclick = () => { if(moveState==='tile') { selectedColor=c; updateUI(); }};
+                    const d = document.createElement('div'); d.className=`inv-tile ${c} ${selectedColor===c?'selected':''}`;
+                    const count = document.createElement('span'); count.className='inv-count'; count.innerText = t[c];
+                    const name = document.createElement('span'); name.className='inv-name'; name.innerText = COLOR_NAMES_DE[c];
+                    s.appendChild(d); s.appendChild(count); s.appendChild(name); inv.appendChild(s);
+                }
+            });
+            updateDotHighlights();
+            const ub = document.getElementById('undo-btn');
+            if (ub) {
+                ub.disabled = undoStack.length === 0;
+                ub.style.opacity = ub.disabled ? '0.5' : '1';
+                ub.style.cursor = ub.disabled ? 'default' : 'pointer';
+            }
+        }
+        // CSV format: position_id, position_name, row, c0, c1, c2, ... — each cell its own column.
+        // Cell values: '.' = empty. Any other token is a board id. Each UNIQUE token is its own
+        // separate board — even if two boards touch, their borders stay visible and they score
+        // separately. Convention: S1,S2,S3… = black 3x3; W1,W2,W3… = white pyramid; G1,G2… = grey 4x3.
+        // Color class is derived from the first letter (S/W/G), with cell-count fallback.
+        function parsePositionsCSV(text) {
+            const lines = text.split(/\r?\n/).map(l => l.replace(/\r/g, '')).filter(l => l && !l.trimStart().startsWith('#'));
+            if (lines.length < 2) return null;
+            const header = lines[0].split(',').map(s => s.trim().toLowerCase());
+            const iPid  = header.indexOf('position_id');
+            const iName = header.indexOf('position_name');
+            const iRow  = header.indexOf('row');
+            if (iPid < 0 || iName < 0 || iRow < 0) return null;
+            const cellStart = iRow + 1;
+
+            const positions = {};
+            const order = [];
+            for (let i = 1; i < lines.length; i++) {
+                const parts = lines[i].split(',').map(s => s.trim());
+                if (parts.length <= cellStart) continue;
+                const pid  = parts[iPid];
+                const pname = parts[iName];
+                const y = parseInt(parts[iRow]);
+                if (isNaN(y)) continue;
+                const cells = parts.slice(cellStart).map(s => (s === '' ? '.' : s));
+                if (!positions[pid]) { positions[pid] = { name: pname, rows: {} }; order.push(pid); }
+                positions[pid].rows[y] = cells;
+            }
+
+            return order.map(pid => {
+                const pos = positions[pid];
+                const rowNums = Object.keys(pos.rows).map(Number);
+                // Collect cells by token; each unique token = one separate board.
+                // 'o' / 'O' = placement dot (where stones may go when completing a bridge).
+                const byToken = {};
+                const tokenOrder = [];
+                const dots = [];
+                rowNums.forEach(y => {
+                    const r = pos.rows[y];
+                    for (let x = 0; x < r.length; x++) {
+                        const tok = r[x];
+                        if (!tok || tok === '.') continue;
+                        if (tok === 'o' || tok === 'O') { dots.push([x, y]); continue; }
+                        if (!byToken[tok]) { byToken[tok] = []; tokenOrder.push(tok); }
+                        byToken[tok].push([x, y]);
+                    }
+                });
+                return {
+                    name: pos.name,
+                    sub: '',
+                    boards: tokenOrder.map(tok => ({ token: tok, cells: byToken[tok] })),
+                    dots
+                };
+            });
+        }
+
+        // ---------- Position editor (custom positions stored in localStorage) ----------
+        // Indices are y * editorGridW + x (W = column count = stride).
+        let editorPaint = {};       // { [index]: token }  e.g. { 12: 'S1', 13: 'S1', ... }
+        let editorBrush = 'S1';
+        let editorGridW = 17;
+        let editorGridH = 17;
+        let editorPositionName = '';
+        let editingCustomId = null;
+        const EDITOR_TOKENS = ['S1','S2','S3','S4','S5','W1','W2','W3','W4','W5','G1','G2','G3','G4'];
+        const EDITOR_SIZES = [9, 11, 13, 15, 17, 19, 21, 23, 25];
+
+        function loadCustomPositions() {
+            try {
+                const data = localStorage.getItem('dl_custom_positions');
+                return data ? JSON.parse(data) : [];
+            } catch (e) { return []; }
+        }
+
+        function saveCustomPositionsArr(arr) {
+            try { localStorage.setItem('dl_custom_positions', JSON.stringify(arr)); }
+            catch (e) { alert('保存に失敗しました: ' + e.message); }
+        }
+
+        function deleteCustomPosition(customId) {
+            saveCustomPositionsArr(loadCustomPositions().filter(p => p.customId !== customId));
+        }
+
+        function openEditor(existingPos) {
+            editorPaint = {};
+            if (existingPos) {
+                let maxX = 0, maxY = 0;
+                existingPos.boards.forEach(b => {
+                    const cells = Array.isArray(b) ? b : b.cells;
+                    cells.forEach(([x,y]) => { if (x > maxX) maxX = x; if (y > maxY) maxY = y; });
+                });
+                const existingDots = existingPos.dots || [];
+                existingDots.forEach(([x,y]) => { if (x > maxX) maxX = x; if (y > maxY) maxY = y; });
+                // Open the editor snug to the position's bounds (+2-cell margin).
+                // Walter can grow it via the Breite/Höhe dropdowns.
+                editorGridW = maxX + 2;
+                editorGridH = maxY + 2;
+                // Synthesize numeric tokens for hardcoded positions (which only have 'S'/'W'/'G' single-letter tokens)
+                const usedByPrefix = { S:0, W:0, G:0 };
+                existingPos.boards.forEach(b => {
+                    const isArr = Array.isArray(b);
+                    const cells = isArr ? b : b.cells;
+                    let tok = isArr ? null : b.token;
+                    if (!tok || tok.length === 1) {
+                        const prefix = (tok && tok[0]) || (cells.length === 9 ? 'S' : (cells.length >= 7 ? 'G' : 'W'));
+                        usedByPrefix[prefix] = (usedByPrefix[prefix] || 0) + 1;
+                        tok = prefix + usedByPrefix[prefix];
+                    }
+                    cells.forEach(([x,y]) => { editorPaint[y * editorGridW + x] = tok; });
+                });
+                existingDots.forEach(([x,y]) => { editorPaint[y * editorGridW + x] = 'DOT'; });
+                editorPositionName = existingPos.name;
+                editingCustomId = existingPos.customId || null;
+            } else {
+                editorGridW = 17;
+                editorGridH = 17;
+                editorPositionName = '';
+                editingCustomId = null;
+            }
+            editorBrush = 'S1';
+            document.getElementById('setup-overlay').style.display = 'none';
+            document.getElementById('editor-overlay').style.display = 'block';
+            document.getElementById('editor-name').value = editorPositionName;
+            rebuildSizeSelectors();
+            renderBrushBar();
+            renderEditor();
+        }
+
+        function rebuildSizeSelectors() {
+            const fill = (sel, current) => {
+                if (!sel) return;
+                sel.innerHTML = '';
+                const sizes = EDITOR_SIZES.slice();
+                if (!sizes.includes(current)) sizes.push(current);
+                sizes.sort((a,b) => a-b);
+                sizes.forEach(s => {
+                    const o = document.createElement('option');
+                    o.value = s; o.textContent = s;
+                    if (s === current) o.selected = true;
+                    sel.appendChild(o);
+                });
+            };
+            fill(document.getElementById('editor-size-w'), editorGridW);
+            fill(document.getElementById('editor-size-h'), editorGridH);
+        }
+
+        // axis: 'w' (width / column count) or 'h' (height / row count)
+        function setEditorGridDim(axis, newSize) {
+            newSize = parseInt(newSize);
+            if (!newSize) return;
+            const oldW = editorGridW, oldH = editorGridH;
+            const newW = axis === 'w' ? newSize : oldW;
+            const newH = axis === 'h' ? newSize : oldH;
+            if (newW === oldW && newH === oldH) return;
+            const wouldDrop = Object.keys(editorPaint).some(idx => {
+                const i = parseInt(idx);
+                const x = i % oldW, y = Math.floor(i / oldW);
+                return x >= newW || y >= newH;
+            });
+            if (wouldDrop && !confirm('縮小すると塗ったセルが失われます。それでも縮小しますか？')) {
+                rebuildSizeSelectors();
+                return;
+            }
+            const oldPaint = editorPaint;
+            editorPaint = {};
+            Object.keys(oldPaint).forEach(idx => {
+                const i = parseInt(idx);
+                const x = i % oldW, y = Math.floor(i / oldW);
+                if (x < newW && y < newH) editorPaint[y * newW + x] = oldPaint[idx];
+            });
+            editorGridW = newW;
+            editorGridH = newH;
+            renderEditor();
+        }
+
+        function closeEditor() {
+            document.getElementById('editor-overlay').style.display = 'none';
+            showSetup();
+        }
+
+        function editorClick(i) {
+            if (editorBrush === 'erase') { delete editorPaint[i]; }
+            else { editorPaint[i] = editorBrush; }
+            renderEditor();
+        }
+
+        function renderBrushBar() {
+            const bar = document.getElementById('editor-brush-bar');
+            bar.innerHTML = '';
+            EDITOR_TOKENS.forEach(tok => {
+                const ch = tok[0];
+                const bg = ch === 'S' ? '#3a3a3a' : (ch === 'W' ? '#6a6a6a' : '#9a9a9a');
+                const fg = ch === 'G' ? '#000' : '#fff';
+                const btn = document.createElement('button');
+                btn.style.cssText = `background:${bg}; color:${fg}; border:3px solid ${editorBrush===tok?'#FFEB3B':'rgba(0,0,0,0.2)'}; padding:6px 10px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.85em; min-width:42px;`;
+                btn.textContent = tok;
+                btn.onclick = () => { editorBrush = tok; renderBrushBar(); };
+                bar.appendChild(btn);
+            });
+            // Punkt brush: marks cells where stones may be placed off-board when
+            // completing a bridge (Walter's manual placement, replaces auto-dots).
+            const dotBtn = document.createElement('button');
+            dotBtn.style.cssText = `background:#fff; color:#000; border:3px solid ${editorBrush==='DOT'?'#FFEB3B':'rgba(0,0,0,0.2)'}; padding:6px 10px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.85em; display:inline-flex; align-items:center; gap:5px;`;
+            dotBtn.innerHTML = '<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#000;"></span> ドット';
+            dotBtn.onclick = () => { editorBrush = 'DOT'; renderBrushBar(); };
+            bar.appendChild(dotBtn);
+            const eraser = document.createElement('button');
+            eraser.style.cssText = `background:#fff; color:#000; border:3px solid ${editorBrush==='erase'?'#FFEB3B':'rgba(0,0,0,0.2)'}; padding:6px 10px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.85em;`;
+            eraser.textContent = '✕ 消去';
+            eraser.onclick = () => { editorBrush = 'erase'; renderBrushBar(); };
+            bar.appendChild(eraser);
+        }
+
+        function renderEditor() {
+            const g = document.getElementById('editor-grid');
+            g.innerHTML = '';
+            // ecs is sized off the larger axis so the grid fits the viewport;
+            // the container has overflow:auto so anything wider/taller is scrollable.
+            const maxAxis = Math.max(editorGridW, editorGridH);
+            const ecs = Math.max(16, Math.min(38, Math.floor((Math.min(window.innerWidth, 820) - 80) / maxAxis)));
+            g.style.gridTemplateColumns = `repeat(${editorGridW}, ${ecs}px)`;
+            g.style.gridTemplateRows = `repeat(${editorGridH}, ${ecs}px)`;
+            const fontSize = Math.max(8, Math.floor(ecs * 0.32));
+            for (let i = 0; i < editorGridW * editorGridH; i++) {
+                const c = document.createElement('div');
+                // Faint grid border in the editor so Walter can see the cells he's painting on.
+                // Empty cells have no fill — only this thin outline; on the play grid the
+                // border is gone entirely so empty space is just white.
+                c.style.cssText = `width:${ecs}px; height:${ecs}px; cursor:pointer; display:flex; align-items:center; justify-content:center; border:1px solid rgba(0,0,0,0.10);`;
+                const tok = editorPaint[i];
+                if (tok === 'DOT') {
+                    // Placement dot — Walter marks where stones may go off-board
+                    c.style.background = 'transparent';
+                    const dotSize = Math.max(6, Math.floor(ecs * 0.22));
+                    c.innerHTML = `<span style="display:inline-block; width:${dotSize}px; height:${dotSize}px; border-radius:50%; background:#000;"></span>`;
+                } else if (tok) {
+                    const ch = tok[0];
+                    const bg = ch === 'S' ? '#3a3a3a' : (ch === 'W' ? '#6a6a6a' : '#9a9a9a');
+                    const fg = ch === 'G' ? '#000' : '#fff';
+                    c.style.background = bg;
+                    c.style.border = '1px solid rgba(0,0,0,0.20)';
+                    c.innerHTML = `<span style="font-size:${fontSize}px; color:${fg}; font-weight:bold;">${tok}</span>`;
+                } else {
+                    // Empty cell — blank white, no auto-dot. Walter places dots manually.
+                    c.style.background = 'transparent';
+                    c.innerHTML = '';
+                }
+                c.onclick = () => editorClick(i);
+                g.appendChild(c);
+            }
+        }
+
+        function paintToBoards() {
+            const byToken = {};
+            const order = [];
+            Object.keys(editorPaint).forEach(idx => {
+                const tok = editorPaint[idx];
+                if (tok === 'DOT') return;  // dots collected separately via paintToDots()
+                const i = parseInt(idx);
+                const x = i % editorGridW, y = Math.floor(i / editorGridW);
+                if (!byToken[tok]) { byToken[tok] = []; order.push(tok); }
+                byToken[tok].push([x, y]);
+            });
+            return order.map(tok => ({ token: tok, cells: byToken[tok] }));
+        }
+
+        function paintToDots() {
+            const dots = [];
+            Object.keys(editorPaint).forEach(idx => {
+                if (editorPaint[idx] !== 'DOT') return;
+                const i = parseInt(idx);
+                dots.push([i % editorGridW, Math.floor(i / editorGridW)]);
+            });
+            return dots;
+        }
+
+        function saveCustomPosition() {
+            if (Object.keys(editorPaint).length === 0) {
+                alert('少なくとも1つボードを配置してください！');
+                return;
+            }
+            const nameInput = document.getElementById('editor-name');
+            let name = (nameInput.value || '').trim();
+            if (!name) name = (prompt('配置名:', 'マイ配置') || '').trim();
+            if (!name) return;
+            const newPos = {
+                customId: editingCustomId || ('c' + Date.now()),
+                name: name,
+                sub: 'Custom position',
+                boards: paintToBoards(),
+                dots: paintToDots()
+            };
+            const customs = loadCustomPositions();
+            const idx = customs.findIndex(p => p.customId === newPos.customId);
+            if (idx >= 0) customs[idx] = newPos; else customs.push(newPos);
+            saveCustomPositionsArr(customs);
+            editingCustomId = newPos.customId;
+            editorPositionName = name;
+            nameInput.value = name;
+            alert(`「${name}」を保存しました！`);
+        }
+
+        // gridW = grid stride (column count). The CSV format is row-keyed,
+        // so only the width matters for indexing; the height is implicit in maxY.
+        function buildPositionCSV(paint, gridW, name) {
+            let maxX = 0, maxY = 0;
+            Object.keys(paint).forEach(idx => {
+                const i = parseInt(idx);
+                const x = i % gridW, y = Math.floor(i / gridW);
+                if (x > maxX) maxX = x;
+                if (y > maxY) maxY = y;
+            });
+            const numCols = Math.max(maxX + 1, 12);
+            const pid = STARTING_POSITIONS.length + 1;
+            const headers = ['position_id','position_name','row'];
+            for (let c = 0; c < numCols; c++) headers.push('c' + c);
+            let csv = headers.join(',') + '\n';
+            for (let y = 0; y <= maxY; y++) {
+                const row = [pid, name, y];
+                for (let x = 0; x < numCols; x++) {
+                    const v = paint[y * gridW + x];
+                    row.push(v === 'DOT' ? 'o' : (v || '.'));
+                }
+                csv += row.join(',') + '\n';
+            }
+            return csv;
+        }
+
+        // Convert a saved/loaded position object back to a paint dict (used for sharing
+        // existing custom positions without re-opening the editor)
+        function positionToPaint(pos) {
+            let maxX = 0, maxY = 0;
+            pos.boards.forEach(b => {
+                const cells = Array.isArray(b) ? b : b.cells;
+                cells.forEach(([x,y]) => { if (x > maxX) maxX = x; if (y > maxY) maxY = y; });
+            });
+            const dots = pos.dots || [];
+            dots.forEach(([x,y]) => { if (x > maxX) maxX = x; if (y > maxY) maxY = y; });
+            const gridW = maxX + 2;
+            const gridH = maxY + 2;
+            const paint = {};
+            const usedByPrefix = { S:0, W:0, G:0 };
+            pos.boards.forEach(b => {
+                const isArr = Array.isArray(b);
+                const cells = isArr ? b : b.cells;
+                let tok = isArr ? null : b.token;
+                if (!tok || tok.length === 1) {
+                    const prefix = (tok && tok[0]) || (cells.length === 9 ? 'S' : (cells.length >= 7 ? 'G' : 'W'));
+                    usedByPrefix[prefix] = (usedByPrefix[prefix] || 0) + 1;
+                    tok = prefix + usedByPrefix[prefix];
+                }
+                cells.forEach(([x,y]) => { paint[y * gridW + x] = tok; });
+            });
+            dots.forEach(([x,y]) => { paint[y * gridW + x] = 'DOT'; });
+            return { paint, gridW, gridH };
+        }
+
+        function exportEditorCSV() {
+            if (Object.keys(editorPaint).length === 0) {
+                alert('少なくとも1つボードを配置してください！');
+                return;
+            }
+            const name = (document.getElementById('editor-name').value || '').trim() || 'Custom';
+            const csv = buildPositionCSV(editorPaint, editorGridW, name);
+            document.getElementById('csv-output').value = csv;
+            document.getElementById('csv-modal').style.display = 'flex';
+        }
+
+        // Share a CSV file via the OS share sheet (incl. WhatsApp on iOS/Android,
+        // both in the browser and inside the Parados WebView). Falls back to
+        // download + wa.me text message on platforms without files-share support.
+        async function shareCSVViaWhatsApp(name, csvText) {
+            const safe = (name || 'custom').replace(/[^\w\-äöüÄÖÜß]+/g, '_');
+            const filename = `divided_loyalties_${safe}.csv`;
+            const blob = new Blob([csvText], { type: 'text/csv;charset=utf-8' });
+            try {
+                if (navigator.canShare) {
+                    const file = new File([blob], filename, { type: 'text/csv' });
+                    if (navigator.canShare({ files: [file] })) {
+                        // Walter (2026-05-11): "Wenn ich Picasso sende, kommt Frankenstein"
+                        // — WhatsApp dropped the CSV file and showed an old draft's text.
+                        // No `text:` here: WhatsApp can no longer fall back to a text-only
+                        // path when it doesn't like the CSV attachment; we keep only a
+                        // short title hint for the share sheet.
+                        await navigator.share({
+                            files: [file],
+                            title: `Divided Loyalties: ${name}`
+                        });
+                        return;
+                    }
+                }
+            } catch (e) {
+                if (e && e.name === 'AbortError') return; // user cancelled the share sheet
+                console.warn('navigator.share failed, falling back:', e);
+            }
+            // Fallback: download only — NO wa.me redirect.
+            // Walter (2026-05-12): on Android the wa.me link redirected to
+            // whatsapp:// and the WebView choked with ERR_UNKNOWN_URL_SCHEME
+            // (PDF-Anleitung Schritt 6). Same pattern as
+            // shareGameJSONViaWhatsApp: just download + alert, user attaches
+            // manually in WhatsApp.
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = filename;
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 5000);
+            alert(`CSV ファイル「${filename}」をダウンロードしました。\n\nWhatsApp でクリップ（📎）→「ドキュメント」をタップし、ダウンロードフォルダから CSV を選んで送信してください。`);
+        }
+
+        async function shareEditorViaWhatsApp() {
+            if (Object.keys(editorPaint).length === 0) {
+                alert('少なくとも1つボードを配置してください！');
+                return;
+            }
+            const name = (document.getElementById('editor-name').value || '').trim() || 'Custom';
+            const csv = buildPositionCSV(editorPaint, editorGridW, name);
+            await shareCSVViaWhatsApp(name, csv);
+        }
+
+        async function shareCustomPositionViaWhatsApp(pos) {
+            const { paint, gridW } = positionToPaint(pos);
+            const csv = buildPositionCSV(paint, gridW, pos.name);
+            await shareCSVViaWhatsApp(pos.name, csv);
+        }
+
+        function copyCSVToClipboard() {
+            const ta = document.getElementById('csv-output');
+            const text = ta.value;
+            const fallback = () => { ta.select(); document.execCommand('copy'); };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => alert('コピーしました！'), () => { fallback(); alert('コピーしました！'); });
+            } else { fallback(); alert('コピーしました！'); }
+        }
+
+        async function loadPositions() {
+            try {
+                const resp = await fetch('divided_loyalties_starting_positions.csv');
+                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                const text = await resp.text();
+                const parsed = parsePositionsCSV(text);
+                if (parsed && parsed.length > 0) return parsed;
+            } catch (e) {
+                console.warn('CSV fetch failed, using hardcoded positions:', e);
+            }
+            return HARDCODED_POSITIONS;
+        }
+
+        function slugifyName(s) {
+            return String(s || '').toLowerCase()
+                .normalize('NFD').replace(/[̀-ͯ]/g, '')
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '');
+        }
+
+        function getPositionLink(pos) {
+            const base = /^(file|parados):$/.test(window.location.protocol)
+                ? "https://game.ywesee.com/parados/" + (window.location.pathname.split("/").pop() || "divided_loyalties_en.html")
+                : window.location.href.split('#')[0];
+            return base + '#' + slugifyName(pos.name);
+        }
+
+        function findPositionByHash(hash) {
+            const raw = decodeURIComponent(hash || '').replace(/^#/, '').trim();
+            if (!raw) return null;
+            if (/^\d+$/.test(raw)) {
+                const idx = parseInt(raw, 10) - 1;
+                if (idx >= 0 && idx < STARTING_POSITIONS.length) return STARTING_POSITIONS[idx];
+            }
+            const slug = slugifyName(raw);
+            return STARTING_POSITIONS.find(p => slugifyName(p.name) === slug) || null;
+        }
+
+        function copyPositionLink(pos) {
+            const link = getPositionLink(pos);
+            const fallback = () => {
+                const ta = document.createElement('textarea');
+                ta.value = link; document.body.appendChild(ta); ta.select();
+                try { document.execCommand('copy'); } catch (e) {}
+                document.body.removeChild(ta);
+            };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(link).then(
+                    () => alert('直接リンクをコピーしました:\n' + link),
+                    () => { fallback(); alert('直接リンクをコピーしました:\n' + link); }
+                );
+            } else { fallback(); alert('直接リンクをコピーしました:\n' + link); }
+        }
+
+        async function startup() {
+            STARTING_POSITIONS = await loadPositions();
+            if (location.hash === '#rules') {
+                showSetup();
+                toggleRules(true);
+            } else {
+                const fromHash = findPositionByHash(location.hash);
+                if (fromHash) {
+                    startWithPosition(fromHash);
+                } else {
+                    showSetup();
+                }
+            }
+            window.addEventListener('hashchange', () => {
+                if (location.hash === '#rules') { toggleRules(true); return; }
+                const p = findPositionByHash(location.hash);
+                if (p) {
+                    document.getElementById('setup-overlay').style.display = 'none';
+                    startWithPosition(p);
+                }
+            });
+        }
+
+        startup();
+    </script>
+</body>
+</html>
