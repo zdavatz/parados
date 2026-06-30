@@ -86,6 +86,8 @@ Memory game, 1–4 players. Flip cards to build a complete body from torso outwa
 
 Every game has a Share-on-WhatsApp button right of the `<h1>` (green `#25D366`, `gap:14px`).
 
+**Button LABEL is localized per file language (Walter, 2026-06-30):** DE → `Auf WhatsApp teilen`, EN → `Share on WhatsApp`, JP → `WhatsApp で共有`, CN → `分享到 WhatsApp`, UA → `Поділитися у WhatsApp` (brand "WhatsApp" kept in every language). Applies to all share buttons in a file (rainbow_blackjack has 3). When adding a localized variant, set the button text to match `<html lang>`. (The DL share *dialog* heading + rules reference use the same localized term.) **Caution:** do the non-ASCII replacements with a UTF-8-safe tool (Python/Edit), NOT `perl -CSD -pe 's/…/<cjk>/'` — the literal in the `-e` program gets double-encoded into mojibake.
+
 `shareOnWhatsApp()` flow:
 1. If `window.location.protocol === "file:"`, rewrite to `https://game.ywesee.com/parados/<filename>` (WebView container paths are useless to recipients). **Keep this guard for any new game.**
 2. Try `navigator.share({ text: msg })` first.
