@@ -1008,8 +1008,18 @@
                 board[selectedDishPos.y][selectedDishPos.x] = null;
                 dishMoveAvailable = false; isMovingDish = false; selectedDishPos = null;
                 renderBoard(); updateUI();
+            } else {
+                showDishMoveHint();
             }
         }
+    }
+
+    // Kurzer Hinweis, wenn eine Schale zu weit gezogen wird (nur 1 Feld erlaubt)
+    function showDishMoveHint() {
+        statusEl.style.color = "#ef9a9a";
+        statusEl.innerText = "Nur ein Feld! Eine Schale kann jeweils nur ein Quadrat weit gezogen werden.";
+        clearTimeout(showDishMoveHint._t);
+        showDishMoveHint._t = setTimeout(() => { if (isMovingDish) updateUI(); }, 2500);
     }
 
     function isValidJump(fromX, fromY, toX, toY) {

@@ -944,8 +944,18 @@
                 board[selectedDishPos.y][selectedDishPos.x] = null;
                 dishMoveAvailable = false; isMovingDish = false; selectedDishPos = null;
                 renderBoard(); updateUI();
+            } else {
+                showDishMoveHint();
             }
         }
+    }
+
+    // Brief hint when a dish is dragged too far (only 1 square allowed)
+    function showDishMoveHint() {
+        statusEl.style.color = "#ef9a9a";
+        statusEl.innerText = "Only one square! A dish can be moved just one square at a time.";
+        clearTimeout(showDishMoveHint._t);
+        showDishMoveHint._t = setTimeout(() => { if (isMovingDish) updateUI(); }, 2500);
     }
 
     function isValidJump(fromX, fromY, toX, toY) {

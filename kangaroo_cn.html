@@ -940,8 +940,18 @@
                 board[selectedDishPos.y][selectedDishPos.x] = null;
                 dishMoveAvailable = false; isMovingDish = false; selectedDishPos = null;
                 renderBoard(); updateUI();
+            } else {
+                showDishMoveHint();
             }
         }
+    }
+
+    // 碟子被拖得太远时的简短提示（每次只能移动一格）
+    function showDishMoveHint() {
+        statusEl.style.color = "#ef9a9a";
+        statusEl.innerText = "只能移动一格！碟子每次只能移动一格。";
+        clearTimeout(showDishMoveHint._t);
+        showDishMoveHint._t = setTimeout(() => { if (isMovingDish) updateUI(); }, 2500);
     }
 
     function isValidJump(fromX, fromY, toX, toY) {

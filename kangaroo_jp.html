@@ -940,8 +940,18 @@
                 board[selectedDishPos.y][selectedDishPos.x] = null;
                 dishMoveAvailable = false; isMovingDish = false; selectedDishPos = null;
                 renderBoard(); updateUI();
+            } else {
+                showDishMoveHint();
             }
         }
+    }
+
+    // 皿を遠くへ動かそうとしたときの短いヒント（1マスのみ許可）
+    function showDishMoveHint() {
+        statusEl.style.color = "#ef9a9a";
+        statusEl.innerText = "1マスだけ！皿は一度に1マスしか動かせません。";
+        clearTimeout(showDishMoveHint._t);
+        showDishMoveHint._t = setTimeout(() => { if (isMovingDish) updateUI(); }, 2500);
     }
 
     function isValidJump(fromX, fromY, toX, toY) {
