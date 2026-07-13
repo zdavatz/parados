@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parados &mdash; Rules (PDF)</title>
+<style>
+:root {
+    --bg: #263238;
+    --card-bg: #37474f;
+    --card-hover: #455a64;
+    --accent: #ffd700;
+    --text: #eceff1;
+    --text-dim: #90a4ae;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+header {
+    text-align: center;
+    padding: 30px 10px 10px;
+}
+
+header h1 {
+    font-size: 2.4em;
+    color: var(--accent);
+    text-shadow: 0 2px 12px rgba(255, 215, 0, 0.3);
+    letter-spacing: 3px;
+    margin-bottom: 8px;
+}
+
+header p {
+    color: var(--text-dim);
+    font-size: 1.05em;
+}
+
+.rules-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+    max-width: 1100px;
+    margin: 30px auto;
+    padding: 0 10px;
+}
+
+.game-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 22px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.game-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+.game-card h2 {
+    font-size: 1.3em;
+    color: var(--accent);
+    margin-bottom: 4px;
+}
+
+.game-card .subtitle {
+    color: var(--text-dim);
+    font-size: 0.9em;
+    margin-bottom: 16px;
+}
+
+.pdf-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.pdf-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg);
+    color: var(--text);
+    text-decoration: none;
+    padding: 9px 13px;
+    border-radius: 8px;
+    font-size: 0.95em;
+    border: 1px solid #546e7a;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.pdf-link:hover {
+    background: var(--card-hover);
+    border-color: var(--accent);
+}
+
+footer {
+    text-align: center;
+    padding: 30px 10px 40px;
+    color: var(--text-dim);
+    font-size: 0.95em;
+}
+
+footer a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>RULES</h1>
+    <p>Print-ready rules (PDF) for every Parados game, in every language.</p>
+</header>
+
+<main class="rules-grid">
+
+    <div class="game-card">
+        <h2>TIK &mdash; The Impatient Kangaroo</h2>
+        <div class="subtitle">DUK &mdash; Das ungeduldige K&auml;nguru</div>
+        <div class="pdf-list">
+            <a class="pdf-link" href="kangaroo_rules.pdf">🇩🇪 Deutsch</a>
+            <a class="pdf-link" href="kangaroo_en_rules.pdf">🇬🇧 English</a>
+            <a class="pdf-link" href="kangaroo_jp_rules.pdf">🇯🇵 日本語</a>
+            <a class="pdf-link" href="kangaroo_cn_rules.pdf">🇨🇳 中文</a>
+            <a class="pdf-link" href="kangaroo_ua_rules.pdf">🇺🇦 Українська</a>
+        </div>
+    </div>
+
+    <div class="game-card">
+        <h2>Divided Loyalties</h2>
+        <div class="subtitle">Geteilte Loyalit&auml;ten</div>
+        <div class="pdf-list">
+            <a class="pdf-link" href="divided_loyalties_rules.pdf">🇩🇪 Deutsch</a>
+            <a class="pdf-link" href="divided_loyalties_en_rules.pdf">🇬🇧 English</a>
+            <a class="pdf-link" href="divided_loyalties_jp_rules.pdf">🇯🇵 日本語</a>
+            <a class="pdf-link" href="divided_loyalties_cn_rules.pdf">🇨🇳 中文</a>
+            <a class="pdf-link" href="divided_loyalties_ua_rules.pdf">🇺🇦 Українська</a>
+        </div>
+    </div>
+
+    <div class="game-card">
+        <h2>Democracy in Space</h2>
+        <div class="subtitle">Local &amp; remote play</div>
+        <div class="pdf-list">
+            <a class="pdf-link" href="democracy_rules.pdf">🇩🇪 Deutsch</a>
+            <a class="pdf-link" href="democracy_en_rules.pdf">🇬🇧 English</a>
+            <a class="pdf-link" href="democracy_remote_rules.pdf">🌐 Remote</a>
+        </div>
+    </div>
+
+    <div class="game-card">
+        <h2>Rainbow Blackjack</h2>
+        <div class="subtitle">Local &amp; remote play</div>
+        <div class="pdf-list">
+            <a class="pdf-link" href="rainbow_blackjack_rules.pdf">🇩🇪 Deutsch</a>
+            <a class="pdf-link" href="rainbow_blackjack_en_rules.pdf">🇬🇧 English</a>
+            <a class="pdf-link" href="rainbow_blackjack_remote_rules.pdf">🌐 Remote</a>
+        </div>
+    </div>
+
+    <div class="game-card">
+        <h2>MAKA LAINA</h2>
+        <div class="subtitle">Local &amp; remote play</div>
+        <div class="pdf-list">
+            <a class="pdf-link" href="makalaina_rules.pdf">📄 Rules</a>
+            <a class="pdf-link" href="makalaina_remote_rules.pdf">🌐 Remote</a>
+        </div>
+    </div>
+
+    <div class="game-card">
+        <h2>Capovolto</h2>
+        <div class="subtitle">Othello on a polyomino grid</div>
+        <div class="pdf-list">
+            <a class="pdf-link" href="capovolto_rules.pdf">📄 Rules</a>
+        </div>
+    </div>
+
+    <div class="game-card">
+        <h2>Frankenstein</h2>
+        <div class="subtitle">Memory game, 1&ndash;4 players</div>
+        <div class="pdf-list">
+            <a class="pdf-link" href="frankenstein_rules.pdf">📄 Rules</a>
+        </div>
+    </div>
+
+</main>
+
+<footer>
+    <p>&larr; <a href="../../index.html">Back to Parados</a></p>
+</footer>
+
+</body>
+</html>
