@@ -34,6 +34,8 @@ const WEB_BASE: &str = "https://game.ywesee.com/parados/";
 const URL_IOS_MAC: &str = "https://apps.apple.com/us/app/parados/id6760842713";
 const URL_ANDROID: &str = "https://play.google.com/store/apps/details?id=com.ywesee.parados";
 const URL_WINDOWS: &str = "https://apps.microsoft.com/detail/9N7RTWZQQ0K7";
+const GITHUB_RULES_DIR: &str = "https://github.com/zdavatz/parados/tree/main/docs/rules";
+const GITHUB_RULES_BASE: &str = "https://github.com/zdavatz/parados/blob/main/docs/rules/";
 
 /// Files in the repo root that are not games.
 const NON_GAMES: &[&str] = &["index.html", "startpositionen.html"];
@@ -58,6 +60,7 @@ struct L10n {
     play_online: &'static str,
     get_app: &'static str,
     rules_word: &'static str,
+    all_rules: &'static str,
     font_family: &'static str,
     script: Script,
 }
@@ -68,6 +71,7 @@ fn l10n(lang: &str) -> L10n {
             play_online: "Online spielen:",
             get_app: "Hol dir die Parados-App:",
             rules_word: "Regeln",
+            all_rules: "Alle Spielregeln als PDF",
             font_family: "Noto Sans",
             script: Script::Latin,
         },
@@ -75,6 +79,7 @@ fn l10n(lang: &str) -> L10n {
             play_online: "オンラインでプレイ:",
             get_app: "Parados アプリを入手:",
             rules_word: "ルール",
+            all_rules: "全ゲームのルール PDF",
             font_family: "Noto Sans JP",
             script: Script::Jp,
         },
@@ -82,6 +87,7 @@ fn l10n(lang: &str) -> L10n {
             play_online: "在线游玩：",
             get_app: "获取 Parados 应用：",
             rules_word: "规则",
+            all_rules: "所有游戏规则 PDF",
             font_family: "Noto Sans SC",
             script: Script::Sc,
         },
@@ -89,6 +95,7 @@ fn l10n(lang: &str) -> L10n {
             play_online: "Грати онлайн:",
             get_app: "Завантажте додаток Parados:",
             rules_word: "Правила",
+            all_rules: "Усі правила ігор у PDF",
             font_family: "Noto Sans",
             script: Script::Latin,
         },
@@ -96,6 +103,7 @@ fn l10n(lang: &str) -> L10n {
             play_online: "Play online:",
             get_app: "Get the Parados app:",
             rules_word: "Rules",
+            all_rules: "All game rules as PDF",
             font_family: "Noto Sans",
             script: Script::Latin,
         },
@@ -272,14 +280,22 @@ div.links p {{ margin: 2pt 0; }}
     )
 }
 
-/// Makes the URLs clickable. azul's HTML renderer emits no link annotations,
-/// so this scans page 1's ops for text runs filled with `LINK_RGB` (only the
-/// URLs are that color), groups them into lines, and covers each line with a
-/// `LinkAnnotation`. `urls` must be in top-to-bottom page order; the function
-/// errors if it doesn't find exactly one line per URL.
-fn annotate_links(doc: &mut PdfDocument, urls: &[&str]) -> Result<(), String> {
-    let page = doc.pages.first_mut().ok_or("document has no pages")?;
+/// A text line rendered in the link color: page index, baseline y, glyph
+/// x extents and font size.
+struct LinkLine {
+    page: usize,
+    y: f32,
+    min_x: f32,
+    max_x: f32,
+    size: f32,
+}
 
+/// Makes the URLs clickable. azul's HTML renderer emits no link annotations,
+/// so this scans every page's ops for text runs filled with `LINK_RGB` (only
+/// links are that color), groups them into lines, and covers each line with a
+/// `LinkAnnotation`. `urls` must be in reading order (page by page, top to
+/// bottom); the function errors unless it finds exactly one line per URL.
+fn annotate_links(doc: &mut PdfDocument, urls: &[&str]) -> Result<(), String> {
     let is_link_color = |col: &Color| -> bool {
         matches!(col, Color::Rgb(rgb)
             if (rgb.r - LINK_RGB.0).abs() < 0.02
@@ -287,67 +303,80 @@ fn annotate_links(doc: &mut PdfDocument, urls: &[&str]) -> Result<(), String> {
             && (rgb.b - LINK_RGB.2).abs() < 0.02)
     };
 
-    // (y, min_x, max_x, font_size) per text line drawn in the link color
-    let mut lines: Vec<(f32, f32, f32, f32)> = Vec::new();
-    let mut link_colored = false;
-    let mut font_size = 10.5f32;
-    let mut cursor = (0.0f32, 0.0f32);
+    let mut lines: Vec<LinkLine> = Vec::new();
     let dump = std::env::var("DUMP_OPS").is_ok();
-    for op in &page.ops {
-        if dump {
-            match op {
-                Op::SetFillColor { col } => eprintln!("SetFillColor {col:?}"),
-                Op::SetTextCursor { pos } => eprintln!("SetTextCursor {:?},{:?}", pos.x, pos.y),
-                Op::SetTextMatrix { matrix } => eprintln!("SetTextMatrix {matrix:?}"),
-                Op::ShowText { items } => eprintln!("ShowText {} items", items.len()),
-                Op::SetFont { size, .. } => eprintln!("SetFont size {size:?}"),
-                _ => {}
-            }
-        }
-        match op {
-            Op::SetFillColor { col } => link_colored = is_link_color(col),
-            Op::SetFont { size, .. } => font_size = size.0,
-            Op::SetTextCursor { pos } => cursor = (pos.x.0, pos.y.0),
-            Op::SetTextMatrix { matrix } => match matrix {
-                TextMatrix::Translate(x, y) => cursor = (x.0, y.0),
-                // azul emits every glyph position as a raw [1,0,0,1,x,y] matrix
-                TextMatrix::Raw(m) => cursor = (m[4], m[5]),
-                _ => {}
-            },
-            Op::ShowText { .. } if link_colored => {
-                match lines.iter_mut().find(|l| (l.0 - cursor.1).abs() < 2.0) {
-                    Some(l) => {
-                        l.1 = l.1.min(cursor.0);
-                        l.2 = l.2.max(cursor.0);
-                        l.3 = l.3.max(font_size);
+    for (page_idx, page) in doc.pages.iter().enumerate() {
+        let mut link_colored = false;
+        let mut font_size = 10.5f32;
+        let mut cursor = (0.0f32, 0.0f32);
+        for op in &page.ops {
+            if dump {
+                match op {
+                    Op::SetFillColor { col } => eprintln!("p{page_idx} SetFillColor {col:?}"),
+                    Op::SetTextCursor { pos } => {
+                        eprintln!("p{page_idx} SetTextCursor {:?},{:?}", pos.x, pos.y)
                     }
-                    None => lines.push((cursor.1, cursor.0, cursor.0, font_size)),
+                    Op::SetTextMatrix { matrix } => eprintln!("p{page_idx} SetTextMatrix {matrix:?}"),
+                    Op::ShowText { items } => eprintln!("p{page_idx} ShowText {} items", items.len()),
+                    Op::SetFont { size, .. } => eprintln!("p{page_idx} SetFont size {size:?}"),
+                    _ => {}
                 }
             }
-            _ => {}
+            match op {
+                Op::SetFillColor { col } => link_colored = is_link_color(col),
+                Op::SetFont { size, .. } => font_size = size.0,
+                Op::SetTextCursor { pos } => cursor = (pos.x.0, pos.y.0),
+                Op::SetTextMatrix { matrix } => match matrix {
+                    TextMatrix::Translate(x, y) => cursor = (x.0, y.0),
+                    // azul emits every glyph position as a raw [1,0,0,1,x,y] matrix
+                    TextMatrix::Raw(m) => cursor = (m[4], m[5]),
+                    _ => {}
+                },
+                Op::ShowText { .. } if link_colored => {
+                    match lines
+                        .iter_mut()
+                        .find(|l| l.page == page_idx && (l.y - cursor.1).abs() < 2.0)
+                    {
+                        Some(l) => {
+                            l.min_x = l.min_x.min(cursor.0);
+                            l.max_x = l.max_x.max(cursor.0);
+                            l.size = l.size.max(font_size);
+                        }
+                        None => lines.push(LinkLine {
+                            page: page_idx,
+                            y: cursor.1,
+                            min_x: cursor.0,
+                            max_x: cursor.0,
+                            size: font_size,
+                        }),
+                    }
+                }
+                _ => {}
+            }
         }
     }
 
-    lines.sort_by(|a, b| b.0.total_cmp(&a.0)); // top of page first
+    // reading order: page by page, top of page first
+    lines.sort_by(|a, b| a.page.cmp(&b.page).then(b.y.total_cmp(&a.y)));
     if lines.len() != urls.len() {
         return Err(format!(
-            "expected {} link-colored lines on page 1, found {}",
+            "expected {} link-colored lines, found {}",
             urls.len(),
             lines.len()
         ));
     }
-    for ((y, min_x, max_x, size), url) in lines.into_iter().zip(urls) {
+    for (line, url) in lines.into_iter().zip(urls) {
         // max_x is the *start* of the line's last glyph — pad right by roughly
         // one glyph width, and stretch vertically to cover ascender/descender.
         let rect = Rect {
-            x: Pt(min_x - 1.0),
-            y: Pt(y - 0.3 * size),
-            width: Pt(max_x - min_x + 0.7 * size + 2.0),
-            height: Pt(1.3 * size),
+            x: Pt(line.min_x - 1.0),
+            y: Pt(line.y - 0.3 * line.size),
+            width: Pt(line.max_x - line.min_x + 0.7 * line.size + 2.0),
+            height: Pt(1.3 * line.size),
             mode: None,
             winding_order: None,
         };
-        page.ops.push(Op::LinkAnnotation {
+        doc.pages[line.page].ops.push(Op::LinkAnnotation {
             link: LinkAnnotation::new(
                 rect,
                 Actions::uri(url.to_string()),
@@ -358,6 +387,43 @@ fn annotate_links(doc: &mut PdfDocument, urls: &[&str]) -> Result<(), String> {
         });
     }
     Ok(())
+}
+
+/// ASCII display name per game (the index must render in every font, so no
+/// localized titles here — CJK titles can't render in the Latin documents).
+fn game_display_name(stem: &str) -> String {
+    let mut base = stem.trim_end_matches("_remote");
+    for suffix in ["_en", "_jp", "_cn", "_ua"] {
+        base = base.trim_end_matches(suffix);
+    }
+    match base {
+        "kangaroo" => "The Impatient Kangaroo",
+        "divided_loyalties" => "Divided Loyalties",
+        "democracy" => "Democracy in Space",
+        "makalaina" => "MAKA LAINA",
+        "capovolto" => "Capovolto",
+        "rainbow_blackjack" => "Rainbow Blackjack",
+        "frankenstein" => "Frankenstein",
+        other => other,
+    }
+    .to_string()
+}
+
+fn lang_tag(lang: &str) -> &'static str {
+    match lang {
+        "de" => "DE",
+        "ja" => "JP",
+        "uk" => "UA",
+        l if l.starts_with("zh") => "CN",
+        _ => "EN",
+    }
+}
+
+/// One list entry of the cross-reference index, e.g.
+/// "Democracy in Space (DE, Remote)".
+fn index_label(stem: &str, lang: &str) -> String {
+    let remote = if stem.ends_with("_remote") { ", Remote" } else { "" };
+    format!("{} ({}{})", game_display_name(stem), lang_tag(lang), remote)
 }
 
 /// Replacement text for symbols a document font may lack. Only applied
@@ -453,20 +519,58 @@ fn main() -> Result<(), String> {
         ..Default::default()
     };
 
+    // Pass 1: extract every game, so each PDF can cross-reference the others.
+    struct GameEntry {
+        file_name: String,
+        stem: String,
+        ex: Extracted,
+    }
     let mut failures = Vec::new();
+    let mut entries: Vec<GameEntry> = Vec::new();
     for path in &game_files {
         let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or_default();
         let stem = path.file_stem().and_then(|n| n.to_str()).unwrap_or_default();
         let html = std::fs::read_to_string(path).map_err(|e| e.to_string())?;
+        match extract(&html, &cite_re) {
+            Ok(ex) => entries.push(GameEntry {
+                file_name: file_name.to_string(),
+                stem: stem.to_string(),
+                ex,
+            }),
+            Err(e) => failures.push(format!("{file_name}: {e}")),
+        }
+    }
 
-        let mut ex = match extract(&html, &cite_re) {
-            Ok(ex) => ex,
-            Err(e) => {
-                failures.push(format!("{file_name}: {e}"));
+    // Pass 2: render each PDF, ending with an index of all the other PDFs
+    // (GitHub links) — it lands on the last page.
+    for i in 0..entries.len() {
+        let l = l10n(&entries[i].ex.lang);
+
+        let mut index_html = format!(
+            "<h2>{}</h2>\n<p>GitHub: {LINK_OPEN}{GITHUB_RULES_DIR}&#160;</span></p>\n<ul>\n",
+            l.all_rules
+        );
+        let mut index_urls: Vec<String> = vec![GITHUB_RULES_DIR.to_string()];
+        for (j, other) in entries.iter().enumerate() {
+            if j == i {
                 continue;
             }
+            index_html.push_str(&format!(
+                "<li>{LINK_OPEN}{}&#160;</span></li>\n",
+                escape_html(&index_label(&other.stem, &other.ex.lang))
+            ));
+            index_urls.push(format!("{GITHUB_RULES_BASE}{}_rules.pdf", other.stem));
+        }
+        index_html.push_str("</ul>");
+
+        let entry = &entries[i];
+        let file_name = entry.file_name.as_str();
+        let stem = entry.stem.as_str();
+        let mut ex = Extracted {
+            title: entry.ex.title.clone(),
+            lang: entry.ex.lang.clone(),
+            rules_html: format!("{}\n{}", entry.ex.rules_html, index_html),
         };
-        let l = l10n(&ex.lang);
         let game_url = format!("{WEB_BASE}{file_name}");
 
         let main_font = pool_fonts[&l.script]
@@ -500,8 +604,9 @@ fn main() -> Result<(), String> {
         )
         .map_err(|e| format!("{file_name}: {e}"))?;
 
-        annotate_links(&mut doc, &[&game_url, URL_IOS_MAC, URL_ANDROID, URL_WINDOWS])
-            .map_err(|e| format!("{file_name}: {e}"))?;
+        let mut link_urls: Vec<&str> = vec![&game_url, URL_IOS_MAC, URL_ANDROID, URL_WINDOWS];
+        link_urls.extend(index_urls.iter().map(String::as_str));
+        annotate_links(&mut doc, &link_urls).map_err(|e| format!("{file_name}: {e}"))?;
 
         doc.metadata.info.document_title = format!("{} — {}", ex.title, l.rules_word);
         doc.metadata.info.author = "Walter Prossnitz".to_string();

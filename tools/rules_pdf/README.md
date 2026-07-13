@@ -31,12 +31,16 @@ the CJK fonts are subset at prepare time to the characters those files use
   stripped, and a small HTML template (links box + rules) is rendered to PDF
   with `printpdf`'s HTML renderer. Fonts: Noto Sans (Latin+Cyrillic),
   Noto Sans JP, Noto Sans SC — picked per `<html lang>`.
-- The four URLs in the links box are blue + underlined and **clickable**:
-  azul's HTML renderer emits no link annotations, so `annotate_links()`
-  finds the URL text on page 1 by its fill color (`#0645ad` — only URLs use
-  it), computes each line's rectangle from the rendered glyph positions, and
-  attaches a PDF `LinkAnnotation` per URL. The run fails if the count of
-  blue lines doesn't match the count of URLs.
+- Each PDF ends with a localized "All game rules as PDF" index on its last
+  page: a link to the GitHub `docs/rules/` folder plus one entry per sibling
+  PDF (GitHub blob links, the current game excluded). Labels are ASCII
+  ("Divided Loyalties (JP)", …) so every entry renders in every font.
+- All links (header URLs + index entries) are blue + underlined and
+  **clickable**: azul's HTML renderer emits no link annotations, so
+  `annotate_links()` finds link text on every page by its fill color
+  (`#0645ad` — only links use it), computes each line's rectangle from the
+  rendered glyph positions, and attaches a PDF `LinkAnnotation` per line.
+  The run fails if the count of blue lines doesn't match the count of URLs.
 - Every PDF is then verified: each glyph referenced by a content stream must
   have a non-empty outline in the embedded font, and every expected character
   must resolve to a non-empty glyph through the embedded font's cmap.

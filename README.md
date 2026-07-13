@@ -22,7 +22,7 @@ Full clickable PDF reference: [`docs/parados_anchor_links.pdf`](docs/parados_anc
 
 ## Rules PDFs
 
-Every game variant has a print-ready rules PDF in [`docs/rules/`](docs/rules/) — one per game and language (20 in total, remote variants included). Each PDF starts with the game's web link and the Parados app links (iOS/Mac App Store, Google Play, Microsoft Store), followed by the full rules text extracted from that variant's in-game rules modal — so `kangaroo_jp_rules.pdf` carries the Japanese rules, `divided_loyalties_ua_rules.pdf` the Ukrainian ones, and so on.
+Every game variant has a print-ready rules PDF in [`docs/rules/`](docs/rules/) — one per game and language (20 in total, remote variants included). Each PDF starts with the game's web link and the Parados app links (iOS/Mac App Store, Google Play, Microsoft Store), followed by the full rules text extracted from that variant's in-game rules modal — so `kangaroo_jp_rules.pdf` carries the Japanese rules, `divided_loyalties_ua_rules.pdf` the Ukrainian ones, and so on. The last page of every PDF carries a clickable index of all the other rules PDFs (GitHub links), so any one PDF leads to the rest. All links are blue, underlined, and clickable.
 
 The PDFs are generated with Rust by [`tools/rules_pdf/`](tools/rules_pdf/) (see its README for setup and the printpdf/azul workarounds it documents). To regenerate after a rules change:
 
