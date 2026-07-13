@@ -22,7 +22,10 @@
 
 use rules_pdf::verify_pdf_glyphs;
 use printpdf::html::{build_font_pool, SharedFontPool};
-use printpdf::{GeneratePdfOptions, PdfDocument, PdfParseErrorSeverity, PdfSaveOptions};
+use printpdf::{
+    Actions, BorderArray, Color, ColorArray, GeneratePdfOptions, LinkAnnotation, Op, PdfDocument,
+    PdfParseErrorSeverity, PdfSaveOptions, Pt, Rect, TextMatrix,
+};
 use scraper::{ElementRef, Html, Node, Selector};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
@@ -37,6 +40,11 @@ const NON_GAMES: &[&str] = &["index.html", "startpositionen.html"];
 
 const BOLD_OPEN: &str = "<span style=\"font-weight: bold\">";
 const ITALIC_OPEN: &str = "<span style=\"font-style: italic\">";
+
+/// Link color, `#0645ad` (Wikipedia blue). `annotate_links` finds the URL
+/// text on the page by exactly this fill color, so the two must stay in sync.
+const LINK_RGB: (f32, f32, f32) = (0x06 as f32 / 255.0, 0x45 as f32 / 255.0, 0xad as f32 / 255.0);
+const LINK_OPEN: &str = "<span style=\"color: #0645ad; text-decoration: underline\">";
 
 /// Which set of fonts a document renders with.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -216,7 +224,9 @@ fn sel(s: &str) -> Selector {
 }
 
 fn link_line(label: &str, url: &str) -> String {
-    format!("<p>{label} {url}</p>")
+    // Trailing no-break space: azul draws the underline one glyph short, so
+    // without it the URL's last character would stick out of the underline.
+    format!("<p>{label} {LINK_OPEN}{url}&#160;</span></p>")
 }
 
 fn page_html(ex: &Extracted, game_url: &str, l: &L10n) -> String {
@@ -260,6 +270,94 @@ div.links p {{ margin: 2pt 0; }}
         windows_line = link_line("Windows:", URL_WINDOWS),
         rules = ex.rules_html,
     )
+}
+
+/// Makes the URLs clickable. azul's HTML renderer emits no link annotations,
+/// so this scans page 1's ops for text runs filled with `LINK_RGB` (only the
+/// URLs are that color), groups them into lines, and covers each line with a
+/// `LinkAnnotation`. `urls` must be in top-to-bottom page order; the function
+/// errors if it doesn't find exactly one line per URL.
+fn annotate_links(doc: &mut PdfDocument, urls: &[&str]) -> Result<(), String> {
+    let page = doc.pages.first_mut().ok_or("document has no pages")?;
+
+    let is_link_color = |col: &Color| -> bool {
+        matches!(col, Color::Rgb(rgb)
+            if (rgb.r - LINK_RGB.0).abs() < 0.02
+            && (rgb.g - LINK_RGB.1).abs() < 0.02
+            && (rgb.b - LINK_RGB.2).abs() < 0.02)
+    };
+
+    // (y, min_x, max_x, font_size) per text line drawn in the link color
+    let mut lines: Vec<(f32, f32, f32, f32)> = Vec::new();
+    let mut link_colored = false;
+    let mut font_size = 10.5f32;
+    let mut cursor = (0.0f32, 0.0f32);
+    let dump = std::env::var("DUMP_OPS").is_ok();
+    for op in &page.ops {
+        if dump {
+            match op {
+                Op::SetFillColor { col } => eprintln!("SetFillColor {col:?}"),
+                Op::SetTextCursor { pos } => eprintln!("SetTextCursor {:?},{:?}", pos.x, pos.y),
+                Op::SetTextMatrix { matrix } => eprintln!("SetTextMatrix {matrix:?}"),
+                Op::ShowText { items } => eprintln!("ShowText {} items", items.len()),
+                Op::SetFont { size, .. } => eprintln!("SetFont size {size:?}"),
+                _ => {}
+            }
+        }
+        match op {
+            Op::SetFillColor { col } => link_colored = is_link_color(col),
+            Op::SetFont { size, .. } => font_size = size.0,
+            Op::SetTextCursor { pos } => cursor = (pos.x.0, pos.y.0),
+            Op::SetTextMatrix { matrix } => match matrix {
+                TextMatrix::Translate(x, y) => cursor = (x.0, y.0),
+                // azul emits every glyph position as a raw [1,0,0,1,x,y] matrix
+                TextMatrix::Raw(m) => cursor = (m[4], m[5]),
+                _ => {}
+            },
+            Op::ShowText { .. } if link_colored => {
+                match lines.iter_mut().find(|l| (l.0 - cursor.1).abs() < 2.0) {
+                    Some(l) => {
+                        l.1 = l.1.min(cursor.0);
+                        l.2 = l.2.max(cursor.0);
+                        l.3 = l.3.max(font_size);
+                    }
+                    None => lines.push((cursor.1, cursor.0, cursor.0, font_size)),
+                }
+            }
+            _ => {}
+        }
+    }
+
+    lines.sort_by(|a, b| b.0.total_cmp(&a.0)); // top of page first
+    if lines.len() != urls.len() {
+        return Err(format!(
+            "expected {} link-colored lines on page 1, found {}",
+            urls.len(),
+            lines.len()
+        ));
+    }
+    for ((y, min_x, max_x, size), url) in lines.into_iter().zip(urls) {
+        // max_x is the *start* of the line's last glyph — pad right by roughly
+        // one glyph width, and stretch vertically to cover ascender/descender.
+        let rect = Rect {
+            x: Pt(min_x - 1.0),
+            y: Pt(y - 0.3 * size),
+            width: Pt(max_x - min_x + 0.7 * size + 2.0),
+            height: Pt(1.3 * size),
+            mode: None,
+            winding_order: None,
+        };
+        page.ops.push(Op::LinkAnnotation {
+            link: LinkAnnotation::new(
+                rect,
+                Actions::uri(url.to_string()),
+                Some(BorderArray::Solid([0.0, 0.0, 0.0])), // no visible border box
+                Some(ColorArray::Transparent),
+                None,
+            ),
+        });
+    }
+    Ok(())
 }
 
 /// Replacement text for symbols a document font may lack. Only applied
@@ -401,6 +499,9 @@ fn main() -> Result<(), String> {
             Some(pools[&l.script].clone()),
         )
         .map_err(|e| format!("{file_name}: {e}"))?;
+
+        annotate_links(&mut doc, &[&game_url, URL_IOS_MAC, URL_ANDROID, URL_WINDOWS])
+            .map_err(|e| format!("{file_name}: {e}"))?;
 
         doc.metadata.info.document_title = format!("{} — {}", ex.title, l.rules_word);
         doc.metadata.info.author = "Walter Prossnitz".to_string();
