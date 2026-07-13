@@ -1,0 +1,18 @@
+[package]
+name = "rules_pdf"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+lopdf = { version = "0.39.0", default-features = false }
+printpdf = "0.10.0"
+regex = "1.13.0"
+scraper = "0.27.0"
+ttf-parser = "0.25.1"
+
+# azul-layout 0.0.9 ships leftover "M12.7 diag" instrumentation — raw
+# write_volatile()s to magic low addresses (0x400A4–0x400EC) that segfault
+# on any native target. prepare.sh vendors the crate into vendor/ and strips
+# those calls; nothing else is modified.
+[patch.crates-io]
+azul-layout = { path = "vendor/azul-layout" }

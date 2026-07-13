@@ -1,1 +1,4 @@
 resume
+tools/rules_pdf/target/
+tools/rules_pdf/fonts/
+tools/rules_pdf/vendor/

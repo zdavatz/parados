@@ -20,6 +20,18 @@ Every game has a **Share on WhatsApp** button (WhatsApp green `#25D366`) placed 
 
 Full clickable PDF reference: [`docs/parados_anchor_links.pdf`](docs/parados_anchor_links.pdf).
 
+## Rules PDFs
+
+Every game variant has a print-ready rules PDF in [`docs/rules/`](docs/rules/) — one per game and language (20 in total, remote variants included). Each PDF starts with the game's web link and the Parados app links (iOS/Mac App Store, Google Play, Microsoft Store), followed by the full rules text extracted from that variant's in-game rules modal — so `kangaroo_jp_rules.pdf` carries the Japanese rules, `divided_loyalties_ua_rules.pdf` the Ukrainian ones, and so on.
+
+The PDFs are generated with Rust by [`tools/rules_pdf/`](tools/rules_pdf/) (see its README for setup and the printpdf/azul workarounds it documents). To regenerate after a rules change:
+
+```sh
+cd tools/rules_pdf
+./prepare.sh          # once per checkout
+cargo run --release
+```
+
 ## Games
 
 - **TIK — The Impatient Kangaroo** — The plan: to create a 21st century successor to the super-hit solo puzzle game Rushhour. Many players think that hopping through the outback collecting goodies is more fun than trying to shove your way through traffic? Another advantage — thanks to the program, there's all kinds of different ways to play:-) Three difficulty tiers of handcrafted puzzles (Beginner → Intermediate → Advanced) plus "Take a Chance" random mode with three placement zones: Center 6×6 (12 dishes), Inner 8×8 (20 dishes), and Full board (34+ dishes) for endless replay — with color-balance validation ensuring green and blue dishes are well-distributed across the board. The rules modal also reminds players to click "Neues Spiel" if a board side ever ends up with 3 or more excess of one color, as a quick fallback. A big advantage over Rushhour: Beginner and Advanced puzzles offer two different starting positions (A/B) — same board, different challenge! Intermediate puzzles have a single fixed starting position. Rules button is prominently placed at the very top of the page (above the title) for easy access. **Dish move — double-click shortcut:** double-click (or double-tap on mobile) the dish you want to move — that puts it directly into move mode with the dish pre-selected; a single click on the target square then finishes the move. The "🖐️ Schale verschieben" button remains as a fallback. **Replay mode:** Load any exported CSV game log to watch the entire game replayed move by move — with play/pause, step forward/back, speed control, and visual highlights showing each dish move and jump. The initial board state is automatically reconstructed from the CSV data.
