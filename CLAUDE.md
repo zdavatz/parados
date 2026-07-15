@@ -135,6 +135,7 @@ One print-ready rules PDF per game HTML file (20: every game × every language, 
 - **New JP/CN characters:** the CJK fonts are subset at prepare time to the chars used in `*_jp.html`/`*_cn.html`. If a rules edit adds new kanji, `rm tools/rules_pdf/fonts/NotoSans*-Subset.ttf && ./prepare.sh` again.
 - **Don't "simplify" the tool's workarounds** — each one papers over a real printpdf 0.10/azul-layout 0.0.9 bug, all documented in `tools/rules_pdf/README.md`: vendored azul-layout (segfaulting leftover diag writes; `[patch.crates-io]`), styled `<span>`s instead of `<b>`/`<i>` (azul drops inline b/strong text), feature-stripped Latin fonts + pre-subset CJK fonts embedded whole (printpdf's subsetter maps ligature/CJK glyphs to `.notdef`), one font pool per script (fuzzy family matching).
 - `fonts/`, `vendor/`, `target/` are gitignored; `prepare.sh` rebuilds them reproducibly.
+- **Directory index:** `docs/rules/index.html` is a static, Parados-themed page listing all 20 PDFs grouped by game with language links, so `game.ywesee.com/parados/docs/rules/` resolves (Apache `DirectoryIndex`, no `Options +Indexes`). Linked from `index.html`'s footer ("Rules (PDF)"). Hand-maintained — add a `<a class="pdf-link">` if a new rules PDF ships.
 
 ## Server-side
 
