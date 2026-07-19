@@ -1,4 +1,65 @@
-# Demo video recorder
+# Video recorders
+
+Two of them, for two different jobs:
+
+| script | output | what it is |
+|---|---|---|
+| `teach.js` | `docs/video/divided_loyalties_teaching_en.mp4` | **the teaching video** — Walter's dictated text is the script, the board illustrates it |
+| `record.js` | `docs/video/divided_loyalties_demo.mp4` | a free-running demo game, no narration |
+
+---
+
+## teach.js — the teaching video
+
+```sh
+node teach.js en      # or: node teach.js de
+```
+
+Three scenes, one per lesson, each built directly out of the colour sets:
+
+```
+Blue +   = blue, purple, green
+Yellow + = yellow, orange, green    <- green belongs to BOTH   (the dilemma)
+Red +    = red, purple, orange      <- purple/orange also serve red (the danger)
+```
+
+1. **A bridge scores.** Blue plays `blue · purple · blue` and bridges it — 1 point,
+   plus the region point. Also shows why the colours alternate.
+2. **The green dilemma.** Blue completes its row *with a green stone*, then Yellow
+   builds its own bridge off that very stone and scores from it. The shared green
+   is an **endpoint** of both bridges — a legal junction, not a crossing.
+3. **Red + inside your row.** Blue's row has purple on the inside. Red bridges
+   `red · purple · orange` straight through it — Blue's bridge is cut, greys out
+   and stops scoring.
+
+The scenes are verified by the run itself, not by eye — it prints the score after
+each one, and warns if scene 3 failed to cut anything:
+
+```
+  after scene 1: { blue: '1/1', yellow: '0/0', bridges: 1, cut: 0 }
+  after scene 2: { blue: '1/1', yellow: '1/1', bridges: 2, cut: 0 }   <- green scored for BOTH
+  after scene 3: { blue: '0/0', yellow: '0/0', bridges: 2, cut: 1 }   <- blue lost its point
+```
+
+Setup stones are placed silently; the **decisive move of every scene is played
+live** through the real click path (inventory → cell → two double-clicks →
+`tryFormBridge`), so each lesson is a legal game position, not a mock-up.
+
+Captions are an HTML overlay injected into the page, so they stay in the Parados
+look and are swappable per language — `TEXT.en` / `TEXT.de` at the top of the
+script. The wording is Walter's, trimmed to caption length.
+
+### What it does not show
+
+`Up the Stairs` and friends have no 4×4 of contiguous on-board cells (largest
+anywhere is 3×3), so the video cannot stage Walter's *"a Red + diagonal can cut a
+diagonal row without even having any common squares"* — that needs two diagonals
+crossing in the gap between cells. Scene 3 shows the cut *through a shared stone*
+instead. Staging the gap-crossing would need a custom position from the editor.
+
+---
+
+## record.js — free-running demo
 
 Records a Divided Loyalties game as video by driving the **real game page** in
 Chromium — no changes to the game itself, no separate simulation.
