@@ -2,3 +2,11 @@ resume
 tools/rules_pdf/target/
 tools/rules_pdf/fonts/
 tools/rules_pdf/vendor/
+
+# Google API credentials — the real copies live in ~/.config/parados/ (outside
+# the repo). These patterns are a safety net so a stray copy can't be committed.
+client_secret*.json
+token*.json
+oauth_state*.json
+*-service-account*.json
+*.apps.googleusercontent.com.json
