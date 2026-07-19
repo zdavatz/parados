@@ -4,6 +4,7 @@ tools/rules_pdf/fonts/
 tools/rules_pdf/vendor/
 tools/demo_video/node_modules/
 tools/demo_video/out/
+tools/demo_video/out_teach/
 tools/demo_video/package*.json
 
 # Google API credentials — the real copies live in ~/.config/parados/ (outside

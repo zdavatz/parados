@@ -138,6 +138,18 @@ One print-ready rules PDF per game HTML file (20: every game × every language, 
 - `fonts/`, `vendor/`, `target/` are gitignored; `prepare.sh` rebuilds them reproducibly.
 - **Directory index:** `docs/rules/index.html` is a static, Parados-themed page listing all 20 PDFs grouped by game with language links, so `game.ywesee.com/parados/docs/rules/` resolves (Apache `DirectoryIndex`, no `Options +Indexes`). Linked from `index.html`'s footer ("Rules (PDF)"). Hand-maintained — add a `<a class="pdf-link">` if a new rules PDF ships.
 
+## Videos (`docs/video/` + `tools/demo_video/`)
+
+Screen-recorded MP4s of Divided Loyalties, produced by driving the **real game page** in headless Chromium (Playwright) + ffmpeg. **No game code is changed and no rules are re-implemented** — that is the whole point.
+
+- **`teach.js` → `divided_loyalties_teaching_<de|en|jp|cn|ua>.mp4`** — the teaching video for Walter's "please also watch the video". Three scenes derived from the colour sets: (1) a bridge scores, (2) the green dilemma — green is in Blue+ *and* Yellow+, so Blue's own green stone scores for Yellow, (3) Red+ inside a row — red bridges through the purple and cuts. Captions are an HTML overlay injected into the page (Parados look, per-language strings in `TEXT`). Each language is recorded from its **own** game file, so the UI is localized too.
+- **`record.js` → `divided_loyalties_demo.mp4`** — a free-running 30-turn game, no narration. Its move picker asks the game's own predicates (`findAutoBridges` + `bridgeWouldForm`, `wouldFormBridge` for dots) what is legal, so it can't produce an illegal position and it follows any future rule change.
+- **The runs assert their own lessons** — `teach.js` prints the score after each scene and warns if scene 3 cut nothing. Expected: scene 2 → blue `1/1` AND yellow `1/1`; scene 3 → blue drops to `0/0`, `cut: 1`. Treat a deviation as a real regression, not a video glitch.
+- **Reading time is language-aware** (`MS_PER_CHAR` = 165 ms for JP/CN, 55 ms otherwise) — counting characters alone made the CJK captions flash by in 70 % of the time. Set it deliberately for any new language.
+- **Not shown:** Walter's "a Red + diagonal cuts a diagonal without any common squares" — that needs two diagonals crossing *in the gap between cells*, i.e. 4×4 contiguous on-board cells, and **no built-in position has more than 3×3** (measured across all 12). Would need a custom editor position.
+- **Directory index:** `docs/video/index.html` — Parados-themed, `<video>` player with a language switcher for the teaching video. Linked from `index.html`'s footer ("Videos") and from `docs/rules/index.html`. Hand-maintained.
+- `tools/demo_video/node_modules/`, `out/`, `out_teach/` and `package*.json` are gitignored; setup is `npm i playwright && npx playwright install chromium`.
+
 ## Server-side
 
 `cgi-bin/save_csv.py` (Python 3 CGI): accepts POST `{game, csv}`, saves to `csv/` as `gamename_HHMM_dd.mm.yyyy.csv` (collision-avoidance suffix). `csv/` owned by `www-data`. Apache: `cgid` module with `ExecCGI` on `cgi-bin/`.

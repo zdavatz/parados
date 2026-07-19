@@ -4,16 +4,30 @@ Two of them, for two different jobs:
 
 | script | output | what it is |
 |---|---|---|
-| `teach.js` | `docs/video/divided_loyalties_teaching_en.mp4` | **the teaching video** — Walter's dictated text is the script, the board illustrates it |
+| `teach.js` | `docs/video/divided_loyalties_teaching_<lang>.mp4` | **the teaching video** — Walter's dictated text is the script, the board illustrates it. 5 languages. |
 | `record.js` | `docs/video/divided_loyalties_demo.mp4` | a free-running demo game, no narration |
+
+Both are listed on `docs/video/index.html` (linked from the footer of
+`index.html` and of `docs/rules/index.html`).
 
 ---
 
 ## teach.js — the teaching video
 
 ```sh
-node teach.js en      # or: node teach.js de
+node teach.js de | en | jp | cn | ua
 ```
+
+All five language variants are recorded from their own game file
+(`divided_loyalties_jp.html` etc.), so the *UI* is localized too, not just the
+captions. The staging position is found by name — `2: Octopus` — which works in
+every variant because DL position names stay English by invariant.
+
+**Reading time is language-aware.** `MS_PER_CHAR` is 165 ms for JP/CN and 55 ms
+otherwise: a CJK character carries far more meaning than a Latin one, so
+counting characters alone flashed the JP/CN captions off in ~70 % of the time
+the DE/EN ones got (75 s vs 107 s total). With the split, all five land at
+105–117 s. If you add a language, set this deliberately.
 
 Three scenes, one per lesson, each built directly out of the colour sets:
 

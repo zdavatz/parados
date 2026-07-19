@@ -16,13 +16,27 @@ const { chromium } = require('playwright');
 const path = require('path');
 
 const REPO = '/var/www/game.ywesee.com/parados';
-const LANG = process.argv[2] === 'de' ? 'de' : 'en';
-const GAME = LANG === 'de' ? 'divided_loyalties.html' : 'divided_loyalties_en.html';
+const GAMES = {
+  de: 'divided_loyalties.html',
+  en: 'divided_loyalties_en.html',
+  jp: 'divided_loyalties_jp.html',
+  cn: 'divided_loyalties_cn.html',
+  ua: 'divided_loyalties_ua.html',
+};
+const LANG = GAMES[process.argv[2]] ? process.argv[2] : 'en';
+const GAME = GAMES[LANG];
 const OUT = path.join(__dirname, 'out_teach');
-const POSITION = LANG === 'de' ? '2: Octopus' : '2: Octopus';
+// Position NAMES stay English in every language variant (the slug invariant),
+// so this one label matches in all five files.
+const POSITION = '2: Octopus';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const READ = (text) => Math.max(2600, Math.min(9000, text.length * 55)); // reading time
+
+// Reading time. A CJK character carries far more meaning than a Latin one, so
+// counting characters alone would flash the JP/CN captions off in half the time
+// the DE/EN ones get. Roughly: Latin ~18 chars/s, CJK ~6 chars/s.
+const MS_PER_CHAR = (LANG === 'jp' || LANG === 'cn') ? 165 : 55;
+const READ = (text) => Math.max(2600, Math.min(9000, text.length * MS_PER_CHAR));
 
 // --- the script ------------------------------------------------------------
 // Wording is Walter's, trimmed to caption length.
@@ -66,6 +80,54 @@ const TEXT = {
       'einen Red-+-Stein hat, kann von einer roten Brücke aus einer anderen Richtung geschnitten werden.',
     s3c: 'Die rote Brücke kreuzt am violetten Stein — Blaus Brücke ist geschnitten. Sie bleibt liegen, ausgegraut, und zählt nicht mehr.',
     outro: 'Neun deiner zwölf Steine bauen deine Reihen, drei helfen dem Gegner, sechs können beide Seiten bedrohen.\nDie Loyalität jeder Farbe ist auf andere Weise geteilt.',
+  },
+  jp: {
+    title: 'Divided Loyalties',
+    subtitle: 'おそらく史上もっとも風変わりなコネクトフォー',
+    intro:
+      'カラーホイール上の6色。隣り合う色がまとまって「カラー +」になります。\n' +
+      '青 + = 青・紫・緑   ·   黄 + = 黄・オレンジ・緑   ·   赤 + = 赤・紫・オレンジ',
+    s1a: '自分のカラー + だけでできた石3個の列には橋を架けられます。3橋は1点、4橋は2点。',
+    s1b: '青が列を完成させ、橋を架けて1点。色が交互になっている点に注目 — 同じ色が2つ隣り合ってはいけません。',
+    s2a: 'ここでジレンマ。緑は青 + にも黄 + にも属します — 両プレイヤーに同時に忠誠を誓う色です。',
+    s2b: '自分の橋を作るつもりで緑の石を置いても、それは同時に相手を助けます。相手はその石を使って別の方向に橋を架けられるからです。',
+    s2c: '黄が青の置いた緑の石を利用して得点しました。これが「分かれた忠誠」です。',
+    s3a: '紫は青 + に属しますが、赤 + にも属します。赤い橋は得点しません — 切断するために存在します。',
+    s3b: '自分の列の内側に赤 + の石を置くのは危険です。内側に赤 + の石がある列は、別の方向から赤い橋に切断される恐れがあります。',
+    s3c: '赤い橋が紫の石で交差 — 青の橋は切断されました。盤上には灰色で残りますが、得点にはなりません。',
+    outro: '12個の石のうち9個は自分の列を作り、3個は相手を助け、6個はどちらの側も脅かせます。\nそして色ごとに、忠誠の分かれ方が違うのです。',
+  },
+  cn: {
+    title: 'Divided Loyalties',
+    subtitle: '也许是有史以来最疯狂的四子连珠游戏',
+    intro:
+      '色环上的六种颜色。相邻的颜色组成一个“颜色 +”。\n' +
+      '蓝 + = 蓝、紫、绿   ·   黄 + = 黄、橙、绿   ·   红 + = 红、紫、橙',
+    s1a: '一排三颗棋子，若全部属于你的颜色 +，就可以建桥。3 桥得 1 分，4 桥得 2 分。',
+    s1b: '蓝方补齐这一排并画出桥——得 1 分。注意颜色是交替的：两颗相同颜色绝不能相邻。',
+    s2a: '两难困境来了。绿色既属于蓝 +，也属于黄 +——它同时忠于双方玩家。',
+    s2b: '每当你放下一颗绿色棋子、表面上是为自己建桥时，你同时也在帮助对手——他可以用这颗棋子朝另一个方向建桥。',
+    s2c: '黄方借用蓝方自己的绿色棋子建桥，并因此得分。这就是分裂的忠诚。',
+    s3a: '紫色属于蓝 +——但也属于红 +。红桥不计分，它们的存在只为切断。',
+    s3b: '在自己的一排中放入红 + 棋子很危险。任何在内部带有红 + 棋子的排，都可能被另一个方向的红桥切断。',
+    s3c: '红桥在紫色棋子处穿过——蓝方的桥被切断。它仍留在盘上，变成灰色，不再计分。',
+    outro: '你的 12 颗棋子中，9 颗用来连成自己的排，3 颗帮助对手，6 颗能威胁双方。\n每种颜色分裂忠诚的方式各不相同。',
+  },
+  ua: {
+    title: 'Divided Loyalties',
+    subtitle: 'Мабуть, найбожевільніша гра «чотири в ряд» з усіх, що коли-небудь існували',
+    intro:
+      'Шість кольорів на колірному колі. Сусідні кольори утворюють «Колір +».\n' +
+      'Синій + = синій, фіолетовий, зелений   ·   Жовтий + = жовтий, помаранчевий, зелений   ·   Червоний + = червоний, фіолетовий, помаранчевий',
+    s1a: 'Ряд із трьох каменів, усі з вашого Кольору +, можна з\'єднати мостом. Міст-3 дає 1 очко, міст-4 — 2.',
+    s1b: 'Синій завершує ряд і малює міст — одне очко. Зверніть увагу: кольори чергуються, два однакові кольори ніколи не можуть лежати поруч.',
+    s2a: 'А тепер дилема. Зелений належить і до Синього +, І до Жовтого + — він лояльний до обох гравців водночас.',
+    s2b: 'Щоразу, коли ви ставите зелений елемент нібито для того, щоб створити міст собі, ви водночас допомагаєте суперникові, який може використати цей елемент, щоб створити міст в іншому напрямку.',
+    s2c: 'Жовтий будує на власному зеленому камені Синього — і заробляє на ньому очки. Ось вона, роздвоєна лояльність.',
+    s3a: 'Фіолетовий належить до Синього + — але й до Червоного +. Червоні мости не дають очок; вони існують, щоб розрізати.',
+    s3b: 'Ставити елемент Червоного + усередині свого ряду небезпечно. Будь-який ряд, що має елемент Червоного + усередині, вразливий до розрізання червоним мостом в іншому напрямку.',
+    s3c: 'Червоний міст перетинає на фіолетовому камені — міст Синього розрізано. Він залишається на дошці, сірим, і не дає очок.',
+    outro: 'Дев\'ять із ваших дванадцяти каменів будують ваші ряди, три допомагають супернику, шість можуть загрожувати будь-якій зі сторін.\nЛояльність кожного кольору розділена по-різному.',
   },
 }[LANG];
 
