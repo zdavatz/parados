@@ -2,6 +2,9 @@ resume
 tools/rules_pdf/target/
 tools/rules_pdf/fonts/
 tools/rules_pdf/vendor/
+tools/demo_video/node_modules/
+tools/demo_video/out/
+tools/demo_video/package*.json
 
 # Google API credentials — the real copies live in ~/.config/parados/ (outside
 # the repo). These patterns are a safety net so a stray copy can't be committed.
