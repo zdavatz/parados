@@ -4,6 +4,7 @@ Two of them, for two different jobs:
 
 | script | output | what it is |
 |---|---|---|
+| `teach_voice.js` | `docs/video/divided_loyalties_teaching_en_voice.mp4` | **narrated by Walter himself** — audio cut from his voice memo |
 | `teach.js` | `docs/video/divided_loyalties_teaching_<lang>.mp4` | **the teaching video** — Walter's dictated text is the script, the board illustrates it. 5 languages. |
 | `record.js` | `docs/video/divided_loyalties_demo.mp4` | a free-running demo game, no narration |
 
@@ -12,7 +13,46 @@ Both are listed on `docs/video/index.html` (linked from the footer of
 
 ---
 
-## teach.js — the teaching video
+## teach_voice.js — narrated in Walter's own voice
+
+No text-to-speech: the narration is cut straight out of
+`docs/voice/Walter_Prossnitz_2026-07-19_alle-Sprachnachrichten.mp3`, so the
+designer explains his own game.
+
+This **inverts the usual order** — the audio is fixed and the board action is
+paced to fit it, not the other way round.
+
+The chapter boundaries in `docs/voice/*_transcript.md` were verified against the
+recording with `silencedetect`: every one falls inside a real pause (e.g. the
+3.7 s gap at 47.3–51.0 s = the transcript's 0:50 start of "The Dilemmas"), so the
+cuts never clip a word. The five chapters, re-ordered for teaching:
+
+| chapter | in the mp3 | length |
+|---|---|---|
+| opening | 263.92–268.42 | 4.5 s |
+| introduction | 277.17–320.60 | 43.4 s |
+| scoring | 95.49–152.74 | 57.3 s |
+| the dilemmas | 50.97–91.25 | 40.3 s |
+| continuation (diagonals, the 9/3/6 split) | 1.47–47.28 | 45.8 s |
+
+Each is high-passed at 80 Hz and loudness-normalised to −16 LUFS. The opening is
+cut short of Walter's "please also watch the video" — that sentence makes no
+sense *inside* the video.
+
+```sh
+node teach_voice.js                    # writes out_voice/*.webm + marks.json
+bash mux.sh out_voice/<file>.webm      # places each chapter at its logged offset
+```
+
+**Sync survives browser drift.** The script logs the wall-clock offset of every
+section to `marks.json` while recording, and the mux places each audio chapter at
+exactly that offset — so even if the headless browser runs slow, picture and
+narration stay together. Measured drift on the committed take was under 0.1 s per
+section (introduction: 43.44 s of video vs 43.42 s of audio).
+
+---
+
+## teach.js — the silent teaching video
 
 ```sh
 node teach.js de | en | jp | cn | ua
