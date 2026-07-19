@@ -204,6 +204,18 @@
 
     <div id="rules-modal" onclick="toggleRules(false)">
         <div class="modal-box" onclick="event.stopPropagation()">
+            <h2>🎲 Game Description</h2>
+            <p>Perhaps the craziest Connect Four game ever. In order to fully understand all the necessary details, please also watch the video.</p>
+
+            <h3>Introduction</h3>
+            <p>Before starting to play, it is important to internalize how the six colours of the colour wheel are interrelated. Neighbouring colours are referred to as "Colour +". For instance, Red + refers to red, orange and purple; Green + refers to green, blue and yellow.</p>
+            <p>One player is blue, the other yellow. Divided Loyalties is played over three or four rounds. In each round the blue player receives four blue, three purple, two green, two red and one orange stone. The yellow player receives four yellow, three orange, two green, two red and one purple stone.</p>
+
+            <h3>The Dilemmas</h3>
+            <p>The dilemmas occur on virtually every move. Principally they arise from the divided loyalties of the secondary colours. For instance, whenever you place a green tile ostensibly to create a bridge for yourself, you are simultaneously assisting your opponent, who can use that tile to create a bridge for themselves in a different direction — possibly even placing that bridge before yours, and in a worst case, which happens often enough, blocking the row you were intending to create.</p>
+            <p>Placing a Red + tile within your row is even more hazardous. Any row that has a Red + tile on the inside is vulnerable to being cut by a red bridge in another direction. All diagonal rows are particularly in danger, as a Red + diagonal row can cut them without even having any common squares. These bridges must immediately be defended, otherwise they will inevitably be cut.</p>
+            <p>Another way to explain this: in your supply of 12 stones there are 9 which you can use to create your rows, 3 which your opponent can use to create theirs, and 6 which either of you can use to create Red + rows to menace each other. All of this because a majority of the colours have divided loyalties, and each colour's loyalty is divided in a different way.</p>
+
             <h2>📜 The Rules (Epic Version)</h2>
 
             <h3>1. Colour Groups (Colour +)</h3>
@@ -253,7 +265,13 @@
                 <li>End-game tip: every set transition (after move 12, 24, …) noticeably shifts tactics — what's still in stock after the last set often decides the game.</li>
             </ul>
 
-            <h3>6. Undo &amp; Save</h3>
+            <h3>6. End of Game</h3>
+            <ul>
+                <li>When all the tiles have been placed, the game is over. Occasionally, if each player has one or two remaining tiles and there does not seem to be a possibility for either player to place or cut a bridge, it may be decided to end the game at that point.</li>
+                <li>Bridge and region points are shown separately for each player, beneath the available stones. Merely add them together to determine who has won the game.</li>
+            </ul>
+
+            <h3>7. Undo &amp; Save</h3>
             <ul>
                 <li><strong>↶ Undo move:</strong> each click on this button undoes one action — stone back into inventory, bridge removed, player's turn restored. Press it as many times as you like, all the way back to the start of the game.</li>
                 <li><strong>Auto-save:</strong> the current game is automatically saved in the browser. When you close the page and reopen it later, „▶ Resume last game" appears at the top of the start menu.</li>

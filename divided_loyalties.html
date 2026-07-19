@@ -204,6 +204,18 @@
 
     <div id="rules-modal" onclick="toggleRules(false)">
         <div class="modal-box" onclick="event.stopPropagation()">
+            <h2>🎲 Spielbeschreibung</h2>
+            <p>Vielleicht das verrückteste Vier-gewinnt-Spiel aller Zeiten. Um alle notwendigen Details vollständig zu verstehen, schau dir bitte auch das Video an.</p>
+
+            <h3>Einführung</h3>
+            <p>Vor dem ersten Spiel ist es wichtig, sich einzuprägen, wie die sechs Farben des Farbkreises zusammenhängen. Benachbarte Farben werden als „Colour +" bezeichnet. Zum Beispiel umfasst Red + Rot, Orange und Violett; Green + umfasst Grün, Blau und Gelb.</p>
+            <p>Ein Spieler ist Blau, der andere Gelb. Divided Loyalties wird über drei oder vier Runden gespielt. In jeder Runde erhält der blaue Spieler vier blaue, drei violette, zwei grüne, zwei rote und einen orangen Stein. Der gelbe Spieler erhält vier gelbe, drei orange, zwei grüne, zwei rote und einen violetten Stein.</p>
+
+            <h3>Die Dilemmata</h3>
+            <p>Die Dilemmata treten praktisch bei jedem Zug auf. Sie entstehen im Wesentlichen aus der geteilten Loyalität der Sekundärfarben. Wenn du zum Beispiel einen grünen Stein setzt, vorgeblich um dir selbst eine Brücke zu bauen, hilfst du gleichzeitig deinem Gegner, der denselben Stein für eine eigene Brücke in einer anderen Richtung nutzen kann — womöglich sogar, bevor du deine setzt, und im schlimmsten Fall, der oft genug eintritt, blockiert er damit genau die Reihe, die du bauen wolltest.</p>
+            <p>Einen Red-+-Stein innerhalb der eigenen Reihe zu setzen, ist noch gefährlicher. Jede Reihe, die innen einen Red-+-Stein hat, kann von einer roten Brücke aus einer anderen Richtung geschnitten werden. Besonders gefährdet sind alle diagonalen Reihen, denn eine diagonale Red-+-Reihe kann sie schneiden, ohne auch nur ein gemeinsames Feld zu haben. Solche Brücken müssen sofort verteidigt werden, sonst werden sie unweigerlich geschnitten.</p>
+            <p>Anders erklärt: In deinem Vorrat von 12 Steinen sind 9, mit denen du deine eigenen Reihen bauen kannst, 3, mit denen dein Gegner seine bauen kann, und 6, mit denen jeder von beiden Red-+-Reihen bilden kann, um den anderen zu bedrohen. Das alles, weil die Mehrheit der Farben geteilte Loyalitäten hat — und die Loyalität jeder Farbe auf andere Weise geteilt ist.</p>
+
             <h2>📜 Die Regeln (Epic Version)</h2>
             
             <h3>1. Farbgruppen (Colour +)</h3>
@@ -253,7 +265,13 @@
                 <li>Endspiel-Tipp: Jeder Satzübergang (nach Zug 12, 24, …) verändert die Taktik deutlich — was nach dem letzten Satz noch im Vorrat ist, entscheidet oft die Partie.</li>
             </ul>
 
-            <h3>6. Zug zurücknehmen & Spiel speichern</h3>
+            <h3>6. Spielende</h3>
+            <ul>
+                <li>Wenn alle Steine gesetzt sind, ist das Spiel zu Ende. Gelegentlich, wenn jeder Spieler noch ein oder zwei Steine übrig hat und es für keinen von beiden eine Möglichkeit zu geben scheint, eine Brücke zu setzen oder zu schneiden, kann man sich darauf einigen, das Spiel an dieser Stelle zu beenden.</li>
+                <li>Brücken- und Regionspunkte werden für jeden Spieler getrennt unter den verfügbaren Steinen angezeigt. Zähle sie einfach zusammen, um zu bestimmen, wer das Spiel gewonnen hat.</li>
+            </ul>
+
+            <h3>7. Zug zurücknehmen & Spiel speichern</h3>
             <ul>
                 <li><strong>↶ Zug zurück:</strong> Jeder Klick auf diesen Knopf macht eine Aktion rückgängig — Stein zurück ins Inventar, Brücke entfernt, Spieler wieder dran. Beliebig oft hintereinander bis zum Spielbeginn.</li>
                 <li><strong>Auto-Save:</strong> Das laufende Spiel wird automatisch im Browser gespeichert. Wenn du die Seite schließt und später wieder öffnest, erscheint „▶ Letztes Spiel fortsetzen" oben im Startmenü.</li>
