@@ -17,14 +17,17 @@ Parados is a collection of standalone web board games by Walter Prossnitz, serve
 ## Games
 
 ### `kangaroo.html` (+ `_en`, `_jp`, `_cn`, `_ua`) — DUK (The Impatient Kangaroo)
-Grid puzzle. Kangy jumps over green/blue dishes ("catapult" jumps, color alternation). Before each jump, the player may move one dish by one square. Modes: LEVEL, RANDOM, EDITOR, REPLAY.
+Grid puzzle. Kangy jumps over green/blue dishes ("catapult" jumps, color alternation). Before each jump, the player may move one dish by one square. Modes: LEVEL, RANDOM, EDITOR, REPLAY (REPLAY is DE-only).
 
-- Dish move: 🖐️ button OR double-click a dish then click target (mobile-friendly shortcut).
-- RANDOM has 3 zone sizes (6×6 / 8×8 / full); `isColorBalanced` enforces ≥30% of each color per half, with player escape hatch ("Neues Spiel" if a half has ≥3 excess of one color).
-- `LEVEL_DATABASE` has 3 tiers (Anfänger / Mittelstufe / Fortgeschritten); A/B start toggles where defined.
-- REPLAY loads exported CSV game logs (two-pass reconstruction).
+- **Streamlined start page (Walter's hand-drawn mockup + playtester feedback, 2026-07-27; all 5 variants):** testers called the old tabbed page "too confusing and unclear." New layout, top to bottom: H1 (now the **full localized game name**, no acronym — see branding note below) + WhatsApp button → a 2×2 `.mode-grid` of colored cards — "How to play" (opens rules modal; the old top rules button is gone), "Practise games" (LEVEL), "Take a chance / random setups" with **6×6 / 8×8 / 10×10 `.zone-btn`s inside the card**, "Create your own Outback" (EDITOR) → config panel row (LEVEL: level select + Start A/B, the redundant "Start Level" button was dropped since the select's `onchange` already starts; EDITOR: size + palette + Play) → status panel → board → "Undo moves" → "Restart | Save as CSV" (+ DE: "📽️ Replay" button, moved to the bottom zone next to Save as CSV; its panel/bar still appear via `switchMode('REPLAY')`). `switchMode` is id-based (`mode-btn-<MODE>`, no `event.target`) and returns false on a refused confirm; `startRandom(zone)` rolls that into zone selection and reverts the zone on cancel.
+- **RANDOM = "Take a chance" only (Walter: "roll the dice and take a chance are identical, so we don't need both"):** the "Roll the Dice"/"Würfeln" button and both selects are gone; the 3 zone buttons start a game directly. Board is fixed **10×10** (the 12×12 option was dropped — mockup lists only 6×6/8×8/10×10). `randomZone` (6/8/10) drives `generateRandomBoard`; `isColorBalanced` still enforces ≥30% of each color per half, escape hatch is now the "⚠️ Restart" button (rules text updated accordingly).
+- **Dish move: double-click ONLY (Walter, 2026-07-27):** the 🖐️ "Move Dish" button is **removed** ("so much easier to do with double click"). Double-click a dish → single click target. **Cancel = double-click the same dish again** — `handleCellDblClick` toggles, with a `dishSelectTime` >450 ms guard so the dblclick whose own click phase just selected the dish doesn't instantly cancel it (`handleDishMove` no-ops on reselect of the same cell for the same reason). Double-clicking when the move is used up flashes `showDishUsedHint`. `toggleDishMoveMode` is gone.
+- **Victory is one line (Walter: "too much space"):** `"🏆 Victory! Kangy has collected everything!"` (localized); the extra WON `turnInfo` line was dropped. Dish counter is now mockup-style `Blue N | Green N` (localized, blue first).
+- **No 👻 (Walter: testers "didn't get it"):** the level start hint says "start on the pale Kangy" with an inline faded 🦘 (`opacity:0.4; grayscale`), matching the `.ghost-kangy` board hint (which stays).
+- `LEVEL_DATABASE` has 3 tiers (Anfänger / Mittelstufe / Fortgeschritten); A/B start toggles where defined. **Level order rearranged (Walter, 2026-07-27: "the cross is much simpler than the 2 (or even 3) previous ones"):** `the-cross` moved from last (Advanced) to **4th** = first Intermediate level; `staircase`/`scattered` renumbered 2/3; `slant` (Diagonal) is now the sole Advanced level. Slugs unchanged; **numeric hashes shifted** (`#4`=the-cross … `#7`=slant) — anchor-links PDF regenerated.
+- REPLAY (DE only) loads exported CSV game logs (two-pass reconstruction).
 
-**Don't touch:** dish-move shortcut wiring (`ondblclick` + `touch-action: manipulation`) — Walter playtested.
+**Don't touch:** dish-move shortcut wiring (`ondblclick` + `touch-action: manipulation`) — Walter playtested. Don't re-add the 🖐️ button or the "roll the dice" wording.
 
 ### `divided_loyalties.html` (+ `_en`, `_jp`, `_cn`, `_ua`) — Divided Loyalties
 Connect-4 with 6 colors. Two-player tile + bridge building. Non-square grid (`GRID_W` × `GRID_H`, computed per position with +2 margin for off-board placements). `_en`/`_jp`/`_cn`/`_ua` are **UI-only translations** (DE original → EN → JP/CN/UA added 2026-06-30 to reach Walter's Ukrainian + Asian contacts; built as byte-identical copies of `_en` with only display strings localized via parallel translator agents, then validated for CSV/slug byte-identity, JS syntax, and guardrails). **Critical invariant for ALL variants:** embedded CSV `position_name` values stay English (`Up the Stairs`, `Wind wheel`, …) so `slugifyName` yields the same hash anchors in every file — shared deep-links (`#staircase`, `#rules`, …) travel across all 5 language variants. JS logic + code comments are byte-identical across variants; only `<html lang>`, `<title>`, visible text, `COLOR_NAMES_DE` *values*, the turn/set labels, section headers, alerts, bridge-refuse reasons, and the share message preamble are translated (URLs, `${...}` interpolation, board codes S1/G4/W, `[A,B,C]` notation, and names Andres Kuusk/Walter are kept). The JP/CN/UA variants localize the "Share on WhatsApp" button text (kangaroo keeps it English — a deliberate divergence, revertible if Walter wants parity).
@@ -106,13 +109,13 @@ For file shares (CSV / saved game JSON), use `navigator.share({ files:[file], ti
 
 **makalaina has no hash deep-links** — curated positions were removed (Walter's fairness rule lives in the opening sequence, not in disc layouts). `currentPosition` is still passed in the PeerJS `state_sync` payload but no longer drives any title or URL state.
 
-**Kangaroo branding per language — DUK is German-only (Walter, 2026-05-31):** `DUK` = **D**as **U**ngeduldige **K**änguru, an acronym that only parses in German, so it lives **only** in `kangaroo.html` (title, H1, `Lade DUK...`, `document.title`, share message). The other variants drop it:
-- **EN** (`kangaroo_en.html`) → rebranded **`TIK`** (The Impatient Kangaroo) in H1, `<title>`, `Loading TIK...`, `document.title` prefix, and share message.
+**Kangaroo branding per language — DUK is German-only (Walter, 2026-05-31):** `DUK` = **D**as **U**ngeduldige **K**änguru, an acronym that only parses in German, so it lives **only** in `kangaroo.html` (`<title>`, `Lade DUK...`, `document.title`, share message). The other variants drop it:
+- **EN** (`kangaroo_en.html`) → rebranded **`TIK`** (The Impatient Kangaroo) in `<title>`, `Loading TIK...`, `document.title` prefix, and share message.
 - **JP** (`kangaroo_jp.html`) → full name `せっかちなカンガルー`, no acronym.
 - **CN** (`kangaroo_cn.html`) → full name `急躁的袋鼠`, no acronym.
 - **UA** (`kangaroo_ua.html`) → full name `Нетерпляче Кенгуру`, no acronym (loading text is just `Завантаження...`).
 - **`index.html`** overview card heading uses the English **`TIK — The Impatient Kangaroo`**.
-**Don't reintroduce `DUK` outside `kangaroo.html`** — it confused non-German players. Cross-language URL **slugs** are unaffected (they're English mnemonics, see above); only the display branding is localized.
+**Since the 2026-07-27 start-page remake, the on-page H1 shows the full localized game name in every variant (per Walter's mockup, incl. DE/EN)** — the acronyms survive only in `<title>`/`document.title`, the loading text, the share message, and the index card. **Don't reintroduce `DUK` outside `kangaroo.html`** — it confused non-German players. Cross-language URL **slugs** are unaffected (they're English mnemonics, see above); only the display branding is localized.
 
 **Localized share messages:** kangaroo's `shareOnWhatsApp` message is localized per variant. DE uses "Spiele DUK — Das ungeduldige Känguru — Stufe X: …" + "Hol dir die Parados-App:"; EN uses "Play TIK — The Impatient Kangaroo — Level X: …" + "Get the Parados app:"; JP, CN, UA each have their own localized verb and full game name. `setPositionTitle`'s `document.title` prefix is localized too (e.g. `せっかちなカンガルー — …` in JP).
 
@@ -159,7 +162,7 @@ Game CSV exports (`downloadCSV()`) POST to this endpoint and also trigger a loca
 
 ## UI conventions
 
-- Rules button at the very top, above the title.
+- Rules button at the very top, above the title. **Exception: kangaroo×5** — since the 2026-07-27 start-page remake, the rules open via the "❓ How to play" card in the mode grid below the title (Walter's mockup).
 - Rules modal is `localStorage`-gated auto-show with a close button at the bottom ("Verstanden!" / "Got it!" / "Schließen").
 - Share-on-WhatsApp button right of `<h1>`.
 

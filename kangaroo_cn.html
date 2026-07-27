@@ -28,7 +28,6 @@
         }
 
         h1 { margin: 10px 0 5px 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); font-size: 1.8em; }
-        .subtitle { font-size: 0.9em; color: #b0bec5; margin-bottom: 15px; font-style: italic; }
 
         .game-wrapper {
             display: flex;
@@ -38,26 +37,39 @@
             max-width: 800px;
         }
 
-        /* MODE SWITCHER */
-        .mode-tabs {
-            display: flex;
+        /* MAIN MENU (Walter's streamlined start page, 2026-07-27) */
+        .mode-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
             width: 100%;
-            gap: 5px;
             margin-bottom: 10px;
         }
-        .mode-tab {
-            flex: 1;
-            padding: 10px;
-            background: #37474f;
-            border: 1px solid #546e7a;
+        .mode-btn {
+            padding: 14px 10px;
+            border-radius: 10px;
             color: white;
             cursor: pointer;
-            border-radius: 6px 6px 0 0;
             font-weight: bold;
+            font-size: 1.05em;
             text-align: center;
-            transition: background 0.2s;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.3);
+            user-select: none;
         }
-        .mode-tab.active { background: #ff9800; color: #263238; border-color: #ff9800; }
+        .mode-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.3); }
+        .mode-btn.active { outline: 3px solid #ffeb3b; outline-offset: -3px; }
+        .mode-rules { background: #0277bd; }
+        .mode-level { background: #43a047; }
+        .mode-random { background: #00897b; }
+        .mode-editor { background: #ef6c00; }
+        .mode-sub { font-size: 0.75em; font-weight: normal; opacity: 0.9; margin-top: 2px; }
+        .zone-row { display: flex; gap: 6px; justify-content: center; margin-top: 8px; }
+        .zone-btn {
+            padding: 4px 10px; border: 2px solid rgba(255,255,255,0.7); border-radius: 8px;
+            background: rgba(0,0,0,0.25); color: white; cursor: pointer; font-size: 0.85em; font-weight: bold;
+            box-shadow: none;
+        }
+        .zone-btn.active { background: #ffeb3b; color: #263238; border-color: #ffeb3b; }
 
         /* TOP BAR */
         .top-bar {
@@ -65,14 +77,10 @@
             flex-direction: column;
             gap: 10px;
             width: 100%;
-            margin-bottom: 10px;
-            background: rgba(0,0,0,0.2);
-            padding: 15px;
-            border-radius: 0 0 6px 6px;
             box-sizing: border-box;
         }
-        
-        .config-panel { display: none; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center;}
+
+        .config-panel { display: none; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 6px; margin-bottom: 10px; }
         .config-panel.active { display: flex; }
         
         select { background: #455a64; color: white; border: 1px solid #78909c; padding: 6px; border-radius: 4px; font-size: 0.9em; }
@@ -110,7 +118,6 @@
         button:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.3); }
         button:disabled { opacity: 0.5; cursor: default; box-shadow: none; transform: none; background-color: #546e7a !important; }
 
-        .btn-move { background-color: #8e24aa; color: white; flex-grow: 1; justify-content: center; max-width: 200px;}
         .btn-undo { background-color: #fbc02d; color: #37474f; min-width: 90px; justify-content: center;}
         .btn-start { background-color: #43a047; color: white; }
         .variant-toggle { display: inline-flex; gap: 2px; }
@@ -148,7 +155,6 @@
         .highlight { background-color: rgba(100, 255, 218, 0.25); box-shadow: inset 0 0 8px rgba(100, 255, 218, 0.4); }
         .highlight::after { content: ''; width: 20%; height: 20%; background-color: rgba(100, 255, 218, 0.9); border-radius: 50%; }
 
-        .top-rules-zone { width: 100%; display: flex; justify-content: center; margin-bottom: 10px; }
         .bottom-zone { margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; width: 100%; display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; }
         .btn-reset { background-color: #c62828; color: white; opacity: 0.9; }
         .btn-rules { background-color: #0277bd; color: white; }
@@ -180,22 +186,25 @@
 </head>
 <body>
 
-    <div class="top-rules-zone">
-        <button class="btn-rules" onclick="openRules()">❓ 游戏规则</button>
-    </div>
-
     <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
         <h1 style="margin:5px 0;">急躁的袋鼠 🦘<span id="position-title" style="color:#7f8c8d; font-weight:normal;"></span></h1>
         <button class="btn" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">分享到 WhatsApp</button>
     </div>
-    <div class="subtitle">The Impatient Kangaroo</div>
 
     <div class="game-wrapper">
 
-        <div class="mode-tabs">
-            <div class="mode-tab active" onclick="switchMode('LEVEL')">🏆 关卡</div>
-            <div class="mode-tab" onclick="switchMode('RANDOM')">🎲 随机模式</div>
-            <div class="mode-tab" onclick="switchMode('EDITOR')">🛠️ 编辑器</div>
+        <div class="mode-grid">
+            <div class="mode-btn mode-rules" onclick="openRules()">❓ 怎么玩</div>
+            <div id="mode-btn-LEVEL" class="mode-btn mode-level active" onclick="switchMode('LEVEL')">🏆 练习游戏</div>
+            <div id="mode-btn-RANDOM" class="mode-btn mode-random" onclick="startRandom()">🎲 碰碰运气
+                <div class="mode-sub">随机布局</div>
+                <div class="zone-row">
+                    <button class="zone-btn" id="zone-btn-6" onclick="event.stopPropagation(); startRandom(6)">6×6</button>
+                    <button class="zone-btn active" id="zone-btn-8" onclick="event.stopPropagation(); startRandom(8)">8×8</button>
+                    <button class="zone-btn" id="zone-btn-10" onclick="event.stopPropagation(); startRandom(10)">10×10</button>
+                </div>
+            </div>
+            <div id="mode-btn-EDITOR" class="mode-btn mode-editor" onclick="switchMode('EDITOR')">🛠️ 创建你自己的内陆</div>
         </div>
 
         <div class="top-bar">
@@ -206,20 +215,6 @@
                     <button id="btnVariantA" class="btn-variant active" onclick="switchVariant('A')">Start A</button>
                     <button id="btnVariantB" class="btn-variant" onclick="switchVariant('B')">Start B</button>
                 </span>
-                <button class="btn-start" onclick="confirmReset()">开始关卡</button>
-            </div>
-
-            <div id="panel-RANDOM" class="config-panel">
-                <select id="boardSize">
-                    <option value="10x10" selected>10 x 10</option>
-                    <option value="12x12">12 x 12</option>
-                </select>
-                <select id="difficulty">
-                    <option value="beginner">中央 6×6 (简单)</option>
-                    <option value="normal" selected>内侧 8×8 (普通)</option>
-                    <option value="high">全部 (困难)</option>
-                </select>
-                <button class="btn-start" onclick="confirmReset()">生成地图</button>
             </div>
 
             <div id="panel-EDITOR" class="config-panel">
@@ -244,16 +239,15 @@
             <div id="dishCount" class="sub-status"></div>
         </div>
 
-        <div class="main-controls">
-            <button id="btnUndo" class="btn-undo" onclick="undoMove()" disabled>↩️ 撤销</button>
-            <button id="btnMoveDish" class="btn-move" onclick="toggleDishMoveMode()" disabled>🖐️ 移动盘子</button>
-        </div>
-
         <div id="board" class="board"></div>
+
+        <div class="main-controls">
+            <button id="btnUndo" class="btn-undo" onclick="undoMove()" disabled>↩️ 撤销移动</button>
+        </div>
 
         <div class="bottom-zone">
             <button class="btn-reset" onclick="confirmReset()">⚠️ 重新开始</button>
-            <button class="btn-csv" onclick="downloadCSV()">💾 保存 CSV</button>
+            <button class="btn-csv" onclick="downloadCSV()">💾 保存为 CSV</button>
         </div>
     </div>
 
@@ -275,8 +269,8 @@
 
             <h3>重要提示！(Important!)</h3>
             <p>在每次跳跃之前，你可以（也应该！）将任意一个盘子向任意方向（包括对角线）移动一格。</p>
-            <p>💡 <b>小贴士：</b>双击（或双触）你想要移动的盘子，然后只需单击目标格子即可完成移动。"🖐️ 移动盘子" 按钮仍可作为替代方式使用。</p>
-            <p>💡 如果在棋盘一侧（左/右 或 上/下）某种颜色多出 3 个或更多盘子，只需点击 <b>"新游戏"</b> 即可获得更均衡的棋盘。</p>
+            <p>💡 <b>小贴士：</b>双击（或双触）你想要移动的盘子，然后只需单击目标格子即可完成移动。再次双击同一个盘子即可取消。</p>
+            <p>💡 如果在棋盘一侧（左/右 或 上/下）某种颜色多出 3 个或更多盘子，只需点击 <b>⚠️ 重新开始</b> 即可获得更均衡的棋盘。</p>
             <p>不进行这些移动是不可能获胜的……经验丰富的玩家通常会在 Kangy 到达内陆某个区域之前很久，就开始移动那里的盘子。</p>
 
             <h3>战术提示 (Tactical tips)</h3>
@@ -353,9 +347,29 @@
             startHintB: {x: 2, y: 5}
         },
         {
+            id: 'the-cross',
+            group: '中级',
+            name: '关卡 1: 十字路口',
+            cols: 10, rows: 10,
+            layout: [
+                "..........",
+                "....G.....",
+                "....B.....",
+                "....G.....",
+                ".BGB.GBG..",
+                "....B.....",
+                "....G.....",
+                "....B.....",
+                "..........",
+                ".........."
+            ],
+            startHint: {x: 4, y: 4},
+            startHintB: {x: 0, y: 0}
+        },
+        {
             id: 'staircase',
             group: '中级',
-            name: '关卡 1: 阶梯',
+            name: '关卡 2: 阶梯',
             cols: 10, rows: 10,
             layout: [
                 "..........",
@@ -374,7 +388,7 @@
         {
             id: 'scattered',
             group: '中级',
-            name: '关卡 2: 分散',
+            name: '关卡 3: 分散',
             cols: 10, rows: 10,
             layout: [
                 "..........",
@@ -392,8 +406,8 @@
         },
         {
             id: 'slant',
-            group: '中级',
-            name: '关卡 3: 对角',
+            group: '高级',
+            name: '第1关：对角',
             cols: 10, rows: 10,
             layout: [
                 "..........",
@@ -408,32 +422,14 @@
                 ".........."
             ],
             startHint: {x: 8, y: 8}
-        },
-        {
-            id: 'the-cross',
-            group: '高级',
-            name: '第1关：十字路口',
-            cols: 10, rows: 10,
-            layout: [
-                "..........",
-                "....G.....",
-                "....B.....",
-                "....G.....",
-                ".BGB.GBG..",
-                "....B.....",
-                "....G.....",
-                "....B.....",
-                "..........",
-                ".........."
-            ],
-            startHint: {x: 4, y: 4},
-            startHintB: {x: 0, y: 0}
         }
     ];
 
     // Globals
     let currentMode = 'LEVEL'; // LEVEL, RANDOM, EDITOR
     let selectedVariant = 'A';
+    let randomZone = 8; // Take-a-chance zone: 6, 8, or 10 (full board)
+    let dishSelectTime = 0;
     let COLS = 10, ROWS = 10;
     let board = []; 
     let gameState = 'SETUP'; // SETUP, PLAYING, WON, EDITOR
@@ -457,7 +453,6 @@
     const boardEl = document.getElementById('board');
     const statusEl = document.getElementById('gameStatus');
     const turnInfoEl = document.getElementById('turnInfo');
-    const btnMoveDish = document.getElementById('btnMoveDish');
     const btnUndo = document.getElementById('btnUndo');
     const countEl = document.getElementById('dishCount');
     const root = document.documentElement;
@@ -550,22 +545,33 @@
 
     function switchMode(mode) {
         if (gameState === 'PLAYING' && board.some(row => row.includes('G') || row.includes('B'))) {
-            if (!confirm("中止当前游戏并切换模式？")) return;
+            if (!confirm("中止当前游戏并切换模式？")) return false;
         }
-        
+
         currentMode = mode;
         setPositionTitle('');
-        document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.mode-btn').forEach(t => t.classList.remove('active'));
+        const modeBtn = document.getElementById('mode-btn-' + mode);
+        if (modeBtn) modeBtn.classList.add('active');
         document.querySelectorAll('.config-panel').forEach(p => p.classList.remove('active'));
-        
-        event.target.classList.add('active');
-        document.getElementById('panel-' + mode).classList.add('active');
+        const panel = document.getElementById('panel-' + mode);
+        if (panel) panel.classList.add('active');
 
         if (mode === 'EDITOR') {
             initEditorBoard();
         } else {
             initGame();
         }
+        return true;
+    }
+
+    function startRandom(zone) {
+        const prevZone = randomZone;
+        if (zone) randomZone = zone;
+        if (!switchMode('RANDOM')) { randomZone = prevZone; return; }
+        document.querySelectorAll('.zone-btn').forEach(b => b.classList.remove('active'));
+        const zoneBtn = document.getElementById('zone-btn-' + randomZone);
+        if (zoneBtn) zoneBtn.classList.add('active');
     }
 
     function switchVariant(v) {
@@ -619,8 +625,7 @@
 
         } else if (currentMode === 'RANDOM') {
             setPositionTitle('');
-            const sizeVal = document.getElementById('boardSize').value.split('x');
-            COLS = parseInt(sizeVal[0]); ROWS = parseInt(sizeVal[1]);
+            COLS = 10; ROWS = 10;
             board = Array(ROWS).fill(null).map(() => Array(COLS).fill(null));
             generateRandomBoard();
             gameState = 'SETUP';
@@ -657,10 +662,9 @@
     }
 
     function generateRandomBoard() {
-        const diff = document.getElementById('difficulty').value;
         let innerSize, totalDishes;
-        if (diff === 'beginner') { innerSize = 6; totalDishes = 12; }
-        else if (diff === 'normal') { innerSize = 8; totalDishes = 20; }
+        if (randomZone === 6) { innerSize = 6; totalDishes = 12; }
+        else if (randomZone === 8) { innerSize = 8; totalDishes = 20; }
         else { innerSize = Math.max(COLS, ROWS); totalDishes = Math.floor(COLS * ROWS * 0.34); if (totalDishes % 2 !== 0) totalDishes--; }
 
         let pad = innerSize >= COLS ? 0 : Math.floor((COLS - innerSize) / 2);
@@ -799,15 +803,14 @@
         }
         
         if (gameState !== 'EDITOR') {
-            countEl.innerText = `绿: ${gLeft} | 蓝: ${bLeft}`;
+            countEl.innerText = `蓝 ${bLeft} | 绿 ${gLeft}`;
             if (gameState === 'PLAYING' && gLeft===0 && bLeft===0) {
                 gameState = 'WON';
-                statusEl.innerText = "🏆 胜利！Kangy 为家人收集了所有的食物和水！";
+                statusEl.innerText = "🏆 胜利！Kangy 收集了所有东西！";
                 statusEl.style.color = "#66bb6a";
-                btnMoveDish.disabled = true;
                 logAction("WIN", -1, -1, -1, -1, "Game Won");
             } else if (gameState === 'PLAYING' && (gLeft>0 || bLeft>0) && !canAnyMovePossible() && !dishMoveAvailable) {
-                 statusEl.innerText = "陷入死胡同... 尝试“撤销” ↩️";
+                 statusEl.innerText = "陷入死胡同... 尝试“撤销移动” ↩️";
                  statusEl.style.color = "#ef9a9a";
             }
         } else {
@@ -824,27 +827,29 @@
             statusEl.style.color = "#ffcc80";
             statusEl.innerText = "构建你的内陆";
             turnInfoEl.innerText = "选择画笔并点击网格";
-            btnMoveDish.disabled = true;
         } else if (gameState === 'SETUP') {
             statusEl.style.color = "#ffcc80";
-            statusEl.innerText = nextTarget ? `⚠️ 数量不平衡！必须从 ${nextTarget==='G'?'绿色':'蓝色'} 开始！` : "放置袋鼠开始游戏";
-            turnInfoEl.innerText = currentLevelData && getActiveStartHint(currentLevelData) ? "提示：使用幽灵袋鼠 👻" : "点击一个空格";
-            btnMoveDish.disabled = true;
+            statusEl.innerText = nextTarget ? `⚠️ 数量不平衡！必须从 ${nextTarget==='G'?'绿色':'蓝色'} 开始！` : "开始游戏——点击放置袋鼠";
+            if (currentLevelData && getActiveStartHint(currentLevelData)) {
+                turnInfoEl.innerHTML = '提示：从淡色袋鼠处开始 <span style="opacity:0.4; filter:grayscale(50%);">🦘</span>';
+            } else {
+                turnInfoEl.innerText = "";
+            }
         } else if (gameState === 'PLAYING') {
-            btnMoveDish.disabled = !dishMoveAvailable;
+            statusEl.style.color = "#ffcc80";
             let targetText = nextTarget === 'G' ? "绿色（食物）" : (nextTarget === 'B' ? "蓝色（水）" : "自由选择");
-            
+
             if (isMovingDish) {
                 statusEl.innerText = "移动盘子";
-                turnInfoEl.innerText = "点击相邻的空格";
-                btnMoveDish.innerText = "❌ 取消";
+                turnInfoEl.innerText = "点击相邻的空格——双击该盘子可取消";
             } else {
                 statusEl.innerHTML = `轮到袋鼠了！目标：<b>${targetText}</b>`;
-                turnInfoEl.innerText = "别忘了长距离弹射跳跃！";
-                btnMoveDish.innerText = "🖐️ 移动盘子";
+                turnInfoEl.innerText = dishMoveAvailable
+                    ? "双击一个盘子即可移动——多想想长距离弹射跳跃！"
+                    : "盘子已移动——现在跳跃吧！";
             }
         } else if (gameState === 'WON') {
-             turnInfoEl.innerText = "Kangy 的家人很开心！";
+             turnInfoEl.innerText = "";
         }
     }
 
@@ -887,11 +892,22 @@
 
     function handleCellDblClick(x, y) {
         if (gameState !== 'PLAYING') return;
-        if (!dishMoveAvailable) return;
+        if (!dishMoveAvailable) { showDishUsedHint(); return; }
         const c = board[y][x];
         if (c !== 'G' && c !== 'B') return;
+        // Toggle: a second double-click on the selected dish cancels the move.
+        // The time guard skips the dblclick whose own click phase just selected it.
+        if (isMovingDish && selectedDishPos && selectedDishPos.x === x && selectedDishPos.y === y
+            && Date.now() - dishSelectTime > 450) {
+            isMovingDish = false;
+            selectedDishPos = null;
+            renderBoard();
+            updateUI();
+            return;
+        }
         isMovingDish = true;
         selectedDishPos = { x, y };
+        dishSelectTime = Date.now();
         renderBoard();
         updateUI();
     }
@@ -916,16 +932,11 @@
         renderBoard(); updateUI();
     }
 
-    function toggleDishMoveMode() {
-        if (!dishMoveAvailable) return;
-        isMovingDish = !isMovingDish;
-        selectedDishPos = null;
-        updateUI(); renderBoard();
-    }
-
     function handleDishMove(x, y) {
         if (board[y][x] === 'G' || board[y][x] === 'B') {
+            if (selectedDishPos && selectedDishPos.x === x && selectedDishPos.y === y) return; // dblclick toggle handles cancel
             selectedDishPos = {x, y};
+            dishSelectTime = Date.now();
             renderBoard();
         } else if (selectedDishPos && board[y][x] === null) {
             const dx = Math.abs(x - selectedDishPos.x);
@@ -952,6 +963,14 @@
         statusEl.innerText = "只能移动一格！碟子每次只能移动一格。";
         clearTimeout(showDishMoveHint._t);
         showDishMoveHint._t = setTimeout(() => { if (isMovingDish) updateUI(); }, 2500);
+    }
+
+    // Brief hint when the one dish move per turn is already used up
+    function showDishUsedHint() {
+        statusEl.style.color = "#ef9a9a";
+        statusEl.innerText = "盘子已经移动过了——现在跳跃吧！";
+        clearTimeout(showDishUsedHint._t);
+        showDishUsedHint._t = setTimeout(() => { if (gameState === 'PLAYING') updateUI(); }, 2500);
     }
 
     function isValidJump(fromX, fromY, toX, toY) {
