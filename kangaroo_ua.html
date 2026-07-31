@@ -67,8 +67,9 @@
         .zone-btn {
             padding: 4px 10px; border: 2px solid rgba(255,255,255,0.7); border-radius: 8px;
             background: rgba(0,0,0,0.25); color: white; cursor: pointer; font-size: 0.85em; font-weight: bold;
-            box-shadow: none;
+            box-shadow: none; display: flex; flex-direction: column; align-items: center; gap: 1px; line-height: 1.1;
         }
+        .zone-btn .zone-diff { font-size: 0.72em; font-weight: normal; opacity: 0.85; }
         .zone-btn.active { background: #ffeb3b; color: #263238; border-color: #ffeb3b; }
 
         /* TOP BAR */
@@ -199,9 +200,9 @@
             <div id="mode-btn-RANDOM" class="mode-btn mode-random" onclick="startRandom()">🎲 Спробуй удачу
                 <div class="mode-sub">випадкові розстановки</div>
                 <div class="zone-row">
-                    <button class="zone-btn" id="zone-btn-6" onclick="event.stopPropagation(); startRandom(6)">6×6</button>
-                    <button class="zone-btn active" id="zone-btn-8" onclick="event.stopPropagation(); startRandom(8)">8×8</button>
-                    <button class="zone-btn" id="zone-btn-10" onclick="event.stopPropagation(); startRandom(10)">10×10</button>
+                    <button class="zone-btn" id="zone-btn-6" onclick="event.stopPropagation(); startRandom(6)">6×6<span class="zone-diff">легко</span></button>
+                    <button class="zone-btn" id="zone-btn-8" onclick="event.stopPropagation(); startRandom(8)">8×8<span class="zone-diff">середньо</span></button>
+                    <button class="zone-btn" id="zone-btn-10" onclick="event.stopPropagation(); startRandom(10)">10×10<span class="zone-diff">складно</span></button>
                 </div>
             </div>
             <div id="mode-btn-EDITOR" class="mode-btn mode-editor" onclick="switchMode('EDITOR')">🛠️ Створи власний Аутбек</div>
