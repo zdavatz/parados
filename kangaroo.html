@@ -350,9 +350,29 @@
      */
     const LEVEL_DATABASE = [
         {
+            id: 'shifting',
+            group: 'Anfänger',
+            name: 'Stufe 1: Verschieben',
+            cols: 10, rows: 10,
+            layout: [
+                "..........",
+                "..........",
+                "....B.....",
+                "..........",
+                "..........",
+                ".....G....",
+                "..........",
+                "..........",
+                "..........",
+                ".........."
+            ],
+            startHint: {x: 4, y: 7}, // Man muss G nach links schieben um zu springen!
+            startHintB: {x: 2, y: 5}
+        },
+        {
             id: 'first-steps',
             group: 'Anfänger',
-            name: 'Stufe 1: Erste Schritte',
+            name: 'Stufe 2: Erste Schritte',
             cols: 10, rows: 10,
             layout: [
                 "..........",
@@ -372,7 +392,7 @@
         {
             id: 'the-block',
             group: 'Anfänger',
-            name: 'Stufe 2: Der Block',
+            name: 'Stufe 3: Der Block',
             cols: 10, rows: 10,
             layout: [
                 "..........",
@@ -388,26 +408,6 @@
             ],
             startHint: {x: 4, y: 7},
             startHintB: {x: 6, y: 5}
-        },
-        {
-            id: 'shifting',
-            group: 'Anfänger',
-            name: 'Stufe 3: Verschieben',
-            cols: 10, rows: 10,
-            layout: [
-                "..........",
-                "..........",
-                "....B.....",
-                "..........",
-                "..........",
-                ".....G....",
-                "..........",
-                "..........",
-                "..........",
-                ".........."
-            ],
-            startHint: {x: 4, y: 7}, // Man muss G nach links schieben um zu springen!
-            startHintB: {x: 2, y: 5}
         },
         {
             id: 'the-cross',
@@ -430,28 +430,9 @@
             startHintB: {x: 0, y: 0}
         },
         {
-            id: 'staircase',
-            group: 'Mittelstufe',
-            name: 'Stufe 2: Treppe',
-            cols: 10, rows: 10,
-            layout: [
-                "..........",
-                "..B.G.....",
-                "..........",
-                "...G.B....",
-                "..........",
-                ".G...B....",
-                "..........",
-                "...G......",
-                "....B.....",
-                ".........."
-            ],
-            startHint: {x: 5, y: 8}
-        },
-        {
             id: 'scattered',
             group: 'Mittelstufe',
-            name: 'Stufe 3: Verstreut',
+            name: 'Stufe 2: Verstreut',
             cols: 10, rows: 10,
             layout: [
                 "..........",
@@ -466,6 +447,25 @@
                 ".........."
             ],
             startHint: {x: 1, y: 1}
+        },
+        {
+            id: 'staircase',
+            group: 'Mittelstufe',
+            name: 'Stufe 3: Treppe',
+            cols: 10, rows: 10,
+            layout: [
+                "..........",
+                "..B.G.....",
+                "..........",
+                "...G.B....",
+                "..........",
+                ".G...B....",
+                "..........",
+                "...G......",
+                "....B.....",
+                ".........."
+            ],
+            startHint: {x: 5, y: 8}
         },
         {
             id: 'slant',
