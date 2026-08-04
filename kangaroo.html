@@ -72,6 +72,19 @@
         .zone-btn .zone-diff { font-size: 0.72em; font-weight: normal; opacity: 0.85; }
         .zone-btn.active { background: #ffeb3b; color: #263238; border-color: #ffeb3b; }
 
+        /* LEVEL picker inside the Übungsspiele card */
+        .level-picker { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+        .level-group { display: flex; flex-direction: column; gap: 3px; }
+        .level-group-label { font-size: 0.72em; font-weight: normal; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.5px; }
+        .level-group-btns { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; }
+        .level-btn {
+            padding: 4px 9px; border: 2px solid rgba(255,255,255,0.7); border-radius: 8px;
+            background: rgba(0,0,0,0.25); color: white; cursor: pointer; font-size: 0.8em; font-weight: bold;
+            box-shadow: none;
+        }
+        .level-btn.active { background: #ffeb3b; color: #263238; border-color: #ffeb3b; }
+        .level-variant-row { display: flex; justify-content: center; margin-top: 8px; }
+
         /* TOP BAR */
         .top-bar {
             display: flex;
@@ -218,7 +231,15 @@
 
         <div class="mode-grid">
             <div class="mode-btn mode-rules" onclick="openRules()">❓ So wird gespielt</div>
-            <div id="mode-btn-LEVEL" class="mode-btn mode-level active" onclick="switchMode('LEVEL')">🏆 Übungsspiele</div>
+            <div id="mode-btn-LEVEL" class="mode-btn mode-level active" onclick="switchMode('LEVEL')">🏆 Übungsspiele
+                <div class="level-picker" id="levelButtons"></div>
+                <div class="level-variant-row">
+                    <span class="variant-toggle">
+                        <button id="btnVariantA" class="btn-variant active" onclick="event.stopPropagation(); switchVariant('A')">Start A</button>
+                        <button id="btnVariantB" class="btn-variant" onclick="event.stopPropagation(); switchVariant('B')">Start B</button>
+                    </span>
+                </div>
+            </div>
             <div id="mode-btn-RANDOM" class="mode-btn mode-random" onclick="startRandom()">🎲 Take a Chance
                 <div class="mode-sub">Zufalls-Aufstellungen</div>
                 <div class="zone-row">
@@ -231,15 +252,6 @@
         </div>
 
         <div class="top-bar">
-            <div id="panel-LEVEL" class="config-panel active">
-                <select id="levelSelect" onchange="confirmReset()">
-                    </select>
-                <span class="variant-toggle">
-                    <button id="btnVariantA" class="btn-variant active" onclick="switchVariant('A')">Start A</button>
-                    <button id="btnVariantB" class="btn-variant" onclick="switchVariant('B')">Start B</button>
-                </span>
-            </div>
-
             <div id="panel-EDITOR" class="config-panel">
                 <select id="editorSize" onchange="initEditorBoard()">
                     <option value="8x8">8 x 8</option>
@@ -480,6 +492,7 @@
     let currentMode = 'LEVEL'; // LEVEL, RANDOM, EDITOR
     let selectedVariant = 'A'; // A or B start position
     let randomZone = 8; // Take-a-chance zone: 6, 8, or 10 (full board)
+    let selectedLevelIndex = 0; // Practise-games level; buttons live inside the LEVEL card
     let dishSelectTime = 0;
     let COLS = 10, ROWS = 10;
     let board = []; 
@@ -577,23 +590,51 @@
     }
 
     // --- INITIALIZATION ---
-    function populateLevelSelect() {
-        const select = document.getElementById('levelSelect');
-        select.innerHTML = '';
-        let currentGroup = '';
-        
+    function populateLevelButtons() {
+        const container = document.getElementById('levelButtons');
+        container.innerHTML = '';
+        let currentGroup = '', row = null;
+
         LEVEL_DATABASE.forEach((lvl, index) => {
             if (lvl.group !== currentGroup) {
-                const optgroup = document.createElement('optgroup');
-                optgroup.label = lvl.group;
-                select.appendChild(optgroup);
+                const group = document.createElement('div');
+                group.className = 'level-group';
+                const label = document.createElement('div');
+                label.className = 'level-group-label';
+                label.innerText = lvl.group;
+                group.appendChild(label);
+                row = document.createElement('div');
+                row.className = 'level-group-btns';
+                group.appendChild(row);
+                container.appendChild(group);
                 currentGroup = lvl.group;
             }
-            const opt = document.createElement('option');
-            opt.value = index;
-            opt.innerText = lvl.name;
-            select.lastChild.appendChild(opt);
+            const btn = document.createElement('button');
+            btn.className = 'level-btn' + (index === selectedLevelIndex ? ' active' : '');
+            btn.id = 'level-btn-' + index;
+            btn.innerText = lvl.name;
+            btn.onclick = (e) => { e.stopPropagation(); selectLevel(index); };
+            row.appendChild(btn);
         });
+    }
+
+    function highlightLevelButtons() {
+        document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+        const b = document.getElementById('level-btn-' + selectedLevelIndex);
+        if (b) b.classList.add('active');
+    }
+
+    // Click a level button: switch into LEVEL mode (or restart) and start it.
+    // Mirrors startRandom's revert-on-refused-confirm pattern.
+    function selectLevel(index) {
+        const prev = selectedLevelIndex;
+        selectedLevelIndex = index;
+        if (currentMode !== 'LEVEL') {
+            if (!switchMode('LEVEL')) { selectedLevelIndex = prev; return; }
+        } else {
+            if (!confirmReset()) { selectedLevelIndex = prev; return; }
+        }
+        highlightLevelButtons();
     }
 
     function switchMode(mode) {
@@ -642,9 +683,10 @@
 
     function confirmReset() {
         if (gameState === 'PLAYING') {
-            if (!confirm("Wirklich neu starten?")) return;
+            if (!confirm("Wirklich neu starten?")) return false;
         }
         initGame();
+        return true;
     }
 
     function initGame() {
@@ -660,7 +702,7 @@
         turnCounter = 1;
 
         if (currentMode === 'LEVEL') {
-            const lvlIndex = document.getElementById('levelSelect').value;
+            const lvlIndex = selectedLevelIndex;
             const lvl = LEVEL_DATABASE[lvlIndex];
             currentLevelData = lvl;
             setPositionTitle(lvl.name);
@@ -1550,13 +1592,13 @@
     });
 
     // START
-    populateLevelSelect();
+    populateLevelButtons();
 
     function applyHashLevel() {
         const m = findLevelByHash(location.hash);
         if (!m) return false;
-        const sel = document.getElementById('levelSelect');
-        sel.value = m.index;
+        selectedLevelIndex = m.index;
+        highlightLevelButtons();
         selectedVariant = m.variant;
         const lvl = LEVEL_DATABASE[m.index];
         if (lvl.startHintB) {
