@@ -41,6 +41,7 @@
         .mode-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
+            align-items: start; /* an expanded card must not stretch its row neighbour */
             gap: 10px;
             width: 100%;
             margin-bottom: 10px;
@@ -58,12 +59,15 @@
         }
         .mode-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.3); }
         .mode-btn.active { outline: 3px solid #ffeb3b; outline-offset: -3px; }
-        .mode-rules { background: #0277bd; }
-        .mode-level { background: #43a047; }
-        .mode-random { background: #00897b; }
+        .mode-rules { background: #d32f2f; }
+        .mode-level { background: #0277bd; }
+        .mode-random { background: #43a047; }
         .mode-editor { background: #ef6c00; }
         .mode-sub { font-size: 0.75em; font-weight: normal; opacity: 0.9; margin-top: 2px; }
-        .zone-row { display: flex; gap: 6px; justify-content: center; margin-top: 8px; }
+        /* Level/zone pickers stay hidden until their card is clicked (Walter, 2026-08-07:
+           "you should only see all the levels of practise games after you click on Practise Games") */
+        .zone-row { display: none; gap: 6px; justify-content: center; margin-top: 8px; }
+        .mode-btn.expanded .zone-row { display: flex; }
         .zone-btn {
             padding: 4px 10px; border: 2px solid rgba(255,255,255,0.7); border-radius: 8px;
             background: rgba(0,0,0,0.25); color: white; cursor: pointer; font-size: 0.85em; font-weight: bold;
@@ -73,7 +77,8 @@
         .zone-btn.active { background: #ffeb3b; color: #263238; border-color: #ffeb3b; }
 
         /* LEVEL picker inside the Übungsspiele card */
-        .level-picker { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+        .level-picker { margin-top: 8px; display: none; flex-direction: column; gap: 6px; }
+        .mode-btn.expanded .level-picker { display: flex; }
         .level-group { display: flex; flex-direction: column; gap: 3px; }
         .level-group-label { font-size: 0.72em; font-weight: normal; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.5px; }
         .level-group-btns { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; }
@@ -83,7 +88,8 @@
             box-shadow: none;
         }
         .level-btn.active { background: #ffeb3b; color: #263238; border-color: #ffeb3b; }
-        .level-variant-row { display: flex; justify-content: center; margin-top: 8px; }
+        .level-variant-row { display: none; justify-content: center; margin-top: 8px; }
+        .mode-btn.expanded .level-variant-row { display: flex; }
 
         /* TOP BAR */
         .top-bar {
@@ -231,7 +237,7 @@
 
         <div class="mode-grid">
             <div class="mode-btn mode-rules" onclick="openRules()">❓ So wird gespielt</div>
-            <div id="mode-btn-LEVEL" class="mode-btn mode-level active" onclick="switchMode('LEVEL')">🏆 Übungsspiele
+            <div id="mode-btn-LEVEL" class="mode-btn mode-level active" onclick="toggleCard('LEVEL')">🏆 Übungsspiele
                 <div class="level-picker" id="levelButtons"></div>
                 <div class="level-variant-row">
                     <span class="variant-toggle">
@@ -240,7 +246,7 @@
                     </span>
                 </div>
             </div>
-            <div id="mode-btn-RANDOM" class="mode-btn mode-random" onclick="startRandom()">🎲 Take a Chance
+            <div id="mode-btn-RANDOM" class="mode-btn mode-random" onclick="toggleCard('RANDOM')">🎲 Take a Chance
                 <div class="mode-sub">Zufalls-Aufstellungen</div>
                 <div class="zone-row">
                     <button class="zone-btn" id="zone-btn-6" onclick="event.stopPropagation(); startRandom(6)">6×6<span class="zone-diff">leicht</span></button>
@@ -633,8 +639,23 @@
             if (!switchMode('LEVEL')) { selectedLevelIndex = prev; return; }
         } else {
             if (!confirmReset()) { selectedLevelIndex = prev; return; }
+            collapseCards();
         }
         highlightLevelButtons();
+    }
+
+    // Cards reveal their options only on click (Walter, 2026-08-07): clicking
+    // Practise games / Take a chance expands that card (and folds the other);
+    // picking an option starts the game and folds the card away again.
+    function toggleCard(mode) {
+        const card = document.getElementById('mode-btn-' + mode);
+        const wasOpen = card.classList.contains('expanded');
+        collapseCards();
+        if (!wasOpen) card.classList.add('expanded');
+    }
+
+    function collapseCards() {
+        document.querySelectorAll('.mode-btn.expanded').forEach(c => c.classList.remove('expanded'));
     }
 
     function switchMode(mode) {
@@ -643,6 +664,7 @@
         }
 
         stopReplayPlay();
+        collapseCards();
         currentMode = mode;
         setPositionTitle('');
         document.querySelectorAll('.mode-btn').forEach(t => t.classList.remove('active'));
