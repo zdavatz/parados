@@ -40,7 +40,7 @@ if [ ! -f fonts/NotoSansJP-Subset.ttf ]; then
     uv run --with fonttools -- fonttools varLib.instancer --update-name-table \
         -o fonts/NotoSansJP-Regular.ttf fonts/NotoSansJP-VF.ttf wght=400
     rm fonts/NotoSansJP-VF.ttf
-    cat ../../kangaroo_jp.html ../../divided_loyalties_jp.html src/main.rs > fonts/jp_chars.txt
+    cat ../../*_jp.html src/main.rs > fonts/jp_chars.txt
     uv run --with fonttools -- pyftsubset fonts/NotoSansJP-Regular.ttf \
         --text-file=fonts/jp_chars.txt --unicodes="$UNICODES" \
         --layout-features='*' --name-IDs='*' --output-file=fonts/NotoSansJP-Subset.ttf
@@ -52,7 +52,7 @@ if [ ! -f fonts/NotoSansSC-Subset.ttf ]; then
     uv run --with fonttools -- fonttools varLib.instancer --update-name-table \
         -o fonts/NotoSansSC-Regular.ttf fonts/NotoSansSC-VF.ttf wght=400
     rm fonts/NotoSansSC-VF.ttf
-    cat ../../kangaroo_cn.html ../../divided_loyalties_cn.html src/main.rs > fonts/cn_chars.txt
+    cat ../../*_cn.html src/main.rs > fonts/cn_chars.txt
     uv run --with fonttools -- pyftsubset fonts/NotoSansSC-Regular.ttf \
         --text-file=fonts/cn_chars.txt --unicodes="$UNICODES" \
         --layout-features='*' --name-IDs='*' --output-file=fonts/NotoSansSC-Subset.ttf
