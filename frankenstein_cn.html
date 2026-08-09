@@ -1,0 +1,2186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>科学怪人 —— 那只绿色的手肘去哪了？？</title>
+<style>
+:root {
+    --bg: #263238;
+    --panel-bg: #37474f;
+    --card-size: 70px;
+    --body-cell: 52px;
+    --card-back: #5d4037;
+    --card-front: #fdfcf0;
+    --golden: #ffd700;
+    --accent: #ff9800;
+    --text: #eceff1;
+    --text-dim: #90a4ae;
+    --green: #4caf50;
+    --orange: #ff9800;
+    --purple: #9c27b0;
+    --grey: #9e9e9e;
+    --blue: #00acc1;
+    --player1: #42a5f5;
+    --player2: #ef5350;
+    --player3: #66bb6a;
+    --player4: #ffa726;
+    --modal-bg: rgba(0, 0, 0, 0.9);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 10px;
+    user-select: none;
+}
+
+h1 {
+    font-size: 2em;
+    color: var(--golden);
+    text-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+    margin: 5px 0;
+    letter-spacing: 3px;
+}
+
+.subtitle {
+    font-size: 0.9em;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+    font-style: italic;
+}
+
+/* ─── Setup Screen ─── */
+#setupScreen {
+    background: var(--panel-bg);
+    border-radius: 12px;
+    padding: 30px;
+    max-width: 500px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    margin-top: 20px;
+}
+
+#setupScreen h2 {
+    color: var(--golden);
+    margin-bottom: 20px;
+    font-size: 1.3em;
+}
+
+.player-select {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.player-select button {
+    padding: 14px 24px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 1.1em;
+    cursor: pointer;
+    background: #5d4037;
+    color: var(--text);
+    transition: all 0.2s;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.3);
+}
+
+.player-select button:hover {
+    background: #6d4c41;
+    transform: translateY(-1px);
+}
+
+.player-select button:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 rgba(0,0,0,0.3);
+}
+
+.setup-option {
+    margin: 12px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: var(--text-dim);
+    font-size: 0.95em;
+}
+
+.setup-option input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+/* ─── Game Screen ─── */
+#gameScreen { display: none; width: 100%; max-width: 1200px; }
+
+#statusBar {
+    background: var(--panel-bg);
+    padding: 8px 16px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 1em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+#playerTurnInfo { color: var(--accent); font-size: 1.05em; }
+#mistakeInfo { color: #e0e0e0; }
+#mistakeTrackInfo { color: #ef9a9a; font-size: 0.9em; }
+#cardsLeft { color: var(--text-dim); }
+
+.main-area {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+}
+
+/* ─── Card Grid ─── */
+.card-grid-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.card-grid-container h3 {
+    color: var(--text-dim);
+    font-size: 0.85em;
+    margin-bottom: 6px;
+}
+
+#cardGrid {
+    display: grid;
+    gap: 4px;
+    padding: 10px;
+    background: #1a2027;
+    border-radius: 8px;
+    border: 3px solid #5d4037;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+}
+
+/* ─── Card Flip ─── */
+.card {
+    width: var(--card-size);
+    height: var(--card-size);
+    perspective: 600px;
+    cursor: pointer;
+}
+
+.card.removed {
+    visibility: hidden;
+}
+
+.card.disabled {
+    pointer-events: none;
+}
+
+.card-inner {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.45s ease;
+}
+
+.card.flipped .card-inner {
+    transform: rotateY(180deg);
+}
+
+.card-face {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    border-radius: 6px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.card-back {
+    background: var(--card-back);
+    border: 2px solid #8d6e63;
+    color: #d7ccc8;
+    font-weight: 800;
+    font-size: 1.4em;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+}
+
+.card-back::after {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    border: 1px dashed #8d6e63;
+    border-radius: 4px;
+    pointer-events: none;
+}
+
+.card-front {
+    background: var(--card-front);
+    border: 2px solid #bdbdbd;
+    transform: rotateY(180deg);
+    padding: 3px;
+}
+
+.card-front svg {
+    width: 100%;
+    height: 100%;
+}
+
+.card.mistake-flash .card-front {
+    animation: mistakeFlash 0.3s ease 2;
+}
+
+@keyframes mistakeFlash {
+    50% { border-color: #e53935; box-shadow: 0 0 12px rgba(229, 57, 53, 0.6); }
+}
+
+.card.place-pulse .card-front {
+    animation: placePulse 0.4s ease;
+}
+
+@keyframes placePulse {
+    50% { transform: rotateY(180deg) scale(1.15); box-shadow: 0 0 16px rgba(76, 175, 80, 0.6); }
+}
+
+/* ─── Bodies Container ─── */
+.bodies-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.body-tabs {
+    display: flex;
+    gap: 4px;
+}
+
+.body-tab {
+    padding: 6px 14px;
+    border: none;
+    border-radius: 6px 6px 0 0;
+    font-weight: 600;
+    font-size: 0.85em;
+    cursor: pointer;
+    background: #455a64;
+    color: var(--text-dim);
+    transition: all 0.2s;
+}
+
+.body-tab.active {
+    color: white;
+    position: relative;
+}
+
+.body-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    border-radius: 2px;
+}
+
+.body-tab.current-turn {
+    animation: turnPulse 1.5s ease infinite;
+}
+
+@keyframes turnPulse {
+    0%, 100% { box-shadow: none; }
+    50% { box-shadow: 0 0 12px rgba(255, 215, 0, 0.5); }
+}
+
+.body-panel {
+    background: #1a2027;
+    border-radius: 0 8px 8px 8px;
+    padding: 12px;
+    border: 2px solid #455a64;
+    min-width: 240px;
+}
+
+.body-panel.active-turn {
+    border-color: var(--golden);
+}
+
+.player-progress {
+    text-align: center;
+    margin-bottom: 8px;
+    font-size: 0.8em;
+    color: var(--text-dim);
+}
+
+/* ─── Body Grid ─── */
+.body-grid {
+    display: grid;
+    grid-template-columns: repeat(4, var(--body-cell));
+    grid-template-rows: repeat(7, var(--body-cell));
+    gap: 2px;
+    justify-content: center;
+}
+
+.body-slot {
+    width: var(--body-cell);
+    height: var(--body-cell);
+    border-radius: 4px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+}
+
+.body-slot.empty-available {
+    border: 2px dashed #546e7a;
+    background: rgba(255,255,255,0.03);
+}
+
+.body-slot.empty-locked {
+    border: 1px solid #37474f;
+    background: rgba(0,0,0,0.15);
+    opacity: 0.4;
+}
+
+.body-slot.filled {
+    border: none;
+    background: var(--card-front);
+}
+
+.body-slot.filled svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.body-slot.joker-filled {
+    border: 2px solid var(--golden);
+    background: #fff8e1;
+}
+
+.body-slot.just-placed {
+    animation: slotPulse 0.5s ease;
+}
+
+@keyframes slotPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.12); box-shadow: 0 0 12px rgba(76, 175, 80, 0.5); }
+    100% { transform: scale(1); }
+}
+
+/* grid placement for body slots */
+.slot-upper_head   { grid-column: 2 / 4; grid-row: 1; width: auto; z-index: 1; }
+.slot-lower_head   { grid-column: 2 / 4; grid-row: 2; width: auto; top: -2px; }
+/* Head slots: seamless connection */
+.slot-upper_head.filled { border-radius: 4px 4px 0 0; }
+.slot-lower_head.filled { border-radius: 0 0 4px 4px; }
+.slot-upper_head.empty-available { border-bottom: none; border-radius: 4px 4px 0 0; }
+.slot-lower_head.empty-available { border-top: none; border-radius: 0 0 4px 4px; }
+.slot-upper_head.empty-locked { border-bottom: none; border-radius: 4px 4px 0 0; }
+.slot-lower_head.empty-locked { border-top: none; border-radius: 0 0 4px 4px; }
+.slot-r_upper_arm  { grid-column: 1; grid-row: 3; }
+.slot-torso_ul     { grid-column: 2; grid-row: 3; }
+.slot-torso_ur     { grid-column: 3; grid-row: 3; }
+.slot-l_upper_arm  { grid-column: 4; grid-row: 3; }
+.slot-r_lower_arm  { grid-column: 1; grid-row: 4; }
+.slot-torso_bl     { grid-column: 2; grid-row: 4; }
+.slot-torso_br     { grid-column: 3; grid-row: 4; }
+.slot-l_lower_arm  { grid-column: 4; grid-row: 4; }
+.slot-r_hand       { grid-column: 1; grid-row: 5; }
+.slot-l_upper_leg  { grid-column: 2; grid-row: 5; }
+.slot-r_upper_leg  { grid-column: 3; grid-row: 5; }
+.slot-l_hand       { grid-column: 4; grid-row: 5; }
+.slot-l_lower_leg  { grid-column: 2; grid-row: 6; }
+.slot-r_lower_leg  { grid-column: 3; grid-row: 6; }
+.slot-l_foot       { grid-column: 2; grid-row: 7; }
+.slot-r_foot       { grid-column: 3; grid-row: 7; }
+
+/* ─── Joker Picker Modal ─── */
+#jokerModal {
+    display: none;
+    position: fixed;
+    z-index: 3000;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    justify-content: center;
+    align-items: center;
+}
+
+#jokerModal.show { display: flex; }
+
+.joker-picker {
+    background: #fff;
+    color: #333;
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+}
+
+.joker-picker h3 {
+    margin-bottom: 12px;
+    color: #5d4037;
+}
+
+.joker-picker p {
+    font-size: 0.9em;
+    color: #666;
+    margin-bottom: 16px;
+}
+
+.joker-slots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+}
+
+.joker-slot-btn {
+    padding: 8px 14px;
+    border: 2px solid #5d4037;
+    border-radius: 6px;
+    background: #fff8e1;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85em;
+    transition: all 0.15s;
+}
+
+.joker-slot-btn:hover {
+    background: #ffd700;
+    border-color: #8d6e63;
+}
+
+/* ─── Bottom Controls ─── */
+.bottom-zone {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 12px;
+    padding: 8px;
+}
+
+.bottom-zone button {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 3px 0 rgba(0,0,0,0.3);
+    font-size: 0.85em;
+}
+
+.bottom-zone button:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 rgba(0,0,0,0.3);
+}
+
+.btn-undo { background: #1e88e5; color: white; }
+.btn-undo:hover { background: #1565c0; }
+.btn-undo:disabled { opacity: 0.4; cursor: default; }
+.btn-reset { background: #e53935; color: white; }
+.btn-reset:hover { background: #c62828; }
+.btn-rules { background: #8e24aa; color: white; }
+.btn-rules:hover { background: #6a1b9a; }
+.btn-csv { background: #546e7a; color: white; }
+.btn-csv:hover { background: #455a64; }
+
+/* ─── Victory Overlay ─── */
+#victoryOverlay {
+    display: none;
+    position: fixed;
+    z-index: 4000;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.88);
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(4px);
+}
+
+#victoryOverlay.show { display: flex; }
+
+.victory-box {
+    background: linear-gradient(135deg, #1a2027, #37474f);
+    border: 3px solid var(--golden);
+    border-radius: 16px;
+    padding: 40px;
+    text-align: center;
+    box-shadow: 0 0 40px rgba(255, 215, 0, 0.3);
+    max-width: 400px;
+}
+
+.victory-box h2 {
+    color: var(--golden);
+    font-size: 2em;
+    margin-bottom: 10px;
+}
+
+.victory-box p, #victoryMsg {
+    color: var(--text);
+    font-size: 1.1em;
+    margin-bottom: 20px;
+}
+
+.victory-box button {
+    padding: 12px 28px;
+    border: none;
+    border-radius: 8px;
+    background: var(--golden);
+    color: #333;
+    font-weight: 700;
+    font-size: 1em;
+    cursor: pointer;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.3);
+}
+
+.victory-box button:hover { background: #ffca28; }
+
+/* ─── Rules Modal ─── */
+#rulesModal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    background-color: var(--modal-bg);
+    backdrop-filter: blur(3px);
+}
+
+.modal-content {
+    background-color: #fff;
+    color: #37474f;
+    margin: 4% auto;
+    padding: 28px;
+    border-radius: 10px;
+    width: 92%;
+    max-width: 620px;
+    max-height: 88vh;
+    overflow-y: auto;
+    line-height: 1.6;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+}
+
+.modal-content h2 {
+    color: #4e342e;
+    margin-bottom: 15px;
+    font-size: 1.4em;
+}
+
+.modal-content h3 {
+    color: #5d4037;
+    margin-top: 16px;
+    margin-bottom: 6px;
+}
+
+.modal-content p {
+    margin-bottom: 10px;
+}
+
+.modal-content ul {
+    margin: 8px 0 12px 20px;
+}
+
+.modal-content .close {
+    float: right;
+    font-size: 1.8em;
+    cursor: pointer;
+    color: #999;
+    line-height: 1;
+}
+
+.modal-content .close:hover { color: #333; }
+
+.close-btn {
+    display: block;
+    margin: 20px auto 0;
+    padding: 10px 28px;
+    background: #5d4037;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 1em;
+}
+
+.close-btn:hover { background: #4e342e; }
+
+.body-tab.finished { opacity: 0.7; border-bottom: 2px solid var(--green); }
+
+.completion-notice {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, #1a2027, #37474f);
+    border: 2px solid var(--golden);
+    border-radius: 12px;
+    padding: 20px 30px;
+    color: var(--golden);
+    font-size: 1.3em;
+    font-weight: 700;
+    z-index: 3500;
+    opacity: 0;
+    transition: opacity 0.3s;
+    text-align: center;
+}
+.completion-notice.show { opacity: 1; }
+
+/* ─── Responsive ─── */
+@media (max-width: 800px) {
+    .main-area { flex-direction: column; align-items: center; }
+    :root { --card-size: 55px; --body-cell: 44px; }
+}
+
+@media (max-width: 500px) {
+    h1 { font-size: 1.5em; }
+    :root { --card-size: 44px; --body-cell: 38px; }
+    .player-select { flex-direction: column; }
+    .player-select button { width: 100%; }
+    #statusBar { font-size: 0.85em; }
+}
+</style>
+</head>
+<body>
+
+<div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
+    <h1 style="margin:5px 0;">科学怪人</h1>
+    <button class="btn-rules" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">分享到 WhatsApp</button>
+</div>
+<p class="subtitle">那只绿色的手肘去哪了？？ &mdash; Walter Prossnitz 设计的记忆游戏</p>
+
+<!-- ─── Setup Screen ─── -->
+<div id="setupScreen">
+    <h2>几位玩家？</h2>
+    <div class="player-select">
+        <button onclick="startGame(1)">1 位玩家（单人）</button>
+        <button onclick="startGame(2)">2 位玩家</button>
+        <button onclick="startGame(3)">3 位玩家</button>
+        <button onclick="startGame(4)">4 位玩家</button>
+    </div>
+    <div class="setup-option" style="margin-top:12px">
+        <label for="buildModeSelect" style="color:var(--golden);font-weight:bold">拼装模式：</label>
+        <select id="buildModeSelect" style="margin-left:8px;padding:4px 8px;border-radius:6px;background:var(--card-bg);color:var(--text);border:1px solid var(--golden)">
+            <option value="classic">经典（躯干 → 向外）</option>
+            <option value="reverse">反向（四肢末端 → 向内）</option>
+            <option value="mixed">混合（两个方向各一）</option>
+        </select>
+    </div>
+    <div id="buildModeHint" style="margin-top:6px;font-size:0.85em;color:#aaa;font-style:italic">经典：从中间向外拼装</div>
+    <div class="setup-option">
+        <input type="checkbox" id="trackMistakesToggle" checked>
+        <label for="trackMistakesToggle">记录失误（本应记住的牌）</label>
+    </div>
+</div>
+
+<!-- ─── Game Screen ─── -->
+<div id="gameScreen">
+    <div id="statusBar">
+        <span id="playerTurnInfo">玩家 1 的回合</span>
+        <span id="mistakeInfo">未命中：0 / 2</span>
+        <span id="mistakeTrackInfo"></span>
+        <span id="cardsLeft">牌数：32</span>
+    </div>
+
+    <div class="main-area">
+        <div class="card-grid-container">
+            <h3>正面朝下的牌</h3>
+            <div id="cardGrid"></div>
+        </div>
+
+        <div class="bodies-container">
+            <div class="body-tabs" id="bodyTabs"></div>
+            <div id="bodyDisplay"></div>
+        </div>
+    </div>
+
+    <div class="bottom-zone">
+        <button class="btn-undo" id="btnUndo" onclick="undoLastFlip()">&#8617; 撤销</button>
+        <button class="btn-rules" onclick="openRules()">&#10067; 规则</button>
+        <button class="btn-reset" onclick="confirmReset()">&#9888; 新游戏</button>
+        <button class="btn-csv" onclick="downloadCSV()">&#128190; 导出 CSV</button>
+    </div>
+</div>
+
+<!-- ─── Joker Placement Modal ─── -->
+<div id="jokerModal">
+    <div class="joker-picker">
+        <h3>放置你的百搭牌！</h3>
+        <p>为百搭牌选择一个身体部位（仅限躯干、手臂或腿）：</p>
+        <div class="joker-slots" id="jokerSlots"></div>
+    </div>
+</div>
+
+<!-- ─── Victory Overlay ─── -->
+<div id="victoryOverlay">
+    <div class="victory-box">
+        <h2 id="victoryTitle">玩家 1 获胜！</h2>
+        <div id="victoryMsg">科学怪人拼装完成！</div>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+            <button onclick="closeVictory()">查看科学怪人</button>
+            <button onclick="backToSetup()">新游戏</button>
+        </div>
+    </div>
+</div>
+
+<!-- ─── Rules Modal ─── -->
+<div id="rulesModal">
+    <div class="modal-content">
+        <span class="close" onclick="closeRules()">&times;</span>
+        <h2>科学怪人 &mdash; 规则</h2>
+        <p><strong>那只绿色的手肘去哪了？？</strong><br>
+        一款适合 1 &ndash; 4 位玩家、5 &ndash; 99 岁的记忆版科学怪人游戏。</p>
+
+        <h3>目标</h3>
+        <p>用正面朝下的牌拼出一具完整的科学怪人身体。游戏持续到
+        所有玩家都完成各自的科学怪人为止。最先完成者获胜！</p>
+
+        <h3>准备</h3>
+        <p>每位玩家开局时已摆好 4 块躯干中的 3 块。第 4 块躯干
+        与所有其他身体部位一起藏在正面朝下的牌堆里。</p>
+        <ul>
+            <li>2 位玩家：32 张牌</li>
+            <li>3 位玩家：48 张牌</li>
+            <li>4 位玩家：64 张牌</li>
+        </ul>
+
+        <h3>拼装顺序</h3>
+        <p>从中间向外拼装。身体部位<strong>不分左右</strong>
+        &mdash; 任何手臂牌或腿牌都可以放在任意一侧！</p>
+        <ul>
+            <li><strong>手臂：</strong>上臂 &rarr; 前臂 &rarr; 手</li>
+            <li><strong>腿：</strong>大腿 &rarr; 小腿 &rarr; 脚</li>
+            <li><strong>头部：</strong>下半头 &rarr; 上半头</li>
+        </ul>
+        <p>每个肢体都需要其<strong>特定的相邻躯干块</strong>：
+        右臂需要左上躯干，左臂需要右上躯干，
+        左腿需要左下躯干，右腿需要右下躯干。
+        下半头可以连接到任意一块上部躯干。
+        所有躯干牌都相同，可以填入任何空的躯干位。</p>
+
+        <h3>进行回合</h3>
+        <p>每次翻开一张牌。如果这张牌能用，就把它放到你的身体上，
+        然后继续翻牌。如果用不上，就算一次<strong>未命中</strong>
+        &mdash; 该牌翻回正面朝下。</p>
+        <p>在你第 <strong>2 次未命中</strong>后，你的回合结束。关键在于
+        记住那些暂时用不上的牌都在哪里！</p>
+
+        <h3>百搭牌</h3>
+        <p>百搭牌的数量与玩家人数相同。百搭牌可以替代
+        任意躯干、手臂或腿的部位（手、脚、头除外）。每位玩家最多
+        只能拥有一张百搭牌。翻到第 2 张百搭牌会将它传给下一位玩家（不算未命中）。
+        如果你之后找到了真正的身体部位，可以用它替换你的百搭牌。</p>
+
+        <h3>单人模式</h3>
+        <p>在单人模式下，你同时控制两具科学怪人，像 2 人游戏那样
+        轮流进行。目标是以尽可能少的未命中完成两具科学怪人。
+        记住哪具科学怪人需要哪些部位 &mdash; 这可是真正的脑力训练！</p>
+
+        <h3>未命中与失误</h3>
+        <p><strong>未命中</strong>指你翻开却用不上的任意一张牌。2 次未命中后，
+        你的回合结束。<strong>失误</strong>是一种特殊的未命中：翻开一张
+        之前已经翻过、而你仍然用不上的牌 &mdash;
+        你本该记住它！失误记录可以在准备界面中开启/关闭。</p>
+
+        <h3>反向模式</h3>
+        <p><strong>反向</strong>把一切都反了过来！你不是从躯干开始，
+        而是开局时已摆好 <strong>1 只手、1 只脚和 1 块上半头</strong>。
+        全部 4 块躯干都在牌堆里 &mdash; 从四肢末端<em>向内</em>拼装！</p>
+        <ul>
+            <li><strong>手臂：</strong>手（已摆好）&rarr; 前臂 &rarr; 上臂</li>
+            <li><strong>腿：</strong>脚（已摆好）&rarr; 小腿 &rarr; 大腿</li>
+            <li><strong>头部：</strong>上半头（已摆好）&rarr; 下半头</li>
+            <li><strong>躯干：</strong>需要先完成相邻的肢体 + 头部！</li>
+        </ul>
+        <p>在<strong>混合</strong>模式下，玩家的拼装方向交替 &mdash; 一人向外拼装
+        （从躯干开始），另一人向内拼装（从四肢末端开始）。最适合 2 人或 4 人游戏！</p>
+
+        <button class="close-btn" onclick="closeRules()">明白了！</button>
+    </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   FRANKENSTEIN - Where's that green elbow??
+   A Memory Frankenstein game for 2-4 players
+   ═══════════════════════════════════════════════════════════════ */
+
+// ─── Constants ───
+const TORSO_PARTS = ['torso_ul', 'torso_ur', 'torso_bl', 'torso_br'];
+const ALL_BODY_SLOTS = [
+    'upper_head', 'lower_head',
+    'torso_ul', 'torso_ur', 'torso_bl', 'torso_br',
+    'r_upper_arm', 'l_upper_arm',
+    'r_lower_arm', 'l_lower_arm',
+    'r_hand', 'l_hand',
+    'l_upper_leg', 'r_upper_leg',
+    'l_lower_leg', 'r_lower_leg',
+    'l_foot', 'r_foot'
+];
+
+const FINDABLE_PART_TYPES = [
+    'upper_head', 'lower_head',
+    'upper_arm', 'upper_arm',
+    'lower_arm', 'lower_arm',
+    'hand', 'hand',
+    'upper_leg', 'upper_leg',
+    'lower_leg', 'lower_leg',
+    'foot', 'foot'
+    // + one generic torso card per player
+];
+
+// Maps generic card types to possible body grid slots
+const PART_TO_SLOTS = {
+    upper_arm: ['r_upper_arm', 'l_upper_arm'],
+    lower_arm: ['r_lower_arm', 'l_lower_arm'],
+    hand: ['r_hand', 'l_hand'],
+    upper_leg: ['l_upper_leg', 'r_upper_leg'],
+    lower_leg: ['l_lower_leg', 'r_lower_leg'],
+    foot: ['l_foot', 'r_foot'],
+    torso: TORSO_PARTS,
+    upper_head: ['upper_head'],
+    lower_head: ['lower_head']
+};
+
+const PART_COLORS = ['green', 'orange', 'purple', 'blue'];
+
+const COLOR_HEX = {
+    green: '#4caf50',
+    orange: '#ff9800',
+    purple: '#9c27b0',
+    blue: '#00acc1',
+    grey: '#9e9e9e',
+    joker: '#ffd700'
+};
+
+const PLAYER_COLORS = ['#42a5f5', '#ef5350', '#66bb6a', '#ffa726'];
+const PLAYER_NAMES = ['玩家 1', '玩家 2', '玩家 3', '玩家 4'];
+
+// Slot labels for display
+const SLOT_LABELS = {
+    upper_head: '上半头', lower_head: '下半头',
+    torso_ul: '躯干', torso_ur: '躯干', torso_bl: '躯干', torso_br: '躯干',
+    r_upper_arm: '上臂', l_upper_arm: '上臂',
+    r_lower_arm: '前臂', l_lower_arm: '前臂',
+    r_hand: '手', l_hand: '手',
+    l_upper_leg: '大腿', r_upper_leg: '大腿',
+    l_lower_leg: '小腿', r_lower_leg: '小腿',
+    l_foot: '脚', r_foot: '脚'
+};
+
+// Which slots jokers can go in — excludes heads/hands/feet (too specific)
+const JOKER_VALID_SLOTS = [
+    ...TORSO_PARTS,
+    'r_upper_arm', 'l_upper_arm', 'r_lower_arm', 'l_lower_arm',
+    'l_upper_leg', 'r_upper_leg', 'l_lower_leg', 'r_lower_leg'
+];
+
+function getJokerValidSlots(player) {
+    return JOKER_VALID_SLOTS;
+}
+
+// ─── Game State ───
+let numPlayers = 2;
+let trackMistakes = true;
+let isSoloMode = false;
+let gameState = 'SETUP'; // SETUP | PLAYING | GAME_OVER
+let currentPlayer = 0;
+let mistakeCount = 0;
+let cardGrid = [];
+let players = [];
+let historyStack = [];
+let activeBodyTab = 0;
+let isAnimating = false;
+let gridCols = 8;
+let gridRows = 4;
+let seenCards = new Set();
+let finishedCount = 0;
+
+// CSV logging
+let sessionLog = [];
+let turnCounter = 0;
+let currentGameId = '';
+
+// Pending joker state
+let pendingJokerCard = null;
+
+// ─── DOM Refs ───
+const setupScreen = document.getElementById('setupScreen');
+const gameScreen = document.getElementById('gameScreen');
+const cardGridEl = document.getElementById('cardGrid');
+const bodyTabsEl = document.getElementById('bodyTabs');
+const bodyDisplayEl = document.getElementById('bodyDisplay');
+const statusPlayerEl = document.getElementById('playerTurnInfo');
+const statusMistakeEl = document.getElementById('mistakeInfo');
+const statusMistakeTrackEl = document.getElementById('mistakeTrackInfo');
+const statusCardsEl = document.getElementById('cardsLeft');
+const btnUndo = document.getElementById('btnUndo');
+const jokerModal = document.getElementById('jokerModal');
+const jokerSlotsEl = document.getElementById('jokerSlots');
+const victoryOverlay = document.getElementById('victoryOverlay');
+const rulesModal = document.getElementById('rulesModal');
+
+// ─── Initialization ───
+function startGame(n) {
+    isSoloMode = (n === 1);
+    numPlayers = isSoloMode ? 2 : n;
+    trackMistakes = document.getElementById('trackMistakesToggle').checked;
+    const buildMode = document.getElementById('buildModeSelect').value; // classic, reverse, mixed
+    currentGameId = Date.now().toString(36);
+
+    gridRows = n === 2 ? 4 : n === 3 ? 6 : 8;
+    gridCols = 8;
+
+    // Determine build direction per player
+    function getDirection(playerIdx) {
+        if (buildMode === 'classic') return 'outward';
+        if (buildMode === 'reverse') return 'inward';
+        // mixed: alternate directions (even=outward, odd=inward)
+        return playerIdx % 2 === 0 ? 'outward' : 'inward';
+    }
+
+    // Init players
+    players = [];
+    for (let i = 0; i < numPlayers; i++) {
+        const direction = getDirection(i);
+        const body = {};
+        for (const slot of ALL_BODY_SLOTS) body[slot] = null;
+
+        let missingTorso = null;
+        if (direction === 'outward') {
+            // Classic: pre-place 3 torso parts (grey), 1 missing torso goes in deck
+            missingTorso = TORSO_PARTS[Math.floor(Math.random() * 4)];
+            for (const t of TORSO_PARTS) {
+                if (t !== missingTorso) {
+                    body[t] = { partType: 'torso', color: 'grey', isJoker: false };
+                }
+            }
+        } else {
+            // Reverse: pre-place 1 hand, 1 foot, 1 upper_head (colored)
+            // All 4 torso parts stay empty and go in the deck
+            const preHandColor = PART_COLORS[Math.floor(Math.random() * PART_COLORS.length)];
+            const preFootColor = PART_COLORS[Math.floor(Math.random() * PART_COLORS.length)];
+            const preHeadColor = PART_COLORS[Math.floor(Math.random() * PART_COLORS.length)];
+            const handSlot = Math.random() < 0.5 ? 'r_hand' : 'l_hand';
+            const footSlot = Math.random() < 0.5 ? 'r_foot' : 'l_foot';
+            body[handSlot] = { partType: 'hand', color: preHandColor, isJoker: false };
+            body[footSlot] = { partType: 'foot', color: preFootColor, isJoker: false };
+            body['upper_head'] = { partType: 'upper_head', color: preHeadColor, isJoker: false };
+        }
+
+        players.push({
+            body,
+            buildDirection: direction,
+            missingTorso,
+            jokerUsed: false,
+            jokerSlot: null,
+            cardsPlaced: 0,
+            totalMisses: 0,
+            mistakeTrackCount: 0,
+            finished: false,
+            finishOrder: 0
+        });
+    }
+
+    // Generate deck
+    cardGrid = generateDeck();
+    currentPlayer = 0;
+    mistakeCount = 0;
+    historyStack = [];
+    sessionLog = [];
+    turnCounter = 0;
+    activeBodyTab = 0;
+    seenCards = new Set();
+    finishedCount = 0;
+    gameState = 'PLAYING';
+
+    setupScreen.style.display = 'none';
+    gameScreen.style.display = 'block';
+    victoryOverlay.classList.remove('show');
+
+    updateCardSize();
+    renderAll();
+}
+
+function generateDeck() {
+    const deck = [];
+    let id = 0;
+    const card = (partType, color) => ({ id: id++, partType, color, isJoker: false, faceUp: false, removed: false });
+
+    for (let p = 0; p < numPlayers; p++) {
+        const player = players[p];
+
+        if (player.buildDirection === 'inward') {
+            // Reverse: all 4 torso parts in deck (none pre-placed)
+            for (let t = 0; t < 4; t++) {
+                deck.push(card('torso', 'grey'));
+            }
+            // 2 arm chains, but only 1 hand (other pre-placed on body)
+            const armChain1 = generateColorChain(3);
+            const armChain2 = generateColorChain(3);
+            deck.push(card('upper_arm', armChain1[0]));
+            deck.push(card('lower_arm', armChain1[1]));
+            // hand from chain1 is pre-placed — skip it
+            deck.push(card('upper_arm', armChain2[0]));
+            deck.push(card('lower_arm', armChain2[1]));
+            deck.push(card('hand', armChain2[2]));
+
+            // 2 leg chains, but only 1 foot (other pre-placed on body)
+            const legChain1 = generateColorChain(3);
+            const legChain2 = generateColorChain(3);
+            deck.push(card('upper_leg', legChain1[0]));
+            deck.push(card('lower_leg', legChain1[1]));
+            // foot from chain1 is pre-placed — skip it
+            deck.push(card('upper_leg', legChain2[0]));
+            deck.push(card('lower_leg', legChain2[1]));
+            deck.push(card('foot', legChain2[2]));
+
+            // Head chain: only lower_head (upper_head pre-placed on body)
+            const headChain = generateColorChain(2);
+            deck.push(card('lower_head', headChain[0]));
+            // upper_head pre-placed — skip it
+        } else {
+            // Classic: 1 missing torso in deck, rest pre-placed
+            deck.push(card('torso', 'grey'));
+
+            const armChain1 = generateColorChain(3);
+            const armChain2 = generateColorChain(3);
+            const legChain1 = generateColorChain(3);
+            const legChain2 = generateColorChain(3);
+            const headChain = generateColorChain(2);
+
+            deck.push(card('upper_arm', armChain1[0]));
+            deck.push(card('lower_arm', armChain1[1]));
+            deck.push(card('hand', armChain1[2]));
+            deck.push(card('upper_arm', armChain2[0]));
+            deck.push(card('lower_arm', armChain2[1]));
+            deck.push(card('hand', armChain2[2]));
+
+            deck.push(card('upper_leg', legChain1[0]));
+            deck.push(card('lower_leg', legChain1[1]));
+            deck.push(card('foot', legChain1[2]));
+            deck.push(card('upper_leg', legChain2[0]));
+            deck.push(card('lower_leg', legChain2[1]));
+            deck.push(card('foot', legChain2[2]));
+
+            deck.push(card('lower_head', headChain[0]));
+            deck.push(card('upper_head', headChain[1]));
+        }
+    }
+
+    // Add jokers
+    for (let j = 0; j < numPlayers; j++) {
+        deck.push({ id: id++, partType: 'joker', color: 'joker', isJoker: true, faceUp: false, removed: false });
+    }
+
+    return shuffleArray(deck);
+}
+
+function generateColorChain(length) {
+    const chain = [];
+    for (let i = 0; i < length; i++) {
+        const excluded = i > 0 ? [chain[i - 1]] : [];
+        const available = PART_COLORS.filter(c => !excluded.includes(c));
+        chain.push(available[Math.floor(Math.random() * available.length)]);
+    }
+    return chain;
+}
+
+function shuffleArray(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
+// ─── Card Interaction ───
+function flipCard(idx) {
+    if (gameState !== 'PLAYING' || isAnimating) return;
+    const card = cardGrid[idx];
+    if (card.faceUp || card.removed) return;
+
+    // Save state for undo
+    historyStack.push({
+        cardIdx: idx,
+        playerBefore: currentPlayer,
+        mistakesBefore: mistakeCount,
+        placement: null, // filled if placed
+        seenCardsBefore: new Set(seenCards),
+        mistakeTrackBefore: players[currentPlayer].mistakeTrackCount,
+        totalMissesBefore: players[currentPlayer].totalMisses,
+        finishedBefore: players[currentPlayer].finished,
+        finishedCountBefore: finishedCount
+    });
+
+    card.faceUp = true;
+    renderCardGrid();
+    logAction('FLIP', card);
+
+    // Short delay for the flip animation to show
+    isAnimating = true;
+    setTimeout(() => {
+        isAnimating = false;
+        processFlippedCard(idx);
+    }, 500);
+}
+
+function processFlippedCard(idx) {
+    const card = cardGrid[idx];
+
+    // Joker handling
+    if (card.isJoker) {
+        handleJoker(card, idx);
+        return;
+    }
+
+    // Find a valid slot for this generic card type
+    const player = players[currentPlayer];
+    const slot = findValidSlot(card.partType, card.color, player);
+
+    if (slot) {
+        // Place it!
+        placeCard(card, slot, currentPlayer);
+        historyStack[historyStack.length - 1].placement = { slot, playerIdx: currentPlayer };
+        logAction('PLACE', card);
+
+        if (checkWin(currentPlayer) && !players[currentPlayer].finished) {
+            players[currentPlayer].finished = true;
+            finishedCount++;
+            players[currentPlayer].finishOrder = finishedCount;
+            if (finishedCount >= numPlayers) {
+                endGame();
+                return;
+            }
+            showCompletionNotice(currentPlayer);
+        }
+        renderAll();
+    } else {
+        // Miss
+        mistakeCount++;
+        players[currentPlayer].totalMisses++;
+        logAction('MISS', card);
+
+        // Check if this was a "should have known" mistake
+        if (trackMistakes && seenCards.has(idx)) {
+            players[currentPlayer].mistakeTrackCount++;
+            logAction('MISTAKE_TRACKED', card);
+        }
+
+        // Flash the card
+        const cardEl = cardGridEl.children[idx];
+        if (cardEl) cardEl.classList.add('mistake-flash');
+
+        renderStatus();
+
+        if (mistakeCount >= 2) {
+            // Turn ends
+            isAnimating = true;
+            setTimeout(() => {
+                flipBackAllUnplaced();
+                nextPlayer();
+                isAnimating = false;
+                renderAll();
+            }, 1200);
+        } else {
+            // First miss - flip back after a delay
+            isAnimating = true;
+            setTimeout(() => {
+                card.faceUp = false;
+                seenCards.add(idx);
+                isAnimating = false;
+                renderAll();
+            }, 1200);
+        }
+    }
+}
+
+function findValidSlot(partType, color, player) {
+    const possibleSlots = PART_TO_SLOTS[partType];
+    if (!possibleSlots) return null;
+
+    for (const slot of possibleSlots) {
+        if (!player.body[slot] && prerequisiteMet(slot, player)) {
+            return slot;
+        }
+    }
+    return null;
+}
+
+function prerequisiteMet(slot, player) {
+    if (player.buildDirection === 'inward') {
+        // Reverse: build from extremities inward to torso
+        const rules = {
+            // Extremities always placeable (starting points)
+            upper_head: () => true,
+            r_hand: () => true, l_hand: () => true,
+            l_foot: () => true, r_foot: () => true,
+            // Head chain: upper_head → lower_head
+            lower_head: () => !!player.body['upper_head'],
+            // Arm chains: hand → lower_arm → upper_arm
+            r_lower_arm: () => !!player.body['r_hand'],
+            l_lower_arm: () => !!player.body['l_hand'],
+            r_upper_arm: () => !!player.body['r_lower_arm'],
+            l_upper_arm: () => !!player.body['l_lower_arm'],
+            // Leg chains: foot → lower_leg → upper_leg
+            l_lower_leg: () => !!player.body['l_foot'],
+            r_lower_leg: () => !!player.body['r_foot'],
+            l_upper_leg: () => !!player.body['l_lower_leg'],
+            r_upper_leg: () => !!player.body['r_lower_leg'],
+            // Torso needs adjacent limb/head (converge inward)
+            torso_ul: () => !!player.body['r_upper_arm'] && !!player.body['lower_head'],
+            torso_ur: () => !!player.body['l_upper_arm'] && !!player.body['lower_head'],
+            torso_bl: () => !!player.body['l_upper_leg'],
+            torso_br: () => !!player.body['r_upper_leg']
+        };
+        return rules[slot] ? rules[slot]() : true;
+    }
+
+    // Classic: build from torso outward
+    const rules = {
+        // Arms need their specific adjacent torso part
+        r_upper_arm: () => !!player.body['torso_ul'],
+        l_upper_arm: () => !!player.body['torso_ur'],
+        r_lower_arm: () => !!player.body['r_upper_arm'],
+        l_lower_arm: () => !!player.body['l_upper_arm'],
+        r_hand: () => !!player.body['r_lower_arm'],
+        l_hand: () => !!player.body['l_lower_arm'],
+        // Legs need their specific adjacent torso part
+        l_upper_leg: () => !!player.body['torso_bl'],
+        r_upper_leg: () => !!player.body['torso_br'],
+        l_lower_leg: () => !!player.body['l_upper_leg'],
+        r_lower_leg: () => !!player.body['r_upper_leg'],
+        l_foot: () => !!player.body['l_lower_leg'],
+        r_foot: () => !!player.body['r_lower_leg'],
+        // Head needs any top torso (spans both columns)
+        lower_head: () => !!(player.body['torso_ul'] || player.body['torso_ur']),
+        upper_head: () => !!player.body['lower_head'],
+        // Torso parts always placeable
+        torso_ul: () => true, torso_ur: () => true,
+        torso_bl: () => true, torso_br: () => true
+    };
+    return rules[slot] ? rules[slot]() : true;
+}
+
+function placeCard(card, slot, playerIdx) {
+    const player = players[playerIdx];
+    player.body[slot] = { partType: card.partType, color: card.color, isJoker: card.isJoker };
+    player.cardsPlaced++;
+    card.removed = true;
+    activeBodyTab = playerIdx;
+
+    // Check if this part matches a joker slot and offer swap
+    if (player.jokerUsed && player.jokerSlot === slot) {
+        // Can't happen - slot would already be filled
+    }
+}
+
+// ─── Joker Handling ───
+function handleJoker(card, idx) {
+    const player = players[currentPlayer];
+
+    if (!player.jokerUsed) {
+        // Find all valid slots for joker
+        const validSlots = getJokerValidSlots(player).filter(slot =>
+            !player.body[slot] && prerequisiteMet(slot, player)
+        );
+
+        if (validSlots.length === 0) {
+            // Can't place joker - it's a miss
+            mistakeCount++;
+            players[currentPlayer].totalMisses++;
+            logAction('MISS', card);
+            if (trackMistakes && seenCards.has(idx)) {
+                players[currentPlayer].mistakeTrackCount++;
+                logAction('MISTAKE_TRACKED', card);
+            }
+            renderStatus();
+            if (mistakeCount >= 2) {
+                isAnimating = true;
+                setTimeout(() => {
+                    flipBackAllUnplaced();
+                    nextPlayer();
+                    isAnimating = false;
+                    renderAll();
+                }, 1200);
+            } else {
+                isAnimating = true;
+                setTimeout(() => {
+                    card.faceUp = false;
+                    seenCards.add(idx);
+                    isAnimating = false;
+                    renderAll();
+                }, 1200);
+            }
+            return;
+        }
+
+        // Show joker slot picker
+        pendingJokerCard = { card, idx };
+        showJokerPicker(validSlots);
+    } else {
+        // Player already has a joker - pass to next player
+        logAction('JOKER_PASS', card);
+        // Mark card for next player's use
+        const nextP = (currentPlayer + 1) % numPlayers;
+        // Auto-assign to next player if they haven't used a joker
+        if (!players[nextP].jokerUsed) {
+            // Next player gets it on their next turn - for now just remove from grid
+            // In the physical game this is given to the next player to use on their turn
+            // For simplicity: the card stays face-up and will be auto-placed on next player's turn start
+            card.removed = true;
+            // Find a valid slot for next player
+            const nextValidSlots = getJokerValidSlots(players[nextP]).filter(slot =>
+                !players[nextP].body[slot] && prerequisiteMet(slot, players[nextP])
+            );
+            if (nextValidSlots.length > 0) {
+                const autoSlot = nextValidSlots[0];
+                players[nextP].body[autoSlot] = { partType: 'joker', color: 'joker', isJoker: true };
+                players[nextP].jokerUsed = true;
+                players[nextP].jokerSlot = autoSlot;
+                players[nextP].cardsPlaced++;
+            }
+        } else {
+            // Both have jokers already - card goes back
+            card.faceUp = false;
+        }
+        // Not a mistake - continue flipping
+        renderAll();
+    }
+}
+
+function showJokerPicker(validSlots) {
+    jokerSlotsEl.innerHTML = '';
+    for (const slot of validSlots) {
+        const btn = document.createElement('button');
+        btn.className = 'joker-slot-btn';
+        btn.textContent = SLOT_LABELS[slot];
+        btn.onclick = () => placeJokerInSlot(slot);
+        jokerSlotsEl.appendChild(btn);
+    }
+    jokerModal.classList.add('show');
+}
+
+function placeJokerInSlot(slot) {
+    jokerModal.classList.remove('show');
+    if (!pendingJokerCard) return;
+
+    const { card, idx } = pendingJokerCard;
+    const player = players[currentPlayer];
+
+    player.body[slot] = { partType: 'joker', color: 'joker', isJoker: true };
+    player.jokerUsed = true;
+    player.jokerSlot = slot;
+    player.cardsPlaced++;
+    card.removed = true;
+
+    historyStack[historyStack.length - 1].placement = { slot, playerIdx: currentPlayer, isJoker: true };
+    logAction('PLACE_JOKER', card);
+
+    pendingJokerCard = null;
+
+    if (checkWin(currentPlayer) && !players[currentPlayer].finished) {
+        players[currentPlayer].finished = true;
+        finishedCount++;
+        players[currentPlayer].finishOrder = finishedCount;
+        if (finishedCount >= numPlayers) {
+            endGame();
+            return;
+        }
+        showCompletionNotice(currentPlayer);
+    }
+    renderAll();
+}
+
+// ─── Turn Management ───
+function nextPlayer() {
+    mistakeCount = 0;
+    logAction('TURN_END', null);
+    do {
+        currentPlayer = (currentPlayer + 1) % numPlayers;
+    } while (players[currentPlayer].finished && finishedCount < numPlayers);
+    activeBodyTab = currentPlayer;
+    turnCounter++;
+}
+
+function flipBackAllUnplaced() {
+    for (let i = 0; i < cardGrid.length; i++) {
+        const card = cardGrid[i];
+        if (card.faceUp && !card.removed) {
+            card.faceUp = false;
+            seenCards.add(i);
+        }
+    }
+}
+
+// ─── Win Detection ───
+function checkWin(playerIdx) {
+    const player = players[playerIdx];
+    for (const slot of ALL_BODY_SLOTS) {
+        if (!player.body[slot]) return false;
+    }
+    return true;
+}
+
+function endGame() {
+    gameState = 'GAME_OVER';
+    logAction('GAME_OVER', null);
+
+    if (isSoloMode) {
+        const totalMisses = players[0].totalMisses + players[1].totalMisses;
+        const totalMistakes = players[0].mistakeTrackCount + players[1].mistakeTrackCount;
+        document.getElementById('victoryTitle').textContent = '两具科学怪人都完成了！';
+        let msg = `未命中总数：${totalMisses}`;
+        if (trackMistakes) msg += ` | 失误：${totalMistakes}`;
+        document.getElementById('victoryMsg').innerHTML = msg;
+    } else {
+        const sorted = players.map((p, i) => ({ idx: i, ...p }))
+            .sort((a, b) => a.finishOrder - b.finishOrder);
+        document.getElementById('victoryTitle').textContent = getPlayerName(sorted[0].idx) + ' 获胜！';
+
+        let html = '<table style="margin:10px auto;text-align:left;color:var(--text);border-collapse:collapse">';
+        html += '<tr><th style="padding:4px 10px">#</th><th style="padding:4px 10px">玩家</th><th style="padding:4px 10px">未命中</th>';
+        if (trackMistakes) html += '<th style="padding:4px 10px">失误</th>';
+        html += '</tr>';
+        for (const p of sorted) {
+            html += `<tr><td style="padding:4px 10px">${p.finishOrder}</td>`;
+            const dirTag = p.buildDirection === 'inward' ? ' <span style="font-size:0.8em;opacity:0.7">[反]</span>' : '';
+            html += `<td style="padding:4px 10px;color:${PLAYER_COLORS[p.idx]}">${getPlayerName(p.idx)}${dirTag}</td>`;
+            html += `<td style="padding:4px 10px">${p.totalMisses}</td>`;
+            if (trackMistakes) html += `<td style="padding:4px 10px">${p.mistakeTrackCount}</td>`;
+            html += '</tr>';
+        }
+        html += '</table>';
+        document.getElementById('victoryMsg').innerHTML = html;
+    }
+    victoryOverlay.classList.add('show');
+    renderAll();
+}
+
+function showCompletionNotice(playerIdx) {
+    const name = getPlayerName(playerIdx);
+    const notice = document.createElement('div');
+    notice.className = 'completion-notice';
+    notice.textContent = name + " 的科学怪人完成了！";
+    document.body.appendChild(notice);
+    setTimeout(() => notice.classList.add('show'), 10);
+    setTimeout(() => {
+        notice.classList.remove('show');
+        setTimeout(() => notice.remove(), 500);
+    }, 2000);
+}
+
+// ─── Undo ───
+function undoLastFlip() {
+    if (historyStack.length === 0 || gameState !== 'PLAYING' || isAnimating) return;
+
+    const entry = historyStack.pop();
+    const card = cardGrid[entry.cardIdx];
+
+    // Undo placement
+    if (entry.placement) {
+        const player = players[entry.placement.playerIdx];
+        player.body[entry.placement.slot] = null;
+        player.cardsPlaced--;
+        if (entry.placement.isJoker) {
+            player.jokerUsed = false;
+            player.jokerSlot = null;
+        }
+        card.removed = false;
+    }
+
+    card.faceUp = false;
+    currentPlayer = entry.playerBefore;
+    mistakeCount = entry.mistakesBefore;
+    activeBodyTab = currentPlayer;
+    if (entry.seenCardsBefore) seenCards = entry.seenCardsBefore;
+    if (entry.mistakeTrackBefore !== undefined) players[currentPlayer].mistakeTrackCount = entry.mistakeTrackBefore;
+    if (entry.totalMissesBefore !== undefined) players[currentPlayer].totalMisses = entry.totalMissesBefore;
+    if (entry.finishedBefore !== undefined) {
+        players[currentPlayer].finished = entry.finishedBefore;
+        finishedCount = entry.finishedCountBefore;
+    }
+
+    // Remove last log entry
+    if (sessionLog.length > 0) sessionLog.pop();
+
+    renderAll();
+}
+
+// ─── Rendering ───
+function renderAll() {
+    renderCardGrid();
+    renderBodyTabs();
+    renderBodyDisplay();
+    renderStatus();
+    btnUndo.disabled = historyStack.length === 0 || gameState !== 'PLAYING';
+}
+
+function renderCardGrid() {
+    cardGridEl.style.gridTemplateColumns = `repeat(${gridCols}, var(--card-size))`;
+    cardGridEl.innerHTML = '';
+
+    for (let i = 0; i < cardGrid.length; i++) {
+        const card = cardGrid[i];
+        const el = document.createElement('div');
+        el.className = 'card';
+        if (card.faceUp) el.classList.add('flipped');
+        if (card.removed) el.classList.add('removed');
+        if (isAnimating || gameState !== 'PLAYING') el.classList.add('disabled');
+
+        const inner = document.createElement('div');
+        inner.className = 'card-inner';
+
+        // Back
+        const back = document.createElement('div');
+        back.className = 'card-face card-back';
+        back.textContent = '?';
+
+        // Front
+        const front = document.createElement('div');
+        front.className = 'card-face card-front';
+        if (card.isJoker) {
+            front.innerHTML = getJokerSVG();
+        } else {
+            front.innerHTML = getBodyPartSVG(card.partType, card.color);
+        }
+
+        inner.appendChild(back);
+        inner.appendChild(front);
+        el.appendChild(inner);
+
+        el.onclick = () => flipCard(i);
+        cardGridEl.appendChild(el);
+    }
+}
+
+function renderBodyTabs() {
+    bodyTabsEl.innerHTML = '';
+    for (let i = 0; i < numPlayers; i++) {
+        const tab = document.createElement('button');
+        tab.className = 'body-tab';
+        if (i === activeBodyTab) tab.classList.add('active');
+        if (i === currentPlayer && gameState === 'PLAYING') tab.classList.add('current-turn');
+        if (players[i].finished) tab.classList.add('finished');
+        tab.textContent = (players[i].finished ? '\u2713 ' : '') + getPlayerName(i);
+        tab.style.borderColor = PLAYER_COLORS[i];
+        if (i === activeBodyTab) {
+            tab.style.background = PLAYER_COLORS[i];
+        }
+        tab.onclick = () => { activeBodyTab = i; renderBodyDisplay(); renderBodyTabs(); };
+        bodyTabsEl.appendChild(tab);
+    }
+}
+
+function renderBodyDisplay() {
+    const player = players[activeBodyTab];
+    if (!player) return;
+
+    const isActive = activeBodyTab === currentPlayer && gameState === 'PLAYING';
+    let html = `<div class="body-panel ${isActive ? 'active-turn' : ''}" style="border-color: ${isActive ? 'var(--golden)' : PLAYER_COLORS[activeBodyTab]}">`;
+    const dirLabel = player.buildDirection === 'inward' ? '（反向）' : '';
+    html += `<div class="player-progress">已找到 ${player.cardsPlaced} / 15 个部位${dirLabel}</div>`;
+    html += '<div class="body-grid">';
+
+    for (const slot of ALL_BODY_SLOTS) {
+        const filled = player.body[slot];
+        let cls = `body-slot slot-${slot}`;
+
+        if (filled) {
+            cls += filled.isJoker ? ' joker-filled' : ' filled';
+        } else if (prerequisiteMet(slot, player)) {
+            cls += ' empty-available';
+        } else {
+            cls += ' empty-locked';
+        }
+
+        html += `<div class="${cls}">`;
+        if (filled) {
+            if (filled.isJoker) {
+                html += getJokerSVG();
+            } else {
+                html += getBodyPartSVG(slot, filled.color);
+            }
+        }
+        html += '</div>';
+    }
+
+    html += '</div></div>';
+    bodyDisplayEl.innerHTML = html;
+}
+
+function getPlayerName(idx) {
+    if (isSoloMode) return '科学怪人 ' + (idx + 1);
+    return PLAYER_NAMES[idx];
+}
+
+function renderStatus() {
+    const pColor = PLAYER_COLORS[currentPlayer];
+    statusPlayerEl.innerHTML = `<span style="color:${pColor}">${getPlayerName(currentPlayer)} 的回合</span>`;
+    statusMistakeEl.textContent = `未命中：${mistakeCount} / 2`;
+    if (trackMistakes) {
+        const playerMistakes = players[currentPlayer].mistakeTrackCount;
+        statusMistakeTrackEl.textContent = `失误：${playerMistakes}`;
+        statusMistakeTrackEl.style.display = '';
+    } else {
+        statusMistakeTrackEl.style.display = 'none';
+    }
+    const remaining = cardGrid.filter(c => !c.removed).length;
+    statusCardsEl.textContent = `牌数：${remaining}`;
+}
+
+// ─── SVG Body Part Art ───
+function getColorHex(color) {
+    return COLOR_HEX[color] || color;
+}
+
+function getBodyPartSVG(partType, color) {
+    const c = getColorHex(color);
+    const sw = 4; // stroke width
+
+    // ─── Color-specific head designs (each color has unique hair & face) ───
+    // Ears are split between upper/lower halves — mixing colors creates funny ear combos!
+    // All heads use consistent face outline at x=20/x=80 so any top fits any bottom.
+    if (partType === 'upper_head') {
+        const designs = {
+            // Green: wild spiky hair in ALL directions, pointy elf ear tops
+            green: `<svg viewBox="0 0 100 50">
+                <path d="M20 50 Q20 16 50 12 Q80 16 80 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+                <line x1="25" y1="18" x2="10" y2="0" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+                <line x1="30" y1="15" x2="20" y2="0" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+                <line x1="36" y1="13" x2="32" y2="0" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+                <line x1="43" y1="12" x2="42" y2="0" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+                <line x1="50" y1="11" x2="50" y2="0" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+                <line x1="57" y1="12" x2="58" y2="0" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+                <line x1="64" y1="13" x2="68" y2="0" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+                <line x1="70" y1="15" x2="80" y2="0" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+                <line x1="75" y1="18" x2="90" y2="0" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+                <line x1="22" y1="24" x2="5" y2="12" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="78" y1="24" x2="95" y2="12" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="22" y1="30" x2="8" y2="24" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="78" y1="30" x2="92" y2="24" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+                <path d="M20 40 L8 32 L12 46 L20 50" fill="none" stroke="${c}" stroke-width="2.5" stroke-linejoin="round"/>
+                <path d="M80 40 L92 32 L88 46 L80 50" fill="none" stroke="${c}" stroke-width="2.5" stroke-linejoin="round"/>
+            </svg>`,
+            // Orange: dense curly hair (many overlapping circles), big round ear tops
+            orange: `<svg viewBox="0 0 100 50">
+                <path d="M20 50 Q20 16 50 12 Q80 16 80 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+                <circle cx="25" cy="10" r="9" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <circle cx="40" cy="5" r="8" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <circle cx="55" cy="3" r="7" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <circle cx="70" cy="5" r="8" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <circle cx="78" cy="12" r="8" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <circle cx="50" cy="8" r="6" fill="none" stroke="${c}" stroke-width="2"/>
+                <circle cx="33" cy="4" r="6" fill="none" stroke="${c}" stroke-width="2"/>
+                <circle cx="63" cy="2" r="5" fill="none" stroke="${c}" stroke-width="2"/>
+                <circle cx="16" cy="22" r="7" fill="none" stroke="${c}" stroke-width="2"/>
+                <circle cx="84" cy="22" r="7" fill="none" stroke="${c}" stroke-width="2"/>
+                <path d="M20 38 Q8 34 6 42 Q6 50 16 50" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <path d="M80 38 Q92 34 94 42 Q94 50 84 50" fill="none" stroke="${c}" stroke-width="2.5"/>
+            </svg>`,
+            // Purple: tall dramatic mohawk with shaved sides, multiple ear piercings
+            purple: `<svg viewBox="0 0 100 50">
+                <path d="M20 50 Q20 20 50 16 Q80 20 80 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+                <path d="M38 16 L36 8 L40 12 L42 2 L45 10 L47 0 L50 8 L53 0 L55 10 L58 2 L60 12 L64 8 L62 16" fill="none" stroke="${c}" stroke-width="3" stroke-linejoin="round"/>
+                <line x1="24" y1="24" x2="26" y2="19" stroke="${c}" stroke-width="1.5"/>
+                <line x1="28" y1="22" x2="30" y2="17" stroke="${c}" stroke-width="1.5"/>
+                <line x1="33" y1="19" x2="35" y2="15" stroke="${c}" stroke-width="1.5"/>
+                <line x1="65" y1="19" x2="67" y2="15" stroke="${c}" stroke-width="1.5"/>
+                <line x1="70" y1="22" x2="72" y2="17" stroke="${c}" stroke-width="1.5"/>
+                <line x1="74" y1="24" x2="76" y2="19" stroke="${c}" stroke-width="1.5"/>
+                <line x1="20" y1="40" x2="6" y2="40" stroke="${c}" stroke-width="2.5"/>
+                <circle cx="4" cy="40" r="3" fill="${c}"/>
+                <circle cx="10" cy="45" r="2" fill="${c}"/>
+                <line x1="80" y1="40" x2="94" y2="40" stroke="${c}" stroke-width="2.5"/>
+                <circle cx="96" cy="40" r="3" fill="${c}"/>
+                <circle cx="90" cy="45" r="2" fill="${c}"/>
+            </svg>`,
+            // Blue/turquoise: flat-top Frankenstein hair with lightning scar, big bolt ear tops
+            blue: `<svg viewBox="0 0 100 50">
+                <path d="M20 50 L20 18 Q20 10 30 8 L70 8 Q80 10 80 18 L80 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+                <line x1="28" y1="8" x2="28" y2="2" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="36" y1="8" x2="36" y2="0" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="44" y1="8" x2="44" y2="1" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="50" y1="8" x2="50" y2="0" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="56" y1="8" x2="56" y2="1" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="64" y1="8" x2="64" y2="0" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="72" y1="8" x2="72" y2="2" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+                <path d="M45 14 L48 20 L42 22 L48 30" fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round"/>
+                <rect x="2" y="38" width="18" height="12" rx="3" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <line x1="7" y1="38" x2="7" y2="50" stroke="${c}" stroke-width="1.5"/>
+                <line x1="11" y1="38" x2="11" y2="50" stroke="${c}" stroke-width="1.5"/>
+                <rect x="80" y="38" width="18" height="12" rx="3" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <line x1="89" y1="38" x2="89" y2="50" stroke="${c}" stroke-width="1.5"/>
+                <line x1="93" y1="38" x2="93" y2="50" stroke="${c}" stroke-width="1.5"/>
+            </svg>`
+        };
+        return designs[color] || designs.green;
+    }
+
+    if (partType === 'lower_head') {
+        const designs = {
+            // Green: crazed face — bloodshot bulging eyes, scar over left eye, teeth-baring grimace
+            green: `<svg viewBox="0 0 100 50">
+                <path d="M20 0 Q18 12 22 20 Q26 30 30 38 Q38 46 40 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
+                <path d="M80 0 Q82 12 78 20 Q74 30 70 38 Q62 46 60 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
+                <path d="M20 0 L10 2 L8 10 L20 7" fill="none" stroke="${c}" stroke-width="2.5" stroke-linejoin="round"/>
+                <path d="M80 0 L90 2 L92 10 L80 7" fill="none" stroke="${c}" stroke-width="2.5" stroke-linejoin="round"/>
+                <path d="M27 3 Q36 -1 45 3" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+                <path d="M55 3 Q64 -1 73 3" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+                <circle cx="36" cy="13" r="9" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <circle cx="36" cy="13" r="4" fill="${c}"/>
+                <line x1="28" y1="10" x2="32" y2="13" stroke="${c}" stroke-width="1.2"/>
+                <line x1="29" y1="16" x2="32" y2="14" stroke="${c}" stroke-width="1.2"/>
+                <line x1="40" y1="8" x2="38" y2="11" stroke="${c}" stroke-width="1.2"/>
+                <circle cx="64" cy="13" r="9" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <circle cx="64" cy="13" r="4" fill="${c}"/>
+                <line x1="72" y1="10" x2="68" y2="13" stroke="${c}" stroke-width="1.2"/>
+                <line x1="71" y1="16" x2="68" y2="14" stroke="${c}" stroke-width="1.2"/>
+                <line x1="60" y1="8" x2="62" y2="11" stroke="${c}" stroke-width="1.2"/>
+                <path d="M26 5 L42 20" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round"/>
+                <line x1="28" y1="8" x2="26" y2="12" stroke="${c}" stroke-width="1.5"/>
+                <line x1="32" y1="11" x2="30" y2="15" stroke="${c}" stroke-width="1.5"/>
+                <line x1="36" y1="15" x2="34" y2="19" stroke="${c}" stroke-width="1.5"/>
+                <path d="M48 24 Q50 27 52 24" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round"/>
+                <path d="M34 33 L40 33 L40 40 L34 40 Z" fill="none" stroke="${c}" stroke-width="2"/>
+                <line x1="37" y1="33" x2="37" y2="40" stroke="${c}" stroke-width="1.2"/>
+                <path d="M40 33 Q50 30 60 33" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <path d="M40 40 Q50 43 60 40" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <path d="M60 33 L66 33 L66 40 L60 40 Z" fill="none" stroke="${c}" stroke-width="2"/>
+                <line x1="63" y1="33" x2="63" y2="40" stroke="${c}" stroke-width="1.2"/>
+                <line x1="45" y1="33" x2="45" y2="40" stroke="${c}" stroke-width="1.2"/>
+                <line x1="50" y1="33" x2="50" y2="40" stroke="${c}" stroke-width="1.2"/>
+                <line x1="55" y1="33" x2="55" y2="40" stroke="${c}" stroke-width="1.2"/>
+                <line x1="40" y1="50" x2="60" y2="50" stroke="${c}" stroke-width="${sw}"/>
+            </svg>`,
+            // Orange: unhinged maniac grin — asymmetric eyes, missing tooth, sinister wide grin, screw in temple
+            orange: `<svg viewBox="0 0 100 50">
+                <path d="M20 0 Q18 10 22 18 Q28 30 34 38 Q40 46 42 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
+                <path d="M80 0 Q82 10 78 18 Q72 30 66 38 Q60 46 58 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
+                <path d="M16 0 Q6 0 6 6 Q8 10 20 5" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <path d="M84 0 Q94 0 94 6 Q92 10 80 5" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <path d="M27 4 Q36 0 45 4" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+                <path d="M55 6 Q64 2 73 6" fill="none" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+                <circle cx="36" cy="13" r="7" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <circle cx="36" cy="14" r="3" fill="${c}"/>
+                <path d="M57 12 Q64 8 71 12" fill="none" stroke="${c}" stroke-width="3.5" stroke-linecap="round"/>
+                <circle cx="64" cy="15" r="2" fill="${c}"/>
+                <circle cx="50" cy="22" r="4" fill="none" stroke="${c}" stroke-width="2"/>
+                <circle cx="24" cy="14" r="4" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <line x1="22" y1="12" x2="26" y2="16" stroke="${c}" stroke-width="2"/>
+                <line x1="26" y1="12" x2="22" y2="16" stroke="${c}" stroke-width="2"/>
+                <path d="M26 31 Q38 46 50 46 Q62 46 74 31" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+                <line x1="34" y1="34" x2="34" y2="43" stroke="${c}" stroke-width="1.5"/>
+                <line x1="40" y1="37" x2="40" y2="45" stroke="${c}" stroke-width="1.5"/>
+                <line x1="46" y1="38" x2="46" y2="46" stroke="${c}" stroke-width="1.5"/>
+                <line x1="54" y1="38" x2="54" y2="46" stroke="${c}" stroke-width="1.5"/>
+                <line x1="60" y1="37" x2="60" y2="45" stroke="${c}" stroke-width="1.5"/>
+                <line x1="66" y1="34" x2="66" y2="43" stroke="${c}" stroke-width="1.5"/>
+                <path d="M24 29 Q22 34 26 34" fill="none" stroke="${c}" stroke-width="1.5"/>
+                <path d="M76 29 Q78 34 74 34" fill="none" stroke="${c}" stroke-width="1.5"/>
+                <line x1="42" y1="50" x2="58" y2="50" stroke="${c}" stroke-width="${sw}"/>
+            </svg>`,
+            // Purple: sinister trickster — stitched scar across face, one mad eye + wink, forked tongue, fangs
+            purple: `<svg viewBox="0 0 100 50">
+                <path d="M20 0 Q18 10 22 18 Q26 28 32 36 Q38 44 42 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
+                <path d="M80 0 Q82 10 78 18 Q74 28 68 36 Q62 44 58 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
+                <line x1="20" y1="2" x2="6" y2="2" stroke="${c}" stroke-width="2.5"/>
+                <circle cx="4" cy="2" r="3" fill="${c}"/>
+                <circle cx="10" cy="7" r="2" fill="${c}"/>
+                <line x1="80" y1="2" x2="94" y2="2" stroke="${c}" stroke-width="2.5"/>
+                <circle cx="96" cy="2" r="3" fill="${c}"/>
+                <circle cx="90" cy="7" r="2" fill="${c}"/>
+                <path d="M27 3 Q36 -1 45 5" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+                <path d="M55 6 Q64 1 73 4" fill="none" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+                <circle cx="36" cy="14" r="8" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <circle cx="36" cy="14" r="2" fill="${c}"/>
+                <circle cx="33" cy="14" r="4" fill="none" stroke="${c}" stroke-width="1"/>
+                <path d="M57 14 Q64 10 71 14" fill="none" stroke="${c}" stroke-width="3.5" stroke-linecap="round"/>
+                <path d="M25 18 L75 8" fill="none" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="35" y1="14" x2="33" y2="18" stroke="${c}" stroke-width="1.5"/>
+                <line x1="40" y1="13" x2="38" y2="17" stroke="${c}" stroke-width="1.5"/>
+                <line x1="45" y1="12" x2="43" y2="16" stroke="${c}" stroke-width="1.5"/>
+                <line x1="50" y1="11" x2="48" y2="15" stroke="${c}" stroke-width="1.5"/>
+                <line x1="55" y1="10" x2="53" y2="14" stroke="${c}" stroke-width="1.5"/>
+                <line x1="60" y1="9" x2="58" y2="13" stroke="${c}" stroke-width="1.5"/>
+                <line x1="65" y1="8" x2="63" y2="12" stroke="${c}" stroke-width="1.5"/>
+                <path d="M46 23 L50 29 L54 23" fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round"/>
+                <path d="M34 33 Q44 39 56 37 Q64 35 70 31" fill="none" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+                <path d="M36 33 L34 38" fill="none" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+                <path d="M68 31 L70 36" fill="none" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+                <path d="M52 37 L50 46 L48 42" fill="${c}" stroke="${c}" stroke-width="1.5" stroke-linejoin="round"/>
+                <path d="M52 37 L54 46 L56 42" fill="${c}" stroke="${c}" stroke-width="1.5" stroke-linejoin="round"/>
+                <line x1="42" y1="50" x2="58" y2="50" stroke="${c}" stroke-width="${sw}"/>
+            </svg>`,
+            // Blue/turquoise: menacing Frankenstein — sunken eyes with dark rings, jagged teeth, more stitches, neck bolts
+            blue: `<svg viewBox="0 0 100 50">
+                <path d="M20 0 L20 14 Q22 28 30 36 Q38 44 42 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
+                <path d="M80 0 L80 14 Q78 28 70 36 Q62 44 58 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
+                <rect x="2" y="0" width="18" height="8" rx="3" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <line x1="7" y1="0" x2="7" y2="8" stroke="${c}" stroke-width="1.5"/>
+                <line x1="11" y1="0" x2="11" y2="8" stroke="${c}" stroke-width="1.5"/>
+                <rect x="80" y="0" width="18" height="8" rx="3" fill="none" stroke="${c}" stroke-width="2.5"/>
+                <line x1="89" y1="0" x2="89" y2="8" stroke="${c}" stroke-width="1.5"/>
+                <line x1="93" y1="0" x2="93" y2="8" stroke="${c}" stroke-width="1.5"/>
+                <path d="M26 8 L44 15" fill="none" stroke="${c}" stroke-width="4.5" stroke-linecap="round"/>
+                <path d="M74 8 L56 15" fill="none" stroke="${c}" stroke-width="4.5" stroke-linecap="round"/>
+                <circle cx="36" cy="18" r="7" fill="none" stroke="${c}" stroke-width="2"/>
+                <circle cx="36" cy="19" r="3.5" fill="${c}"/>
+                <circle cx="64" cy="18" r="7" fill="none" stroke="${c}" stroke-width="2"/>
+                <circle cx="64" cy="19" r="3.5" fill="${c}"/>
+                <path d="M29 22 Q33 26 36 25" fill="none" stroke="${c}" stroke-width="1.5"/>
+                <path d="M43 22 Q39 26 36 25" fill="none" stroke="${c}" stroke-width="1.5"/>
+                <path d="M57 22 Q61 26 64 25" fill="none" stroke="${c}" stroke-width="1.5"/>
+                <path d="M71 22 Q67 26 64 25" fill="none" stroke="${c}" stroke-width="1.5"/>
+                <path d="M44 27 L46 32 Q50 34 54 32 L56 27" fill="none" stroke="${c}" stroke-width="2"/>
+                <line x1="30" y1="36" x2="70" y2="36" stroke="${c}" stroke-width="2.5"/>
+                <line x1="30" y1="43" x2="70" y2="43" stroke="${c}" stroke-width="2.5"/>
+                <path d="M34 36 L32 43" fill="none" stroke="${c}" stroke-width="1.5"/>
+                <path d="M40 36 L38 43" fill="none" stroke="${c}" stroke-width="1.5"/>
+                <path d="M46 36 L44 43" fill="none" stroke="${c}" stroke-width="1.5"/>
+                <path d="M52 36 L50 43" fill="none" stroke="${c}" stroke-width="1.5"/>
+                <path d="M58 36 L56 43" fill="none" stroke="${c}" stroke-width="1.5"/>
+                <path d="M64 36 L62 43" fill="none" stroke="${c}" stroke-width="1.5"/>
+                <line x1="68" y1="22" x2="78" y2="22" stroke="${c}" stroke-width="2"/>
+                <line x1="70" y1="19" x2="70" y2="25" stroke="${c}" stroke-width="1.5"/>
+                <line x1="73" y1="19" x2="73" y2="25" stroke="${c}" stroke-width="1.5"/>
+                <line x1="76" y1="19" x2="76" y2="25" stroke="${c}" stroke-width="1.5"/>
+                <line x1="22" y1="14" x2="32" y2="14" stroke="${c}" stroke-width="2"/>
+                <line x1="24" y1="12" x2="24" y2="16" stroke="${c}" stroke-width="1.5"/>
+                <line x1="27" y1="12" x2="27" y2="16" stroke="${c}" stroke-width="1.5"/>
+                <line x1="30" y1="12" x2="30" y2="16" stroke="${c}" stroke-width="1.5"/>
+                <circle cx="40" cy="47" r="3" fill="none" stroke="${c}" stroke-width="2"/>
+                <line x1="37" y1="47" x2="43" y2="47" stroke="${c}" stroke-width="1.5"/>
+                <circle cx="60" cy="47" r="3" fill="none" stroke="${c}" stroke-width="2"/>
+                <line x1="57" y1="47" x2="63" y2="47" stroke="${c}" stroke-width="1.5"/>
+                <line x1="42" y1="50" x2="58" y2="50" stroke="${c}" stroke-width="${sw}"/>
+            </svg>`
+        };
+        return designs[color] || designs.green;
+    }
+
+    const parts = {
+        // ─── Torso (unchanged) ───
+        torso_ul: `<svg viewBox="0 0 50 50">
+            <rect x="3" y="3" width="44" height="44" rx="4" fill="none" stroke="${c}" stroke-width="3"/>
+            <line x1="15" y1="20" x2="35" y2="20" stroke="${c}" stroke-width="2" stroke-dasharray="4,3"/>
+            <line x1="15" y1="30" x2="35" y2="30" stroke="${c}" stroke-width="2" stroke-dasharray="4,3"/>
+        </svg>`,
+        torso_ur: `<svg viewBox="0 0 50 50">
+            <rect x="3" y="3" width="44" height="44" rx="4" fill="none" stroke="${c}" stroke-width="3"/>
+            <line x1="15" y1="20" x2="35" y2="20" stroke="${c}" stroke-width="2" stroke-dasharray="4,3"/>
+            <line x1="15" y1="30" x2="35" y2="30" stroke="${c}" stroke-width="2" stroke-dasharray="4,3"/>
+        </svg>`,
+        torso_bl: `<svg viewBox="0 0 50 50">
+            <rect x="3" y="3" width="44" height="44" rx="4" fill="none" stroke="${c}" stroke-width="3"/>
+            <line x1="15" y1="20" x2="35" y2="20" stroke="${c}" stroke-width="2" stroke-dasharray="4,3"/>
+            <line x1="15" y1="30" x2="35" y2="30" stroke="${c}" stroke-width="2" stroke-dasharray="4,3"/>
+        </svg>`,
+        torso_br: `<svg viewBox="0 0 50 50">
+            <rect x="3" y="3" width="44" height="44" rx="4" fill="none" stroke="${c}" stroke-width="3"/>
+            <line x1="15" y1="20" x2="35" y2="20" stroke="${c}" stroke-width="2" stroke-dasharray="4,3"/>
+            <line x1="15" y1="30" x2="35" y2="30" stroke="${c}" stroke-width="2" stroke-dasharray="4,3"/>
+        </svg>`,
+        torso: `<svg viewBox="0 0 50 50">
+            <rect x="3" y="3" width="44" height="44" rx="4" fill="none" stroke="${c}" stroke-width="3"/>
+            <line x1="15" y1="20" x2="35" y2="20" stroke="${c}" stroke-width="2" stroke-dasharray="4,3"/>
+            <line x1="15" y1="30" x2="35" y2="30" stroke="${c}" stroke-width="2" stroke-dasharray="4,3"/>
+        </svg>`,
+
+        // ─── UPPER ARMS: Angular L-bend (shoulder-to-elbow), thin ───
+        r_upper_arm: `<svg viewBox="0 0 50 50">
+            <path d="M48 10 L28 10 Q15 10 15 22 L15 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <path d="M48 22 L33 22 Q25 22 25 30 L25 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <line x1="12" y1="48" x2="28" y2="48" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
+        </svg>`,
+
+        l_upper_arm: `<svg viewBox="0 0 50 50">
+            <path d="M2 10 L22 10 Q35 10 35 22 L35 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <path d="M2 22 L17 22 Q25 22 25 30 L25 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <line x1="22" y1="48" x2="38" y2="48" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
+        </svg>`,
+
+        // ─── LOWER ARMS: Thin straight parallel lines (10px apart) ───
+        r_lower_arm: `<svg viewBox="0 0 50 50">
+            <line x1="12" y1="2" x2="28" y2="2" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
+            <line x1="15" y1="0" x2="15" y2="50" stroke="${c}" stroke-width="${sw}"/>
+            <line x1="25" y1="0" x2="25" y2="50" stroke="${c}" stroke-width="${sw}"/>
+        </svg>`,
+
+        l_lower_arm: `<svg viewBox="0 0 50 50">
+            <line x1="22" y1="2" x2="38" y2="2" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
+            <line x1="25" y1="0" x2="25" y2="50" stroke="${c}" stroke-width="${sw}"/>
+            <line x1="35" y1="0" x2="35" y2="50" stroke="${c}" stroke-width="${sw}"/>
+        </svg>`,
+
+        // ─── HANDS: 5 spread fingers fanning from wrist (no palm curve) ───
+        r_hand: `<svg viewBox="0 0 50 50">
+            <line x1="15" y1="0" x2="16" y2="14" stroke="${c}" stroke-width="${sw}"/>
+            <line x1="25" y1="0" x2="24" y2="14" stroke="${c}" stroke-width="${sw}"/>
+            <line x1="8" y1="14" x2="1" y2="42" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <line x1="13" y1="15" x2="9" y2="45" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <line x1="20" y1="15" x2="20" y2="48" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <line x1="27" y1="15" x2="31" y2="45" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <line x1="32" y1="14" x2="39" y2="40" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+        </svg>`,
+
+        l_hand: `<svg viewBox="0 0 50 50">
+            <line x1="25" y1="0" x2="26" y2="14" stroke="${c}" stroke-width="${sw}"/>
+            <line x1="35" y1="0" x2="34" y2="14" stroke="${c}" stroke-width="${sw}"/>
+            <line x1="18" y1="14" x2="11" y2="40" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <line x1="23" y1="15" x2="19" y2="45" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <line x1="30" y1="15" x2="30" y2="48" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <line x1="37" y1="15" x2="41" y2="45" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <line x1="42" y1="14" x2="49" y2="42" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+        </svg>`,
+
+        // ─── UPPER LEGS: Anatomical thigh — wide at hip, tapers to knee, kneecap arc ───
+        l_upper_leg: `<svg viewBox="0 0 50 50">
+            <path d="M5 0 C3 12 7 30 14 46" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <path d="M43 0 C45 12 41 30 34 46" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <path d="M14 46 Q24 52 34 46" fill="none" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>`,
+
+        r_upper_leg: `<svg viewBox="0 0 50 50">
+            <path d="M7 0 C5 12 9 30 16 46" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <path d="M45 0 C47 12 43 30 36 46" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <path d="M16 46 Q26 52 36 46" fill="none" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>`,
+
+        // ─── LOWER LEGS: Anatomical calf — calf muscle bulge, tapers to thin ankle ───
+        l_lower_leg: `<svg viewBox="0 0 50 50">
+            <path d="M15 0 C8 12 13 30 22 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <path d="M33 0 C34 12 32 30 26 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+        </svg>`,
+
+        r_lower_leg: `<svg viewBox="0 0 50 50">
+            <path d="M17 0 C16 12 18 30 24 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <path d="M35 0 C42 12 37 30 28 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+        </svg>`,
+
+        // ─── FEET: Wide flat shape with distinct toe bumps ───
+        l_foot: `<svg viewBox="0 0 50 50">
+            <path d="M20 0 L20 20 Q20 34 12 40 Q6 44 10 46 L40 46 Q44 44 40 40 Q34 34 30 28 L30 0" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="14" cy="43" r="2.5" fill="${c}"/>
+            <circle cx="21" cy="44.5" r="2.5" fill="${c}"/>
+            <circle cx="28" cy="44.5" r="2.5" fill="${c}"/>
+            <circle cx="35" cy="43" r="2.5" fill="${c}"/>
+        </svg>`,
+
+        r_foot: `<svg viewBox="0 0 50 50">
+            <path d="M20 0 L20 28 Q16 34 10 40 Q6 44 10 46 L40 46 Q44 44 38 40 Q30 34 30 20 L30 0" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="15" cy="43" r="2.5" fill="${c}"/>
+            <circle cx="22" cy="44.5" r="2.5" fill="${c}"/>
+            <circle cx="29" cy="44.5" r="2.5" fill="${c}"/>
+            <circle cx="36" cy="43" r="2.5" fill="${c}"/>
+        </svg>`,
+
+        // ─── Generic types (for card display - no left/right distinction) ───
+        upper_arm: `<svg viewBox="0 0 50 50">
+            <path d="M48 10 L28 10 Q15 10 15 22 L15 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <path d="M48 22 L33 22 Q25 22 25 30 L25 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <line x1="12" y1="48" x2="28" y2="48" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
+        </svg>`,
+        lower_arm: `<svg viewBox="0 0 50 50">
+            <line x1="12" y1="2" x2="28" y2="2" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
+            <line x1="15" y1="0" x2="15" y2="50" stroke="${c}" stroke-width="${sw}"/>
+            <line x1="25" y1="0" x2="25" y2="50" stroke="${c}" stroke-width="${sw}"/>
+        </svg>`,
+        hand: `<svg viewBox="0 0 50 50">
+            <line x1="15" y1="0" x2="16" y2="14" stroke="${c}" stroke-width="${sw}"/>
+            <line x1="25" y1="0" x2="24" y2="14" stroke="${c}" stroke-width="${sw}"/>
+            <line x1="8" y1="14" x2="1" y2="42" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <line x1="13" y1="15" x2="9" y2="45" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <line x1="20" y1="15" x2="20" y2="48" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <line x1="27" y1="15" x2="31" y2="45" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <line x1="32" y1="14" x2="39" y2="40" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+        </svg>`,
+        upper_leg: `<svg viewBox="0 0 50 50">
+            <path d="M6 0 C4 12 8 30 15 46" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <path d="M44 0 C46 12 42 30 35 46" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <path d="M15 46 Q25 52 35 46" fill="none" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>`,
+        lower_leg: `<svg viewBox="0 0 50 50">
+            <path d="M16 0 C9 12 14 30 23 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <path d="M34 0 C41 12 36 30 27 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+        </svg>`,
+        foot: `<svg viewBox="0 0 50 50">
+            <path d="M20 0 L20 28 Q16 34 10 40 Q6 44 10 46 L40 46 Q44 44 38 40 Q30 34 30 20 L30 0" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="15" cy="43" r="2.5" fill="${c}"/>
+            <circle cx="22" cy="44.5" r="2.5" fill="${c}"/>
+            <circle cx="29" cy="44.5" r="2.5" fill="${c}"/>
+            <circle cx="36" cy="43" r="2.5" fill="${c}"/>
+        </svg>`
+    };
+
+    return parts[partType] || `<svg viewBox="0 0 50 50"><text x="25" y="30" text-anchor="middle" font-size="8" fill="#999">${partType}</text></svg>`;
+}
+
+function getJokerSVG() {
+    return `<svg viewBox="0 0 50 50">
+        <polygon points="25,2 30,18 48,18 34,28 39,45 25,35 11,45 16,28 2,18 20,18" fill="none" stroke="#ffd700" stroke-width="3"/>
+        <text x="25" y="28" text-anchor="middle" font-size="10" font-weight="bold" fill="#ffd700">J</text>
+    </svg>`;
+}
+
+// ─── Responsive Card Sizing ───
+function updateCardSize() {
+    const maxWidth = Math.min(window.innerWidth - 40, 700);
+    const calcSize = Math.floor(maxWidth / gridCols) - 6;
+    const cardSize = Math.min(75, Math.max(36, calcSize));
+    document.documentElement.style.setProperty('--card-size', cardSize + 'px');
+
+    const bodyCell = Math.min(55, Math.max(32, Math.floor(cardSize * 0.75)));
+    document.documentElement.style.setProperty('--body-cell', bodyCell + 'px');
+}
+
+window.addEventListener('resize', updateCardSize);
+
+// ─── Build Mode Hint ───
+document.getElementById('buildModeSelect').addEventListener('change', function() {
+    const hints = {
+        classic: '经典：从中间向外拼装',
+        reverse: '反向：从手 + 脚 + 头开始，向内拼到躯干！',
+        mixed: '混合：玩家的拼装方向交替 —— 一人向外拼，一人向内拼'
+    };
+    document.getElementById('buildModeHint').textContent = hints[this.value] || '';
+});
+
+// ─── Rules Modal ───
+function openRules() {
+    rulesModal.style.display = 'block';
+}
+
+function closeRules() {
+    rulesModal.style.display = 'none';
+    localStorage.setItem('frankenstein_rules_v1', 'true');
+}
+
+function shareOnWhatsApp() {
+    const shareUrl = /^(file|parados):$/.test(window.location.protocol) ? "https://game.ywesee.com/parados/" + (window.location.pathname.split("/").pop() || "index.html") : window.location.href;
+    const msg = `来玩科学怪人：${shareUrl}\n\n获取 Parados 应用：\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
+    if (navigator.share) { navigator.share({ text: msg }).catch(() => {}); return; }
+    // No share API (Android WebView, in-app browsers): copy to clipboard.
+    // Never wa.me — Android WebView can't dispatch whatsapp:// (ERR_UNKNOWN_URL_SCHEME).
+    const note = '消息已复制 —— 请粘贴到 WhatsApp。';
+    const fallback = () => { const ta = document.createElement('textarea'); ta.value = msg; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); let ok=false; try { ok = document.execCommand('copy'); } catch {} ta.remove(); if (ok) alert(note); else prompt(note, msg); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(msg).then(() => alert(note)).catch(fallback);
+    else fallback();
+}
+
+window.onclick = (e) => {
+    if (e.target === rulesModal) closeRules();
+};
+
+function closeVictory() {
+    victoryOverlay.classList.remove('show');
+}
+
+// ─── Reset ───
+function confirmReset() {
+    if (gameState === 'GAME_OVER' || confirm('开始新游戏？当前进度将会丢失。')) {
+        backToSetup();
+    }
+}
+
+function backToSetup() {
+    gameState = 'SETUP';
+    isSoloMode = false;
+    gameScreen.style.display = 'none';
+    setupScreen.style.display = 'block';
+    victoryOverlay.classList.remove('show');
+    jokerModal.classList.remove('show');
+}
+
+// ─── CSV Export ───
+function logAction(action, card) {
+    sessionLog.push({
+        gameId: currentGameId,
+        turn: turnCounter,
+        player: currentPlayer + 1,
+        action,
+        cardPart: card ? card.partType : '',
+        cardColor: card ? card.color : '',
+        timestamp: new Date().toISOString()
+    });
+}
+
+function downloadCSV() {
+    if (sessionLog.length === 0) {
+        alert('没有可导出的游戏数据。');
+        return;
+    }
+    let csv = 'Game_ID,Turn,Player,Action,Part,Color,Timestamp\n';
+    for (const r of sessionLog) {
+        csv += `${r.gameId},${r.turn},${r.player},${r.action},${r.cardPart},${r.cardColor},${r.timestamp}\n`;
+    }
+
+    // Save to server
+    fetch('cgi-bin/save_csv.py', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({game: 'frankenstein_cn', csv: csv})
+    }).then(r => r.json()).then(d => {
+        if (d.ok) console.log('CSV saved on server: ' + d.filename);
+        else console.warn('Server CSV save failed: ' + (d.error || 'unknown'));
+    }).catch(e => console.warn('Server CSV save failed: ' + e));
+
+    // Local download
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    a.download = `frankenstein_cn_${pad(now.getHours())}${pad(now.getMinutes())}_${pad(now.getDate())}.${pad(now.getMonth()+1)}.${now.getFullYear()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// ─── Keyboard Shortcuts ───
+document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.key === 'z') {
+        e.preventDefault();
+        undoLastFlip();
+    }
+});
+
+// ─── Init ───
+if (!localStorage.getItem('frankenstein_rules_v1')) {
+    openRules();
+}
+
+// #rules deep-link — share rules per game/language
+function applyRulesHash() { if (location.hash === '#rules') openRules(); }
+window.addEventListener('hashchange', applyRulesHash);
+applyRulesHash();
+</script>
+</body>
+</html>
