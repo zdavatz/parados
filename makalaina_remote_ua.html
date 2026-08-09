@@ -1,0 +1,2325 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>MAKA LAINA - Стратегічний фінішний ривок</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0e1117;
+            --surface: #1a1d27;
+            --surface2: #242836;
+            --border: #2e3345;
+            --text: #e8eaed;
+            --text-dim: #8b8fa3;
+            --accent: #c9a227;
+            --accent-glow: rgba(201, 162, 39, 0.15);
+            --p1: #e8c547;
+            --p2: #47b8e8;
+            --red: #e85d5d;
+            --green: #5de88a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Subtle grid background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(201,162,39,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(201,162,39,0.03) 1px, transparent 1px);
+            background-size: 44px 44px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        header {
+            text-align: center;
+            padding: 28px 20px 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        header h1 {
+            font-family: 'Playfair Display', serif;
+            font-weight: 900;
+            font-size: 2.2rem;
+            letter-spacing: 0.15em;
+            color: var(--accent);
+            text-shadow: 0 0 40px rgba(201,162,39,0.3);
+        }
+
+        header .subtitle {
+            font-size: 0.7rem;
+            letter-spacing: 0.4em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-top: 4px;
+        }
+
+        /* CONNECTION SCREEN */
+        #connect-screen {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .connect-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 48px 40px;
+            width: 420px;
+            max-width: 90vw;
+            text-align: center;
+        }
+
+        .connect-box h2 {
+            font-family: 'Playfair Display', serif;
+            font-weight: 900;
+            font-size: 2rem;
+            color: var(--accent);
+            letter-spacing: 0.1em;
+            margin-bottom: 6px;
+        }
+
+        .connect-box .tagline {
+            font-size: 0.7rem;
+            letter-spacing: 0.35em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 32px;
+        }
+
+        .field-group {
+            margin-bottom: 16px;
+            text-align: left;
+        }
+
+        .field-group label {
+            display: block;
+            font-size: 0.7rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 6px;
+        }
+
+        .field-group input, .field-group select {
+            width: 100%;
+            padding: 12px 14px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .field-group input:focus, .field-group select:focus {
+            border-color: var(--accent);
+        }
+
+        .field-group select { cursor: pointer; }
+        .field-group select option { background: var(--surface2); }
+
+        .connect-btn {
+            width: 100%;
+            padding: 14px;
+            margin-top: 20px;
+            background: var(--accent);
+            color: var(--bg);
+            border: none;
+            border-radius: 8px;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 700;
+            font-size: 0.9rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .connect-btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
+        .connect-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        #connect-status {
+            margin-top: 16px;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            min-height: 20px;
+        }
+
+        #connect-status.error { color: var(--red); }
+        #connect-status.success { color: var(--green); }
+
+        /* MAIN LAYOUT */
+        #game-wrap {
+            display: none;
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px 40px;
+        }
+
+        #game-container {
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* BOARD */
+        .board-frame {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+
+        #board {
+            display: grid;
+            grid-template-columns: repeat(12, 40px);
+            grid-template-rows: repeat(12, 40px);
+            gap: 1px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .cell {
+            width: 40px; height: 40px;
+            background: var(--surface2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.15s;
+        }
+
+        .cell:hover { background: #2d3248; }
+        .cell.los { background: rgba(201,162,39,0.08); }
+        .cell.selected { background: rgba(33,150,243,0.15); box-shadow: inset 0 0 0 2px #2196f3; }
+        .cell.reachable { background: rgba(93,232,138,0.1); box-shadow: inset 0 0 6px rgba(93,232,138,0.3); }
+        .cell.placeable { background: rgba(93,232,138,0.35); box-shadow: inset 0 0 8px rgba(93,232,138,0.5); cursor: crosshair; }
+        @keyframes pulse-placeable { 0%,100% { box-shadow: inset 0 0 6px rgba(93,232,138,0.3); } 50% { box-shadow: inset 0 0 12px rgba(93,232,138,0.7); } }
+        .cell.placeable { animation: pulse-placeable 1.2s ease-in-out infinite; }
+
+        .disc {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 0.8rem;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            z-index: 2;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            transition: transform 0.15s;
+        }
+
+        .cell:hover .disc { transform: scale(1.08); }
+
+        .collector {
+            width: 34px; height: 34px;
+            border-radius: 6px;
+            z-index: 3;
+            box-shadow: 0 0 12px rgba(201,162,39,0.4), 0 2px 6px rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        .collector.p1 {
+            background: var(--p1);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: var(--bg);
+        }
+
+        .collector.p2 {
+            background: var(--p2);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: var(--bg);
+        }
+
+        /* SIDEBAR */
+        #sidebar {
+            width: 340px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .panel-title {
+            font-size: 0.65rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 10px;
+        }
+
+        #status-text {
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--accent);
+        }
+
+        .your-turn { animation: pulse-glow 1.5s ease-in-out infinite; }
+
+        @keyframes pulse-glow {
+            0%, 100% { text-shadow: 0 0 8px rgba(201,162,39,0.3); }
+            50% { text-shadow: 0 0 20px rgba(201,162,39,0.6); }
+        }
+
+        .player-indicator {
+            display: inline-block;
+            width: 10px; height: 10px;
+            border-radius: 3px;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+
+        .player-indicator.p1 { background: var(--p1); }
+        .player-indicator.p2 { background: var(--p2); }
+
+        /* Scores */
+        .score-grid {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 4px 12px;
+            font-size: 0.85rem;
+        }
+
+        .score-grid .hdr {
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            padding-bottom: 4px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .score-color {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .score-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .score-val { text-align: center; font-weight: 500; }
+        .worthless { text-decoration: line-through; color: var(--text-dim); opacity: 0.4; }
+        .worthless-box { display: inline-block; border: 2px solid; padding: 1px 5px; border-radius: 4px; font-weight: bold; opacity: 0.7; }
+
+        #history-controls { display: none; background: var(--surface2); border-radius: 8px; padding: 10px; margin-top: 10px; text-align: center; border: 1px solid var(--border); }
+        #history-controls .history-nav { display: flex; gap: 6px; justify-content: center; align-items: center; margin-top: 6px; }
+        #history-controls .history-nav button { padding: 6px 14px; cursor: pointer; border: 1px solid var(--border); border-radius: 4px; background: var(--surface); color: var(--text); font-weight: bold; font-size: 1em; }
+        #history-controls .history-nav button:hover { background: var(--border); }
+        #history-label { font-weight: bold; color: var(--accent); margin: 0; font-size: 0.9em; }
+        #history-desc { font-size: 0.8em; color: var(--text-dim); margin: 4px 0 0; }
+
+        /* Buttons */
+        .action-btn {
+            width: 100%;
+            padding: 11px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--surface2);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover { border-color: var(--accent); background: rgba(201,162,39,0.08); }
+
+        .action-btn.danger { border-color: #5d3333; }
+        .action-btn.danger:hover { border-color: var(--red); background: rgba(232,93,93,0.08); }
+
+        /* DRAFT PANEL */
+        #draft-panel {
+            display: none;
+            background: rgba(33, 150, 243, 0.06);
+            border: 1px solid rgba(33, 150, 243, 0.2);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        #draft-label {
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+
+        #draft-choices {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin: 10px 0;
+        }
+
+        #draft-choices .disc {
+            width: 50px; height: 50px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        #draft-choices .disc:hover {
+            transform: scale(1.15);
+            box-shadow: 0 0 12px rgba(33, 150, 243, 0.5);
+        }
+
+        /* SACRIFICE PANEL */
+        #sacrifice-panel {
+            display: none;
+            background: rgba(232, 93, 93, 0.06);
+            border: 1px solid rgba(232, 93, 93, 0.2);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        #sacrifice-choices {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+            margin: 10px 0;
+        }
+
+        #sacrifice-choices .disc {
+            width: 38px; height: 38px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        #sacrifice-choices .disc:hover {
+            transform: scale(1.15);
+            box-shadow: 0 0 8px rgba(168, 93, 232, 0.5);
+        }
+
+        #bag-count {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-align: center;
+            margin-top: 4px;
+        }
+
+        /* CHAT */
+        #chat-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 200px;
+            max-height: 300px;
+        }
+
+        #chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column-reverse;
+            gap: 4px;
+            padding-right: 4px;
+        }
+
+        #chat-messages::-webkit-scrollbar { width: 4px; }
+        #chat-messages::-webkit-scrollbar-track { background: transparent; }
+        #chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+        .chat-msg {
+            font-size: 0.8rem;
+            line-height: 1.4;
+            padding: 4px 0;
+        }
+
+        .chat-msg .sender {
+            font-weight: 700;
+            margin-right: 6px;
+        }
+
+        .chat-msg .sender.p1 { color: var(--p1); }
+        .chat-msg .sender.p2 { color: var(--p2); }
+
+        .chat-msg.system {
+            color: var(--text-dim);
+            font-style: italic;
+            font-size: 0.75rem;
+        }
+
+        .chat-input-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .chat-input-row input {
+            flex: 1;
+            padding: 9px 12px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.8rem;
+            outline: none;
+        }
+
+        .chat-input-row input:focus { border-color: var(--accent); }
+
+        .chat-input-row button {
+            padding: 9px 16px;
+            background: var(--accent);
+            color: var(--bg);
+            border: none;
+            border-radius: 6px;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 700;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: filter 0.2s;
+        }
+
+        .chat-input-row button:hover { filter: brightness(1.15); }
+
+        /* MODAL */
+        #modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px);
+        }
+
+        #modal {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            width: 560px;
+            max-width: 90vw;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 32px;
+        }
+
+        #modal h2 {
+            font-family: 'Playfair Display', serif;
+            color: var(--accent);
+            margin-bottom: 16px;
+        }
+
+        #modal h3 { color: var(--text); margin: 16px 0 8px; font-size: 0.95rem; }
+        #modal p, #modal li { color: var(--text-dim); font-size: 0.85rem; line-height: 1.6; }
+        #modal ul { padding-left: 20px; }
+        #modal li { margin-bottom: 6px; }
+        #modal b { color: var(--text); }
+
+        @media (max-width: 900px) {
+            #game-container { flex-direction: column; align-items: center; }
+            #sidebar { width: 100%; max-width: 500px; }
+            #board { grid-template-columns: repeat(12, 32px); grid-template-rows: repeat(12, 32px); }
+            .cell { width: 32px; height: 32px; }
+            .disc { width: 26px; height: 26px; font-size: 0.7rem; }
+            .collector { width: 28px; height: 28px; font-size: 0.85rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- CONNECTION SCREEN -->
+<div id="connect-screen">
+    <div class="connect-box">
+        <h2>MAKA LAINA</h2>
+        <div class="tagline">Стратегічний фінішний ривок</div>
+
+        <div class="field-group">
+            <label>Ваше ім'я</label>
+            <input type="text" id="player-name" placeholder="Введіть ваше ім'я" maxlength="20">
+        </div>
+        <div class="field-group">
+            <label>ID кімнати (обидва гравці вводять однаковий ID)</label>
+            <input type="text" id="room-id" placeholder="напр. myroom42">
+        </div>
+
+        <button class="connect-btn" id="connect-btn" onclick="startConnection()">Підключитися</button>
+        <div id="connect-status"></div>
+    </div>
+</div>
+
+<!-- GAME -->
+<header>
+    <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
+        <h1 style="margin:5px 0;">MAKA LAINA<span id="position-title" style="color:#7f8c8d; font-weight:normal;"></span></h1>
+        <button class="action-btn" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">Поділитися у WhatsApp</button>
+    </div>
+    <div class="subtitle">Стратегічний фінішний ривок</div>
+</header>
+
+<div id="setup-panel" style="max-width:600px; margin:0 auto 16px; text-align:center; background:var(--surface); padding:16px 20px; border-radius:12px; border:1px solid var(--border);">
+    <p style="font-weight:bold; margin:0 0 10px; color:var(--accent);">Почати нову гру:</p>
+    <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+        <button class="action-btn" style="width:auto; padding:10px 24px; font-size:1em;" onclick="startRandom()">▶ Почати</button>
+        <button class="action-btn" style="width:auto; padding:10px 24px; font-size:1em; background:#6d4c41; color:white;" onclick="document.getElementById('ml-opening-file').click()">📥 Завантажити дебют (CSV)</button>
+        <input type="file" id="ml-opening-file" accept=".csv,text/csv" style="display:none;" onchange="mlImportOpeningFile(this)">
+    </div>
+    <p style="font-weight:bold; margin:12px 0 6px; color:var(--accent); font-size:0.9rem;">Готові дебюти (лише господар — колектори зафіксовані, Гравець 2 обирає колір):</p>
+    <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+        <button class="action-btn" style="width:auto; padding:8px 12px; background:#8e44ad; color:white;" onclick="loadBuiltinOpening(0)">★ Дебют 1</button>
+        <button class="action-btn" style="width:auto; padding:8px 12px; background:#8e44ad; color:white;" onclick="loadBuiltinOpening(1)">★ Дебют 2</button>
+        <button class="action-btn" style="width:auto; padding:8px 12px; background:#8e44ad; color:white;" onclick="loadBuiltinOpening(2)">★ Дебют 3</button>
+        <button class="action-btn" style="width:auto; padding:8px 12px; background:#8e44ad; color:white;" onclick="loadBuiltinOpening(3)">★ Дебют 4</button>
+        <button class="action-btn" style="width:auto; padding:8px 12px; background:#8e44ad; color:white;" onclick="loadBuiltinOpening(4)">★ Дебют 5</button>
+        <button class="action-btn" style="width:auto; padding:8px 12px; background:#8e44ad; color:white;" onclick="loadBuiltinOpening(5)">★ Дебют 6</button>
+        <button class="action-btn" style="width:auto; padding:8px 12px; background:#8e44ad; color:white;" onclick="loadBuiltinOpening(6)">★ Дебют 7</button>
+        <button class="action-btn" style="width:auto; padding:8px 12px; background:#8e44ad; color:white;" onclick="loadBuiltinOpening(7)">★ Дебют 8</button>
+        <button class="action-btn" style="width:auto; padding:8px 12px; background:#8e44ad; color:white;" onclick="loadBuiltinOpening(8)">★ Дебют 9</button>
+        <button class="action-btn" style="width:auto; padding:8px 12px; background:#8e44ad; color:white;" onclick="loadBuiltinOpening(9)">★ Дебют 10</button>
+        <button class="action-btn" style="width:auto; padding:8px 12px; background:#8e44ad; color:white;" onclick="loadBuiltinOpening(10)">★ Дебют 11</button>
+        <button class="action-btn" style="width:auto; padding:8px 12px; background:#8e44ad; color:white;" onclick="loadBuiltinOpening(11)">★ Дебют 12</button>
+        <button class="action-btn" style="width:auto; padding:8px 12px; background:#8e44ad; color:white;" onclick="loadBuiltinOpening(12)">★ Дебют 13</button>
+        <button class="action-btn" style="width:auto; padding:8px 12px; background:#8e44ad; color:white;" onclick="loadBuiltinOpening(13)">★ Дебют 14</button>
+    </div>
+    <p style="font-size:0.75rem; color:var(--text-dim); margin-top:8px;">Господар (Гравець 1) розставляє обидва колектори. Потім гість (Гравець 2) обирає колір — господар грає іншим і ходить першим.<br><b>Завантажити дебют</b> / <b>Готові дебюти</b> (лише господар): диски <i>та</i> обидва колектори зафіксовані — без живого розставляння, Гравець 2 усе одно обирає колір.</p>
+</div>
+
+<div id="p2-choose-panel" style="display:none; max-width:600px; margin:0 auto 16px; text-align:center; background:var(--surface); padding:16px 20px; border-radius:12px; border:1px solid var(--border);">
+    <p style="font-weight:bold; margin:0 0 4px; color:var(--accent);">Гравець 2: оберіть свій колір</p>
+    <p style="margin:0 0 10px; font-size:0.85em; color:var(--text-dim);">Гравець 1 розпочне гру іншим.</p>
+    <div style="display:flex; gap:12px; justify-content:center;">
+        <button class="action-btn" style="width:auto; padding:10px 24px; background:#222; color:white; font-size:1em;" onclick="p2PicksColor(1)">Я гратиму &#9632; Чорним</button>
+        <button class="action-btn" style="width:auto; padding:10px 24px; background:#f5f5f5; color:#222; border:2px solid #999; font-size:1em;" onclick="p2PicksColor(2)">Я гратиму &#9633; Білим</button>
+    </div>
+    <p id="p2-choose-hint" style="font-size:0.75rem; color:var(--text-dim); margin-top:8px;"></p>
+</div>
+
+<div id="game-wrap">
+    <div id="game-container">
+        <div class="board-frame">
+            <div id="board"></div>
+        </div>
+        <div id="sidebar">
+            <div class="panel">
+                <div class="panel-title">Статус</div>
+                <div id="status-text">Очікування…</div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">Рахунок</div>
+                <div class="score-grid">
+                    <div class="hdr">Колір</div>
+                    <div class="hdr" style="text-align:center"><span class="player-indicator p1"></span>P1</div>
+                    <div class="hdr" style="text-align:center"><span class="player-indicator p2"></span>P2</div>
+                </div>
+                <div class="score-grid" id="score-body"></div>
+                <div id="bag-count"></div>
+            </div>
+
+            <div class="panel" style="display:flex; flex-direction:column; gap:8px;">
+                <button class="action-btn" onclick="toggleRules(true)">📖 Правила</button>
+                <button class="action-btn" id="los-toggle" onclick="toggleLOS()" style="opacity:0.6;">Показати лінію огляду</button>
+                <button class="action-btn" id="csv-export-btn" onclick="downloadCSV()" style="display:none; background:#27ae60; color:white;">Експорт CSV</button>
+                <button class="action-btn" id="opening-export-btn" onclick="exportOpeningCSV()" style="background:#6d4c41; color:white;">📋 Експортувати дебют</button>
+                <button class="action-btn" id="sacrifice-btn" onclick="doSacrifice()" style="display:none;">⚡ Пожертвувати та рухатись</button>
+                <button class="action-btn" id="relinquish-btn" onclick="doRelinquish()" style="display:none;">Пропустити хід (2/2)</button>
+                <p id="stuck-hint" style="display:none; font-size: 0.75em; color: #7f8c8d; text-align: center;">Немає доступних ходів! Пожертвуйте диск (суперник обирає) або пропустіть хід.</p>
+                <div id="draft-panel">
+                    <p id="draft-label">Розмістіть цей диск у своїй лінії огляду:</p>
+                    <div id="draft-choices"></div>
+                </div>
+                <div id="sacrifice-panel">
+                    <p style="font-weight:bold; color:var(--text); margin-bottom:8px; font-size:0.85rem;">ПОЖЕРТВА: оберіть диск для пожертви (значення = дальність руху)</p>
+                    <div id="sacrifice-choices"></div>
+                </div>
+                <div id="history-controls">
+                    <p id="history-label">Історія ходів</p>
+                    <div class="history-nav">
+                        <button onclick="stepHistory(-999)" title="Перший">&#x23EE;</button>
+                        <button onclick="stepHistory(-1)" title="Попередній">&#x25C0;</button>
+                        <span id="history-pos" style="color:var(--text-dim); font-size:0.85em;">0 / 0</span>
+                        <button onclick="stepHistory(1)" title="Наступний">&#x25B6;</button>
+                        <button onclick="stepHistory(999)" title="Останній">&#x23ED;</button>
+                    </div>
+                    <p id="history-desc"></p>
+                    <button class="action-btn" style="margin-top:8px; background:#27ae60; color:white;" onclick="downloadCSV()">Експорт CSV</button>
+                </div>
+                <button class="action-btn danger" onclick="window.location.reload()">✕ Покинути гру</button>
+            </div>
+
+            <div class="panel" id="chat-panel">
+                <div class="panel-title">Чат</div>
+                <div id="chat-messages"></div>
+                <div class="chat-input-row">
+                    <input type="text" id="chat-input" placeholder="Напишіть повідомлення…" onkeydown="if(event.key==='Enter')sendChat()">
+                    <button onclick="sendChat()">Надіслати</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- RULES MODAL -->
+<div id="modal-overlay" onclick="toggleRules(false)">
+    <div id="modal" onclick="event.stopPropagation()">
+        <h2>Правила MAKA LAINA</h2>
+        <h3>Мета</h3>
+        <p>Збирайте диски на сітці 12x12, щоб набрати найбільше очок. Гра триває, доки <b>усі диски не зібрано</b> або обидва гравці не можуть ходити.</p>
+        <h3>Зсув і збирання</h3>
+        <ul>
+            <li>Оберіть диск, який <b>не</b> перебуває у вашій лінії огляду (ЛО).</li>
+            <li>Зсуньте його на 1 клітинку, щоб він увійшов у вашу ЛО.</li>
+            <li>Ваш колектор переміщується на цю клітинку та збирає диск.</li>
+            <li>ЛО поширюється у 8 напрямках і блокується іншими дисками чи колекторами.</li>
+        </ul>
+        <h3>Система драфту</h3>
+        <ul>
+            <li>Після кожного збирання з мішка витягується <b>1 новий диск</b>.</li>
+            <li>Ви маєте розмістити його <b>у своїй лінії огляду</b>.</li>
+            <li>Диск не можна зібрати одразу (він у вашій ЛО).</li>
+            <li>Усього 54 диски: 24 на початку на дошці, 24 надходять через драфт, 6 залишаються прихованими.</li>
+        </ul>
+        <h3>Особливі механіки</h3>
+        <ul>
+            <li><b>Число 1:</b> негайний додатковий хід.</li>
+            <li><b>Число 6:</b> майбутні диски цього кольору для вас нічого не варті.</li>
+            <li><b>Застрягли?</b> Ваш суперник обирає один із зібраних вами основних дисків для пожертви: ваш рахунок за цей колір зменшується, але ваш колектор може вільно переміститися на стільки клітинок. <b>Нічого пожертвувати?</b> Ви все одно отримуєте вільний хід-вихід на відстань до 2 клітинок — тож рання пастка ніколи не є миттєвим програшем.</li>
+        </ul>
+        <button class="close-btn" onclick="toggleRules(false)" style="display:block; margin:18px auto 0; padding:12px 36px; font-size:1.1em; cursor:pointer; border:none; border-radius:8px; background:#27ae60; color:white; font-weight:bold;">Зрозуміло!</button>
+    </div>
+</div>
+
+<script>
+// ─── NETWORKING ──────────────────────────────────────────────
+let peer = null;
+let conn = null;
+let myRole = null;    // 'host' or 'join'
+let myPlayer = null;  // 1 or 2
+let myName = '';
+let opponentName = '';
+
+function setConnStatus(msg, cls = '') {
+    const el = document.getElementById('connect-status');
+    el.textContent = msg;
+    el.className = cls;
+}
+
+function startConnection() {
+    const name = document.getElementById('player-name').value.trim();
+    const room = document.getElementById('room-id').value.trim();
+
+    if (!name) { setConnStatus('Будь ласка, введіть ваше ім\'я.', 'error'); return; }
+    if (!room) { setConnStatus('Будь ласка, введіть ID кімнати.', 'error'); return; }
+
+    myName = name;
+    document.getElementById('connect-btn').disabled = true;
+    setConnStatus('Підключення…');
+
+    // Try to claim host. If the host ID is taken, become the joiner.
+    const hostId = `makalaina-${room}-host`;
+
+    peer = new Peer(hostId);
+
+    peer.on('open', () => {
+        // Successfully claimed host
+        myRole = 'host';
+        myPlayer = 1;
+        setConnStatus('Очікування, поки інший гравець приєднається до кімнати "' + room + '"…');
+        peer.on('connection', (c) => {
+            conn = c;
+            setupConn();
+        });
+    });
+
+    peer.on('error', (err) => {
+        if (err.type === 'unavailable-id') {
+            // Host already exists — join as player 2
+            peer.destroy();
+            peer = new Peer();
+            peer.on('open', () => {
+                myRole = 'join';
+                myPlayer = 2;
+                setConnStatus('Приєднання до кімнати "' + room + '"…');
+                conn = peer.connect(hostId, { reliable: true });
+                setupConn();
+            });
+            peer.on('error', (err2) => {
+                setConnStatus('Помилка: ' + err2.message, 'error');
+                document.getElementById('connect-btn').disabled = false;
+            });
+        } else {
+            setConnStatus('Помилка: ' + err.message, 'error');
+            document.getElementById('connect-btn').disabled = false;
+        }
+    });
+}
+
+function setupConn() {
+    conn.on('open', () => {
+        setConnStatus('Підключено!', 'success');
+        conn.send({ type: 'hello', name: myName, player: myPlayer });
+        setTimeout(() => {
+            document.getElementById('connect-screen').style.display = 'none';
+            document.getElementById('game-wrap').style.display = 'block';
+            addSystemMsg('Підключено! Ви — Гравець ' + myPlayer + '.');
+        }, 400);
+    });
+
+    conn.on('data', (data) => {
+        handleNetMessage(data);
+    });
+
+    conn.on('close', () => {
+        addSystemMsg('Суперник відключився.');
+    });
+}
+
+function sendNet(msg) {
+    if (conn && conn.open) conn.send(msg);
+}
+
+function handleNetMessage(data) {
+    switch (data.type) {
+        case 'hello':
+            opponentName = data.name;
+            addSystemMsg(opponentName + ' приєднався як Гравець ' + data.player + '.');
+            break;
+        case 'chat':
+            addChatMsg(data.player, data.name, data.text);
+            break;
+        case 'click':
+            handleClick(data.idx, true);
+            break;
+        case 'sacrifice_pick':
+            applySacrificeDisc(data.discColor, data.discNum, data.discCounted, true);
+            break;
+        case 'sacrifice_request':
+            sacrificingPlayer = data.sacrificingPlayer;
+            gameState = 'SACRIFICE_OPPONENT_SELECT';
+            showSacrificePanel();
+            updateUI(); render();
+            break;
+        case 'relinquish':
+            performRelinquish(true);
+            break;
+        case 'p2_pick_color':
+            applyP2Choice(data.color, true);
+            break;
+        case 'state_sync':
+            applySyncState(data);
+            break;
+    }
+}
+
+// ─── CHAT ────────────────────────────────────────────────────
+function addSystemMsg(text) {
+    const div = document.createElement('div');
+    div.className = 'chat-msg system';
+    div.textContent = text;
+    const container = document.getElementById('chat-messages');
+    container.prepend(div);
+}
+
+function addChatMsg(player, name, text) {
+    const div = document.createElement('div');
+    div.className = 'chat-msg';
+    const span = document.createElement('span');
+    span.className = 'sender p' + player;
+    span.textContent = name + ':';
+    div.appendChild(span);
+    div.appendChild(document.createTextNode(' ' + text));
+    const container = document.getElementById('chat-messages');
+    container.prepend(div);
+}
+
+function sendChat() {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text) return;
+    addChatMsg(myPlayer, myName, text);
+    sendNet({ type: 'chat', player: myPlayer, name: myName, text: text });
+    input.value = '';
+}
+
+// ─── GAME STATE ──────────────────────────────────────────────
+let gameState = 'SETUP';
+let currentPlayer = 1;
+let collectors = { 1: null, 2: null };
+let selectedIdx = null;
+let cells = Array(144).fill(null);
+let bag = [];
+let playerFlags = { 1: {}, 2: {} };
+let scores = { 1: {}, 2: {} };
+let relinquished = { 1: false, 2: false };
+let relinquishCount = { 1: 0, 2: 0 };
+const RELINQUISH_LIMIT = 2;
+const allColors = ['red', 'blue', 'yellow', 'green', 'orange', 'purple'];
+const discColorMap = {
+    red: '#e85d5d', blue: '#5d8de8', yellow: '#e8c547',
+    green: '#5de88a', orange: '#e8995d', purple: '#a85de8'
+};
+
+// Draft and sacrifice state
+let collectedDiscs = { 1: [], 2: [] };
+let draftChosen = null;
+
+let pendingExtraTurn = false;
+let sacrificeRange = 0;
+let sacrificingPlayer = 0;
+let showLOS = false;
+
+// Move history for replay
+let moveHistory = [];
+let historyIndex = -1;
+let isReviewing = false;
+
+function saveSnapshot(desc) {
+    moveHistory.push({
+        cells: cells.map(c => c ? {...c} : null),
+        collectors: { 1: collectors[1], 2: collectors[2] },
+        scores: { 1: {...scores[1]}, 2: {...scores[2]} },
+        playerFlags: { 1: {...playerFlags[1]}, 2: {...playerFlags[2]} },
+        currentPlayer: currentPlayer,
+        bagLen: bag.length,
+        desc: desc
+    });
+}
+
+function stepHistory(delta) {
+    if (moveHistory.length === 0) return;
+    const maxIdx = moveHistory.length - 1;
+    if (!isReviewing) {
+        historyIndex = maxIdx;
+        isReviewing = true;
+    }
+    historyIndex = Math.max(0, Math.min(maxIdx, historyIndex + delta));
+    renderSnapshot(moveHistory[historyIndex]);
+    updateHistoryControls();
+}
+
+function renderSnapshot(snap) {
+    for (let i = 0; i < 144; i++) {
+        const el = document.getElementById(`cell-${i}`);
+        el.innerHTML = '';
+        el.className = 'cell';
+        if (snap.cells[i]) {
+            const d = document.createElement('div');
+            if (snap.cells[i].type === 'collector') {
+                d.className = `collector p${snap.cells[i].player}`;
+                d.textContent = snap.cells[i].player === 1 ? '♚' : '♛';
+            } else {
+                d.className = 'disc';
+                d.style.backgroundColor = discColorMap[snap.cells[i].color] || snap.cells[i].color;
+                d.textContent = snap.cells[i].num;
+            }
+            el.appendChild(d);
+        }
+    }
+    renderScoreTable(snap.scores, snap.playerFlags);
+}
+
+function updateHistoryControls() {
+    const pos = document.getElementById('history-pos');
+    const desc = document.getElementById('history-desc');
+    pos.innerText = `${historyIndex + 1} / ${moveHistory.length}`;
+    desc.innerText = moveHistory[historyIndex].desc || '';
+}
+
+function renderScoreTable(sc, flags) {
+    const body = document.getElementById('score-body');
+    body.innerHTML = '';
+    allColors.forEach(c => {
+        const hex = discColorMap[c];
+        const p1W = flags[1][c + '6'];
+        const p2W = flags[2][c + '6'];
+        const s1 = sc[1][c] || 0;
+        const s2 = sc[2][c] || 0;
+        const s1Text = p1W ? `<span class="worthless-box" style="border-color:${hex}; background:${hex}22;">${s1}</span>` : s1;
+        const s2Text = p2W ? `<span class="worthless-box" style="border-color:${hex}; background:${hex}22;">${s2}</span>` : s2;
+        const p1Cls = p1W ? ' worthless' : '';
+        const p2Cls = p2W ? ' worthless' : '';
+        body.innerHTML += `
+            <div class="score-color"><span class="score-dot" style="background:${hex}"></span><span style="color:${hex}; font-weight:bold;">${c}</span></div>
+            <div class="score-val${p1Cls}">${s1Text}</div>
+            <div class="score-val${p2Cls}">${s2Text}</div>`;
+    });
+}
+
+let currentPosition = null;
+
+function setPositionTitle(label) {
+    const pt = document.getElementById('position-title');
+    if (pt) pt.textContent = label ? ' — ' + label : '';
+    document.title = label ? 'MAKA LAINA — ' + label : 'MAKA LAINA';
+}
+
+// Host-only entry point. Drops 24 random discs onto the empty board, then
+// hands off to PLACEMENT so Player 1 can place both collectors with the
+// disc layout visible (Walter's rule).
+function startRandom() {
+    if (myRole !== 'host') return;
+    currentPosition = 'random';
+    setPositionTitle('');
+    document.getElementById('setup-panel').style.display = 'none';
+    initBag();
+    for (let i = 0; i < 24; i++) {
+        let r; do { r = Math.floor(Math.random() * 144); } while (cells[r]);
+        cells[r] = bag.pop();
+    }
+    gameState = 'PLACEMENT';
+    currentPlayer = 1;  // Only P1 (host) clicks during PLACEMENT
+    syncState();
+    updateUI(); render();
+}
+
+// Parse an "Export opening" CSV (long format
+// `position_id,element,x,y,color,number`). Returns { d, coll } — coll = {b,w}
+// cell indices iff BOTH collector rows are present.
+// Built-in fair openings (Walter, 2026-05-19) — see makalaina.html for the
+// rationale. Same CSV strings, host-only loader. Keep the two lists in sync.
+const ML_BUILTIN_OPENING_CSVS = [
+`position_id,element,x,y,color,number
+1,disc,0,0,blue,6
+1,disc,1,0,yellow,1
+1,disc,9,0,red,2
+1,disc,5,1,yellow,3
+1,disc,3,2,green,
+1,disc,7,2,blue,4
+1,disc,1,3,purple,
+1,disc,4,3,green,
+1,collector_black,5,3,,
+1,disc,8,3,yellow,3
+1,disc,3,4,red,4
+1,disc,9,4,yellow,4
+1,disc,4,5,red,3
+1,disc,8,5,purple,
+1,disc,11,5,red,4
+1,disc,2,6,purple,
+1,disc,6,6,blue,3
+1,disc,11,6,yellow,2
+1,collector_white,1,7,,
+1,disc,5,7,purple,
+1,disc,3,8,blue,4
+1,disc,6,9,blue,3
+1,disc,3,10,red,1
+1,disc,7,10,green,
+1,disc,5,11,blue,4
+1,disc,11,11,red,2`,
+`position_id,element,x,y,color,number
+1,disc,1,0,red,2
+1,disc,2,1,purple,
+1,collector_black,8,1,,
+1,disc,11,1,blue,3
+1,disc,5,2,yellow,2
+1,disc,11,4,orange,
+1,disc,0,5,yellow,1
+1,disc,5,5,blue,5
+1,disc,8,5,red,3
+1,disc,11,5,yellow,3
+1,disc,2,6,purple,
+1,disc,3,7,orange,
+1,disc,5,7,orange,
+1,disc,6,7,purple,
+1,disc,0,8,blue,4
+1,disc,5,8,green,
+1,disc,6,8,yellow,4
+1,disc,11,8,red,4
+1,disc,6,9,blue,1
+1,disc,10,9,purple,
+1,disc,2,10,blue,2
+1,collector_white,4,10,,
+1,disc,3,11,green,
+1,disc,4,11,blue,6
+1,disc,5,11,yellow,2
+1,disc,9,11,green,`,
+`position_id,element,x,y,color,number
+1,disc,4,0,blue,2
+1,disc,10,0,red,4
+1,disc,11,1,purple,
+1,disc,4,2,blue,6
+1,disc,5,2,yellow,4
+1,disc,7,2,blue,5
+1,disc,9,2,purple,
+1,disc,0,3,orange,
+1,disc,2,3,yellow,2
+1,disc,7,3,blue,2
+1,disc,4,4,purple,
+1,disc,3,5,yellow,6
+1,disc,5,5,red,5
+1,collector_white,7,5,,
+1,disc,9,5,purple,
+1,disc,9,6,blue,3
+1,collector_black,2,7,,
+1,disc,7,7,orange,
+1,disc,3,8,orange,
+1,disc,3,9,orange,
+1,disc,5,9,yellow,2
+1,disc,8,9,red,4
+1,disc,11,9,red,6
+1,disc,11,10,blue,3
+1,disc,4,11,green,
+1,disc,5,11,orange,`,
+`position_id,element,x,y,color,number
+1,disc,3,0,purple,
+1,disc,7,0,red,3
+1,disc,0,1,green,
+1,collector_white,2,1,,
+1,disc,0,2,green,
+1,disc,4,2,blue,4
+1,disc,5,2,green,
+1,disc,10,2,orange,
+1,disc,11,2,yellow,2
+1,disc,6,3,red,2
+1,disc,5,4,yellow,5
+1,disc,3,5,blue,2
+1,collector_black,9,5,,
+1,disc,5,6,blue,1
+1,disc,9,6,blue,6
+1,disc,0,7,yellow,3
+1,disc,9,7,yellow,3
+1,disc,10,7,blue,3
+1,disc,10,8,yellow,4
+1,disc,7,9,blue,2
+1,disc,0,10,red,2
+1,disc,5,10,purple,
+1,disc,7,10,yellow,4
+1,disc,11,10,green,
+1,disc,1,11,blue,5
+1,disc,2,11,red,3`,
+`position_id,element,x,y,color,number
+1,disc,7,0,green,
+1,disc,8,0,orange,
+1,collector_black,0,1,,
+1,collector_white,5,1,,
+1,disc,7,1,purple,
+1,disc,7,2,yellow,3
+1,disc,5,3,yellow,1
+1,disc,3,4,yellow,4
+1,disc,5,4,green,
+1,disc,6,4,purple,
+1,disc,8,4,yellow,3
+1,disc,2,5,blue,3
+1,disc,3,5,red,4
+1,disc,4,5,orange,
+1,disc,1,6,blue,3
+1,disc,7,6,blue,5
+1,disc,1,7,orange,
+1,disc,11,7,yellow,4
+1,disc,1,8,green,
+1,disc,4,8,yellow,5
+1,disc,7,8,blue,1
+1,disc,0,9,red,6
+1,disc,6,9,yellow,4
+1,disc,0,11,yellow,5
+1,disc,8,11,red,2
+1,disc,11,11,orange,`,
+`position_id,element,x,y,color,number
+1,disc,2,0,red,3
+1,disc,3,1,green,
+1,disc,8,1,red,1
+1,disc,9,1,blue,2
+1,disc,10,1,yellow,4
+1,disc,11,1,blue,2
+1,disc,0,2,blue,3
+1,disc,6,3,orange,
+1,disc,10,3,red,6
+1,disc,4,4,red,4
+1,disc,8,4,purple,
+1,disc,2,5,yellow,2
+1,disc,1,6,yellow,4
+1,disc,9,6,orange,
+1,disc,7,7,green,
+1,disc,10,7,blue,4
+1,disc,0,8,red,5
+1,disc,3,8,purple,
+1,disc,0,9,yellow,2
+1,collector_white,6,9,,
+1,collector_black,9,9,,
+1,disc,11,9,yellow,3
+1,disc,2,10,yellow,5
+1,disc,6,10,blue,3
+1,disc,7,10,green,
+1,disc,5,11,red,2`,
+`position_id,element,x,y,color,number
+1,disc,5,0,yellow,2
+1,disc,9,0,orange,
+1,disc,1,1,red,2
+1,disc,9,1,blue,5
+1,disc,4,2,yellow,5
+1,disc,6,2,purple,
+1,disc,7,2,orange,
+1,disc,10,2,blue,3
+1,disc,6,3,blue,4
+1,disc,1,4,blue,4
+1,disc,0,5,green,
+1,disc,4,5,purple,
+1,disc,10,5,green,
+1,disc,1,7,blue,5
+1,disc,4,7,purple,
+1,disc,5,7,yellow,3
+1,disc,8,7,orange,
+1,collector_white,9,7,,
+1,disc,11,7,blue,3
+1,disc,6,8,green,
+1,disc,8,9,yellow,3
+1,collector_black,3,10,,
+1,disc,10,10,red,5
+1,disc,0,11,yellow,5
+1,disc,1,11,yellow,3
+1,disc,9,11,yellow,4`,
+`position_id,element,x,y,color,number
+1,disc,0,1,purple,
+1,disc,1,1,red,3
+1,disc,3,1,red,3
+1,disc,6,1,green,
+1,collector_white,8,1,,
+1,disc,0,2,yellow,4
+1,disc,5,2,blue,2
+1,disc,6,2,purple,
+1,disc,11,2,yellow,3
+1,disc,1,3,yellow,2
+1,disc,7,3,orange,
+1,disc,4,4,yellow,4
+1,disc,6,5,red,4
+1,disc,2,6,blue,5
+1,disc,3,6,red,1
+1,disc,6,7,blue,4
+1,disc,5,8,yellow,1
+1,disc,8,8,red,6
+1,collector_black,11,8,,
+1,disc,3,9,yellow,5
+1,disc,8,9,blue,5
+1,disc,2,10,purple,
+1,disc,6,10,yellow,3
+1,disc,4,11,orange,
+1,disc,7,11,red,2
+1,disc,10,11,red,3`,
+`position_id,element,x,y,color,number
+1,disc,3,0,blue,3
+1,disc,4,0,red,5
+1,disc,5,0,yellow,3
+1,disc,8,0,yellow,3
+1,disc,10,0,blue,3
+1,disc,4,1,red,6
+1,disc,4,2,yellow,2
+1,disc,7,2,blue,4
+1,disc,10,2,yellow,4
+1,disc,3,3,purple,
+1,disc,4,3,blue,5
+1,disc,8,3,orange,
+1,disc,9,3,orange,
+1,disc,6,4,green,
+1,collector_white,0,5,,
+1,collector_black,9,5,,
+1,disc,9,6,yellow,4
+1,disc,4,7,red,4
+1,disc,1,9,yellow,1
+1,disc,3,9,purple,
+1,disc,8,9,red,3
+1,disc,1,10,red,3
+1,disc,2,10,yellow,3
+1,disc,6,10,blue,1
+1,disc,10,10,purple,
+1,disc,8,11,blue,5`,
+`position_id,element,x,y,color,number
+1,disc,8,0,orange,
+1,disc,9,0,green,
+1,disc,3,1,red,4
+1,disc,4,1,red,6
+1,disc,11,1,yellow,2
+1,collector_white,5,2,,
+1,collector_black,9,2,,
+1,disc,10,2,green,
+1,disc,2,3,purple,
+1,disc,7,3,yellow,4
+1,disc,0,4,orange,
+1,disc,2,4,blue,3
+1,disc,10,4,purple,
+1,disc,6,5,red,3
+1,disc,0,6,red,5
+1,disc,8,6,yellow,4
+1,disc,9,7,purple,
+1,disc,10,7,blue,5
+1,disc,2,9,yellow,6
+1,disc,5,9,blue,6
+1,disc,7,9,yellow,5
+1,disc,11,9,blue,2
+1,disc,1,10,red,1
+1,disc,5,10,orange,
+1,disc,10,10,blue,4
+1,disc,3,11,yellow,3`,
+`position_id,element,x,y,color,number
+1,disc,7,0,purple,
+1,disc,8,0,blue,1
+1,disc,9,0,green,
+1,disc,2,1,yellow,2
+1,disc,7,4,yellow,5
+1,collector_black,10,4,,
+1,disc,6,5,yellow,3
+1,disc,7,5,purple,
+1,disc,0,6,blue,3
+1,disc,3,6,orange,
+1,disc,4,6,yellow,1
+1,disc,9,7,yellow,2
+1,disc,1,8,blue,4
+1,disc,2,8,yellow,3
+1,disc,3,8,orange,
+1,disc,5,8,orange,
+1,collector_white,7,8,,
+1,disc,8,8,blue,5
+1,disc,10,8,red,6
+1,disc,11,8,yellow,5
+1,disc,3,10,blue,5
+1,disc,4,10,blue,6
+1,disc,7,10,yellow,3
+1,disc,8,10,yellow,4
+1,disc,9,10,orange,
+1,disc,0,11,blue,2`,
+`position_id,element,x,y,color,number
+1,disc,1,0,purple,
+1,disc,3,0,yellow,2
+1,disc,9,1,blue,4
+1,collector_white,0,2,,
+1,disc,4,2,red,4
+1,disc,5,2,red,5
+1,collector_black,7,2,,
+1,disc,11,2,orange,
+1,disc,0,3,green,
+1,disc,5,3,blue,4
+1,disc,9,3,yellow,6
+1,disc,10,4,yellow,5
+1,disc,1,5,yellow,4
+1,disc,8,5,blue,6
+1,disc,2,6,blue,2
+1,disc,6,6,purple,
+1,disc,7,6,red,6
+1,disc,3,7,red,2
+1,disc,10,7,orange,
+1,disc,0,8,green,
+1,disc,1,8,green,
+1,disc,7,8,blue,4
+1,disc,8,9,green,
+1,disc,1,10,yellow,3
+1,disc,3,10,red,4
+1,disc,8,11,blue,1`,
+`position_id,element,x,y,color,number
+1,disc,1,0,green,
+1,disc,2,0,yellow,6
+1,disc,0,1,blue,4
+1,disc,2,1,orange,
+1,disc,5,1,orange,
+1,disc,8,1,red,3
+1,collector_white,10,1,,
+1,disc,5,2,blue,4
+1,disc,0,3,yellow,4
+1,disc,9,3,purple,
+1,disc,7,4,blue,6
+1,disc,8,4,yellow,1
+1,disc,3,5,blue,1
+1,disc,9,5,blue,3
+1,disc,11,5,blue,5
+1,disc,3,6,red,5
+1,disc,8,7,blue,3
+1,disc,11,7,red,3
+1,disc,5,8,blue,3
+1,disc,6,9,red,3
+1,disc,7,9,red,1
+1,disc,11,9,red,4
+1,collector_black,2,10,,
+1,disc,4,10,orange,
+1,disc,5,10,blue,4
+1,disc,5,11,red,4`,
+`position_id,element,x,y,color,number
+1,disc,5,0,purple,
+1,disc,8,0,red,5
+1,disc,2,1,green,
+1,disc,4,1,red,4
+1,collector_white,0,2,,
+1,disc,1,2,red,2
+1,disc,8,2,blue,4
+1,disc,2,3,yellow,5
+1,disc,2,4,blue,2
+1,disc,6,4,yellow,6
+1,disc,9,4,orange,
+1,disc,10,4,red,4
+1,disc,3,5,blue,5
+1,disc,5,5,orange,
+1,disc,7,5,purple,
+1,disc,2,6,orange,
+1,disc,9,6,yellow,1
+1,disc,0,8,blue,3
+1,disc,3,8,purple,
+1,disc,4,8,blue,3
+1,disc,11,8,purple,
+1,disc,3,9,red,4
+1,disc,5,9,yellow,3
+1,collector_black,3,10,,
+1,disc,2,11,orange,
+1,disc,4,11,red,3`
+];
+
+function mlParseOpeningCSV(text) {
+    const d = [];
+    let cb = null, cw = null;
+    text.split(/\r?\n/).forEach(line => {
+        const t = line.trim();
+        if (!t || /^position_id\s*,/i.test(t)) return;
+        const f = t.split(',');
+        if (f.length < 4) return;
+        const element = (f[1] || '').trim();
+        const x = parseInt(f[2], 10), y = parseInt(f[3], 10);
+        if (!Number.isInteger(x) || !Number.isInteger(y)) return;
+        if (x < 0 || x >= 12 || y < 0 || y >= 12) return;
+        if (element === 'disc') {
+            const color = (f[4] || '').trim();
+            const numRaw = (f[5] || '').trim();
+            if (!color) return;
+            d.push([x, y, color, numRaw === '' ? '' : parseInt(numRaw, 10)]);
+        } else if (element === 'collector_black') {
+            cb = y * 12 + x;
+        } else if (element === 'collector_white') {
+            cw = y * 12 + x;
+        }
+    });
+    const coll = (cb != null && cw != null && cb !== cw) ? { b: cb, w: cw } : null;
+    return { d, coll };
+}
+
+// Host-only. Loads a preset opening from an "Export opening" CSV: discs AND
+// both collectors fixed, skipping live PLACEMENT and going straight to
+// P2_CHOOSE (Walter, 2026-05-18 — live placement is too slow for a "light"
+// game; fairness still comes from Player 2's colour pick). Remote has no
+// disc-only custom path, so the CSV must carry both collectors.
+function mlImportOpeningFile(input) {
+    const file = input.files && input.files[0];
+    input.value = '';
+    if (!file) return;
+    if (myRole !== 'host') { alert('Лише господар (Гравець 1) може завантажити дебют.'); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+        let parsed;
+        try { parsed = mlParseOpeningCSV(String(reader.result || '')); }
+        catch (e) { alert('Не вдалося прочитати цей CSV: ' + e.message); return; }
+        if (!parsed.d.length) { alert('У цьому CSV не знайдено рядків з дисками.'); return; }
+        mlApplyOpening(parsed);
+    };
+    reader.onerror = () => alert('Не вдалося прочитати файл.');
+    reader.readAsText(file);
+}
+
+// Built-in preset opening (host-only): parse its CSV, then apply.
+function loadBuiltinOpening(i) {
+    const csv = ML_BUILTIN_OPENING_CSVS[i];
+    if (csv == null) return;
+    if (myRole !== 'host') { alert('Лише господар (Гравець 1) може завантажити дебют.'); return; }
+    mlApplyOpening(mlParseOpeningCSV(csv));
+}
+
+// Host-only. Validates the collectors, rebuilds the board + bag from the
+// 54-disc pool, places both collectors, goes to P2's colour pick and syncs
+// to the joiner. Shared by the CSV loader and the built-in preset buttons.
+function mlApplyOpening(parsed) {
+    if (myRole !== 'host') { alert('Лише господар (Гравець 1) може завантажити дебют.'); return; }
+    if (!parsed.coll) { alert('У цьому CSV немає колекторів. Використайте CSV "Експортувати дебют" (з обома колекторами) для віддаленого дебюту.'); return; }
+    if (parsed.coll.b < 0 || parsed.coll.b >= 144 || parsed.coll.w < 0 || parsed.coll.w >= 144) {
+        alert('Позиції колекторів у цьому CSV недійсні.'); return;
+    }
+
+    {
+        // Fresh state (allow loading after a prior game on the same page).
+        cells = Array(144).fill(null);
+        collectors = { 1: null, 2: null };
+        scores = { 1: {}, 2: {} };
+        playerFlags = { 1: {}, 2: {} };
+        relinquished = { 1: false, 2: false };
+        relinquishCount = { 1: 0, 2: 0 };
+        collectedDiscs = { 1: [], 2: [] };
+        draftChosen = null;
+        pendingExtraTurn = false;
+        selectedIdx = null;
+        sacrificeRange = 0;
+        sacrificingPlayer = 0;
+        moveHistory = [];
+        historyIndex = -1;
+        isReviewing = false;
+        allColors.forEach(c => { scores[1][c] = 0; scores[2][c] = 0; });
+
+        // Build the 54-disc pool; placed discs come off it, the rest (minus
+        // 6 hidden) becomes the bag — same accounting as the local variant.
+        const pool = [];
+        ['red','blue','yellow'].forEach(c => [1,2,2,3,3,3,4,4,4,5,5,6].forEach(n => pool.push({ color:c, num:n, type:'primary' })));
+        ['green','orange','purple'].forEach(c => { for (let i=0;i<6;i++) pool.push({ color:c, num:'', type:'secondary' }); });
+        parsed.d.forEach(([x, y, color, num]) => {
+            const idx = y * 12 + x;
+            const pi = pool.findIndex(p => p.color === color && p.num === num);
+            cells[idx] = pi >= 0 ? pool.splice(pi, 1)[0] : { color, num, type: num !== '' ? 'primary' : 'secondary' };
+        });
+        pool.sort(() => Math.random() - 0.5);
+        pool.splice(0, 6);
+        bag = pool;
+
+        if (cells[parsed.coll.b] || cells[parsed.coll.w]) {
+            alert('На клітинці колектора в цьому CSV стоїть диск — його не можна використати як готовий дебют.');
+            return;
+        }
+        collectors[1] = parsed.coll.b; cells[parsed.coll.b] = { type: 'collector', player: 1 };
+        collectors[2] = parsed.coll.w; cells[parsed.coll.w] = { type: 'collector', player: 2 };
+
+        currentPosition = 'opening';
+        setPositionTitle('');
+        document.getElementById('setup-panel').style.display = 'none';
+        goToP2Choose();          // → P2_CHOOSE (host buttons disabled)
+        syncState();             // push discs + collectors + state to joiner
+        updateUI(); render();
+    }
+}
+
+function toggleRules(show) {
+    document.getElementById('modal-overlay').style.display = show ? 'flex' : 'none';
+}
+
+function shareOnWhatsApp() {
+    let shareUrl = /^(file|parados):$/.test(window.location.protocol) ? "https://game.ywesee.com/parados/" + (window.location.pathname.split("/").pop() || "index.html") : window.location.href.split('#')[0];
+    const msg = `Грайте в MAKA LAINA: ${shareUrl}\n\nЗавантажте застосунок Parados:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
+    if (navigator.share) { navigator.share({ text: msg }).catch(() => {}); return; }
+    // No share API (Android WebView, in-app browsers): copy to clipboard.
+    // Never wa.me — Android WebView can't dispatch whatsapp:// (ERR_UNKNOWN_URL_SCHEME).
+    const note = 'Повідомлення скопійовано — вставте його у WhatsApp.';
+    const fallback = () => { const ta = document.createElement('textarea'); ta.value = msg; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); let ok=false; try { ok = document.execCommand('copy'); } catch {} ta.remove(); if (ok) alert(note); else prompt(note, msg); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(msg).then(() => alert(note)).catch(fallback);
+    else fallback();
+}
+
+function toggleLOS() {
+    showLOS = !showLOS;
+    const btn = document.getElementById('los-toggle');
+    btn.innerText = showLOS ? 'Сховати лінію огляду' : 'Показати лінію огляду';
+    btn.style.opacity = showLOS ? '1' : '0.6';
+    render();
+}
+
+function initBag() {
+    ['red', 'blue', 'yellow'].forEach(c =>
+        [1,2,2,3,3,3,4,4,4,5,5,6].forEach(n => bag.push({ color: c, num: n, type: 'primary' }))
+    );
+    ['green', 'orange', 'purple'].forEach(c => {
+        for (let i = 0; i < 6; i++) bag.push({ color: c, num: '', type: 'secondary' });
+    });
+    bag.sort(() => Math.random() - 0.5);
+    bag.splice(0, 6);
+    allColors.forEach(c => { scores[1][c] = 0; scores[2][c] = 0; });
+}
+
+function createBoard() {
+    const boardDiv = document.getElementById('board');
+    for (let i = 0; i < 144; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.id = `cell-${i}`;
+        cell.onclick = () => {
+            if (currentPlayer !== myPlayer) return;
+            handleClick(i, false);
+        };
+        boardDiv.appendChild(cell);
+    }
+}
+
+function handleClick(i, isRemote) {
+    if (gameState === 'SETUP' || gameState === 'P2_CHOOSE') return;
+    if (gameState === 'PLACEMENT') {
+        if (cells[i]) return;
+        // Only the host (Player 1) is allowed to place collectors. Joiner
+        // clicks are guarded earlier by the board onclick; remote echoes still
+        // arrive from the host so we accept them in either direction.
+        if (!isRemote && myPlayer !== 1) return;
+        if (!collectors[1]) {
+            collectors[1] = i;
+            cells[i] = { type: 'collector', player: 1 };
+        } else if (!collectors[2]) {
+            collectors[2] = i;
+            cells[i] = { type: 'collector', player: 2 };
+            goToP2Choose();
+        }
+        if (!isRemote) sendNet({ type: 'click', idx: i });
+        render(); updateUI();
+    } else if (gameState === 'PLAY') {
+        handleMove(i, isRemote);
+    } else if (gameState === 'DRAFT_PLACE') {
+        const draftLOS = getLOS(collectors[currentPlayer]);
+        if (!cells[i] && draftLOS.includes(i)) {
+            if (!isRemote) sendNet({ type: 'click', idx: i });
+            const draftColor = draftChosen.color;
+            const draftNum = draftChosen.num;
+            cells[i] = draftChosen;
+            draftChosen = null;
+            document.getElementById('draft-panel').style.display = 'none';
+            gameState = 'PLAY';
+            const dPName = 'Гравець ' + currentPlayer;
+            if (!pendingExtraTurn) {
+                currentPlayer = currentPlayer === 1 ? 2 : 1;
+            }
+            pendingExtraTurn = false;
+            saveSnapshot(`${dPName} розміщує ${draftColor} ${draftNum || ''} на дошці`);
+            updateUI(); render();
+        }
+    } else if (gameState === 'SACRIFICE_MOVE') {
+        if (!isRemote && currentPlayer !== myPlayer) return;
+        const reachable = getReachableCells(collectors[currentPlayer], sacrificeRange);
+        if (reachable.includes(i)) {
+            if (!isRemote) sendNet({ type: 'click', idx: i });
+            const smName = 'Гравець ' + currentPlayer;
+            cells[collectors[currentPlayer]] = null;
+            collectors[currentPlayer] = i;
+            cells[i] = { type: 'collector', player: currentPlayer };
+            sacrificeRange = 0;
+            sacrificingPlayer = 0;
+            gameState = 'PLAY';
+            relinquished[1] = relinquished[2] = false;
+            currentPlayer = currentPlayer === 1 ? 2 : 1;
+            saveSnapshot(`${smName} рухає колектор після пожертви`);
+            updateUI(); render();
+        }
+    }
+}
+
+// Called locally on both sides once Player 1 has placed both collectors.
+// We just transition into P2_CHOOSE — the joiner picks their colour and
+// emits the actual game-start sync via p2PicksColor → applyP2Choice.
+function goToP2Choose() {
+    gameState = 'P2_CHOOSE';
+    document.getElementById('p2-choose-panel').style.display = 'block';
+    const hint = document.getElementById('p2-choose-hint');
+    if (hint) hint.textContent = (myPlayer === 2) ? 'Ваш вибір.' : 'Очікування вибору Гравця 2…';
+    // Disable buttons for the host so only the joiner can act
+    if (myPlayer !== 2) {
+        document.querySelectorAll('#p2-choose-panel button').forEach(b => { b.disabled = true; b.style.opacity = '0.4'; b.style.cursor = 'default'; });
+    }
+}
+
+// Joiner clicks "I'll play Black/White". color = 1 (Black) or 2 (White).
+// We tell the host, then both sides apply the choice the same way.
+function p2PicksColor(color) {
+    if (gameState !== 'P2_CHOOSE') return;
+    if (myPlayer !== 2) return;  // host has no business clicking here
+    sendNet({ type: 'p2_pick_color', color });
+    applyP2Choice(color, false);
+}
+
+// P2 chose `color` (1 = Black, 2 = White). The other player (P1) plays the
+// opposite colour and goes first.
+function applyP2Choice(color, isRemote) {
+    if (gameState !== 'P2_CHOOSE') return;
+    document.getElementById('p2-choose-panel').style.display = 'none';
+    currentPlayer = (color === 1) ? 2 : 1;
+    gameState = 'PLAY';
+    document.getElementById('csv-export-btn').style.display = '';
+    saveSnapshot('Початок гри — ' + (currentPlayer === 1 ? 'Чорний' : 'Білий') + ' ходить першим (Гравець 2 взяв ' + (color === 1 ? 'Чорний' : 'Білий') + ')');
+    if (myRole === 'host') setTimeout(() => syncState(), 50);
+    updateUI(); render();
+}
+
+function syncState() {
+    sendNet({
+        type: 'state_sync',
+        cells: JSON.parse(JSON.stringify(cells)),
+        collectors: { ...collectors },
+        currentPlayer,
+        scores: JSON.parse(JSON.stringify(scores)),
+        playerFlags: JSON.parse(JSON.stringify(playerFlags)),
+        relinquished: { ...relinquished },
+        relinquishCount: { ...relinquishCount },
+        gameState,
+        bag: JSON.parse(JSON.stringify(bag)),
+        collectedDiscs: JSON.parse(JSON.stringify(collectedDiscs)),
+        draftChosen: draftChosen ? JSON.parse(JSON.stringify(draftChosen)) : null,
+        pendingExtraTurn,
+        sacrificeRange,
+        sacrificingPlayer,
+        currentPosition
+    });
+}
+
+function applySyncState(data) {
+    cells = data.cells;
+    collectors = data.collectors;
+    currentPlayer = data.currentPlayer;
+    scores = data.scores;
+    playerFlags = data.playerFlags;
+    relinquished = data.relinquished;
+    if (data.relinquishCount !== undefined) relinquishCount = data.relinquishCount;
+    gameState = data.gameState;
+    if (data.bag !== undefined) bag = data.bag;
+    if (data.collectedDiscs !== undefined) collectedDiscs = data.collectedDiscs;
+    if (data.draftChosen !== undefined) draftChosen = data.draftChosen;
+    if (data.pendingExtraTurn !== undefined) pendingExtraTurn = data.pendingExtraTurn;
+    if (data.sacrificeRange !== undefined) sacrificeRange = data.sacrificeRange;
+    if (data.sacrificingPlayer !== undefined) sacrificingPlayer = data.sacrificingPlayer;
+    if (data.currentPosition !== undefined) {
+        currentPosition = data.currentPosition;
+        setPositionTitle('');
+    }
+    // Re-show draft panel if syncing into a draft state
+    if (gameState === 'DRAFT_PLACE' && draftChosen) {
+        showDraftPlacePanel(draftChosen);
+    }
+    // Re-show sacrifice panel if syncing into opponent-select state
+    if (gameState === 'SACRIFICE_OPPONENT_SELECT') {
+        showSacrificePanel();
+    }
+    // First time the joiner sees a non-SETUP state — hide the setup panel
+    if (gameState !== 'SETUP') {
+        document.getElementById('setup-panel').style.display = 'none';
+    }
+    // Show / hide the P2-pick-colour panel as appropriate
+    const p2Panel = document.getElementById('p2-choose-panel');
+    if (gameState === 'P2_CHOOSE') {
+        p2Panel.style.display = 'block';
+        const hint = document.getElementById('p2-choose-hint');
+        if (hint) hint.textContent = (myPlayer === 2) ? 'Ваш вибір.' : 'Очікування вибору Гравця 2…';
+        if (myPlayer !== 2) {
+            p2Panel.querySelectorAll('button').forEach(b => { b.disabled = true; b.style.opacity = '0.4'; b.style.cursor = 'default'; });
+        }
+    } else {
+        p2Panel.style.display = 'none';
+    }
+    render(); updateUI();
+}
+
+function getLOS(idx) {
+    const los = [];
+    const r = Math.floor(idx / 12), c = idx % 12;
+    [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([dr, dc]) => {
+        for (let d = 1; d < 12; d++) {
+            let nr = r + dr * d, nc = c + dc * d;
+            if (nr < 0 || nr >= 12 || nc < 0 || nc >= 12) break;
+            let id = nr * 12 + nc;
+            los.push(id);
+            if (cells[id]) break;
+        }
+    });
+    return los;
+}
+
+function hasValidMove(player) {
+    const los = getLOS(collectors[player]);
+    for (let i = 0; i < 144; i++) {
+        if (!cells[i] || cells[i].type === 'collector') continue;
+        if (los.includes(i)) continue;
+        const r = Math.floor(i / 12), c = i % 12;
+        for (let dr = -1; dr <= 1; dr++) {
+            for (let dc = -1; dc <= 1; dc++) {
+                if (dr === 0 && dc === 0) continue;
+                const nr = r + dr, nc = c + dc;
+                if (nr < 0 || nr >= 12 || nc < 0 || nc >= 12) continue;
+                const adj = nr * 12 + nc;
+                if (!cells[adj] && los.includes(adj)) return true;
+            }
+        }
+    }
+    return false;
+}
+
+function handleMove(i, isRemote) {
+    const los = getLOS(collectors[currentPlayer]);
+    if (selectedIdx === null) {
+        if (cells[i] && cells[i].type !== 'collector' && !los.includes(i)) {
+            selectedIdx = i;
+            if (!isRemote) sendNet({ type: 'click', idx: i });
+            render();
+        }
+    } else {
+        const dist = Math.max(
+            Math.abs(Math.floor(i / 12) - Math.floor(selectedIdx / 12)),
+            Math.abs((i % 12) - (selectedIdx % 12))
+        );
+        if (!cells[i] && dist === 1 && getLOS(collectors[currentPlayer]).includes(i)) {
+            if (!isRemote) sendNet({ type: 'click', idx: i });
+            processCollection(cells[selectedIdx], i);
+        } else {
+            selectedIdx = null;
+            if (!isRemote) sendNet({ type: 'click', idx: i });
+            render();
+        }
+    }
+}
+
+function processCollection(disc, newIdx) {
+    const pName = 'Гравець ' + currentPlayer;
+    const colorKey = disc.color + '6';
+    const counted = !playerFlags[currentPlayer][colorKey];
+
+    if (counted) {
+        scores[currentPlayer][disc.color] += (disc.num || 1);
+        if (disc.num === 6) playerFlags[currentPlayer][colorKey] = true;
+    }
+
+    // Track collected disc (primary only, for sacrifice)
+    if (disc.type === 'primary') {
+        collectedDiscs[currentPlayer].push({...disc, counted});
+    }
+
+    // Move collector
+    cells[collectors[currentPlayer]] = null;
+    cells[selectedIdx] = null;
+    collectors[currentPlayer] = newIdx;
+    cells[newIdx] = { type: 'collector', player: currentPlayer };
+    selectedIdx = null;
+    relinquished[1] = relinquished[2] = false;
+    const collectDesc = `${pName} збирає ${disc.color} ${disc.num || ''}${disc.num === 6 ? ' (нічого не варте!)' : ''}${disc.num === 1 ? ' (додатковий хід!)' : ''}`;
+
+    // Check if all discs collected and bag empty
+    const remaining = cells.filter(c => c && c.type !== 'collector').length;
+    if (remaining === 0 && bag.length === 0) {
+        gameState = 'END';
+        saveSnapshot(collectDesc);
+        addSystemMsg('Гру завершено! Усі диски зібрано.');
+        updateUI(); render();
+        return;
+    }
+
+    // Draft: draw 1 disc from bag, player must place it. Snapshot the
+    // DRAFT_PLACE state (disc in hand) so the review history records it.
+    if (bag.length > 0) {
+        pendingExtraTurn = (disc.num === 1);
+        draftChosen = bag.pop();
+        gameState = 'DRAFT_PLACE';
+        saveSnapshot(collectDesc);
+        showDraftPlacePanel(draftChosen);
+        updateUI(); render();
+        return;
+    }
+
+    // No draft (bag empty): switch the turn FIRST, then snapshot — so the
+    // saved state records whose turn it now is (parity with the local variant).
+    if (disc.num !== 1) {
+        currentPlayer = currentPlayer === 1 ? 2 : 1;
+    }
+    saveSnapshot(collectDesc);
+    updateUI(); render();
+}
+
+// ─── DRAFT SYSTEM (1-disc placement) ────────────────────────────
+function showDraftPlacePanel(disc) {
+    const panel = document.getElementById('draft-panel');
+    panel.style.display = 'block';
+    const label = document.getElementById('draft-label');
+    label.innerText = 'Розмістіть цей диск у своїй лінії огляду:';
+    const choices = document.getElementById('draft-choices');
+    choices.innerHTML = '';
+    const d = document.createElement('div');
+    d.className = 'disc';
+    d.style.backgroundColor = discColorMap[disc.color] || disc.color;
+    d.innerText = disc.num;
+    d.style.cursor = 'default';
+    d.style.boxShadow = '0 0 12px rgba(93, 232, 138, 0.5)';
+    choices.appendChild(d);
+}
+
+// ─── SACRIFICE SYSTEM ────────────────────────────────────────
+// Walter's escape rule (2026-05-29): a trapped player with nothing to
+// sacrifice gets a free move of up to 2 squares instead of being stuck
+// (a near-certain loss). Discourages trapping the opponent too early — an
+// early trap no longer wins on the spot. Returns true if a free move was
+// set up; false if even a 2-square move is impossible (truly boxed in).
+function freeEscapeMove(player) {
+    if (getReachableCells(collectors[player], 2).length === 0) return false;
+    sacrificingPlayer = player;
+    sacrificeRange = 2;
+    currentPlayer = player;
+    gameState = 'SACRIFICE_MOVE';
+    return true;
+}
+
+function doSacrifice() {
+    if (gameState !== 'PLAY' || currentPlayer !== myPlayer) return;
+    sacrificingPlayer = currentPlayer;
+    const primaryDiscs = collectedDiscs[sacrificingPlayer].filter(d => d.type === 'primary');
+    if (primaryDiscs.length === 0) {
+        // Nothing to sacrifice → free escape move (Walter's rule).
+        const rName = 'Гравець ' + currentPlayer;
+        if (freeEscapeMove(currentPlayer)) {
+            addSystemMsg(`${rName} не має чого пожертвувати — вільний хід (до 2).`);
+            saveSnapshot(`${rName} не має чого пожертвувати — вільний хід (до 2)`);
+        } else {
+            relinquished[currentPlayer] = true;
+            if (relinquished[1] && relinquished[2]) {
+                gameState = 'END';
+                addSystemMsg('Гру завершено — ходів немає.');
+            } else {
+                addSystemMsg(`Гравець ${currentPlayer} не може ходити чи пожертвувати.`);
+                currentPlayer = currentPlayer === 1 ? 2 : 1;
+            }
+            saveSnapshot(`${rName} вимушено пропускає (немає виходу)`);
+        }
+        syncState();
+        updateUI(); render();
+        return;
+    }
+    gameState = 'SACRIFICE_OPPONENT_SELECT';
+    sendNet({ type: 'sacrifice_request', sacrificingPlayer: sacrificingPlayer });
+    updateUI(); render();
+}
+
+function showSacrificePanel() {
+    const panel = document.getElementById('sacrifice-panel');
+    panel.style.display = 'block';
+    document.getElementById('sacrifice-btn').style.display = 'none';
+    const choices = document.getElementById('sacrifice-choices');
+    choices.innerHTML = '';
+    const primaryDiscs = collectedDiscs[sacrificingPlayer].filter(d => d.type === 'primary');
+    const isOpponent = myPlayer !== sacrificingPlayer;
+    primaryDiscs.forEach((disc) => {
+        const d = document.createElement('div');
+        d.className = 'disc';
+        d.style.backgroundColor = discColorMap[disc.color] || disc.color;
+        d.innerText = disc.num;
+        d.title = `Пожертва: ${disc.counted ? 'втрата ' + disc.num + ' очок з ' + disc.color + ', ' : ''}рух до ${disc.num} клітинок`;
+        if (isOpponent) {
+            d.onclick = () => {
+                applySacrificeDisc(disc.color, disc.num, disc.counted, false);
+            };
+        } else {
+            d.style.opacity = '0.5';
+            d.style.cursor = 'not-allowed';
+        }
+        choices.appendChild(d);
+    });
+}
+
+function applySacrificeDisc(color, num, counted, isRemote) {
+    // Find and remove the disc from sacrificingPlayer's collected
+    const arr = collectedDiscs[sacrificingPlayer];
+    const removeIdx = arr.findIndex(d => d.color === color && d.num === num && d.counted === counted);
+    if (removeIdx >= 0) arr.splice(removeIdx, 1);
+
+    sacrificeRange = num;
+
+    // Subtract value from score only if it was counted
+    if (counted) {
+        scores[sacrificingPlayer][color] -= num;
+    }
+
+    document.getElementById('sacrifice-panel').style.display = 'none';
+    // The sacrificing player now moves
+    currentPlayer = sacrificingPlayer;
+    gameState = 'SACRIFICE_MOVE';
+    saveSnapshot(`Гравець ${sacrificingPlayer} жертвує ${color} ${num}`);
+    if (!isRemote) {
+        sendNet({ type: 'sacrifice_pick', discColor: color, discNum: num, discCounted: counted });
+    }
+    updateUI(); render();
+}
+
+function getReachableCells(fromIdx, range) {
+    const reachable = [];
+    const fr = Math.floor(fromIdx / 12), fc = fromIdx % 12;
+    for (let r = 0; r < 12; r++) {
+        for (let c = 0; c < 12; c++) {
+            const dist = Math.max(Math.abs(r - fr), Math.abs(c - fc));
+            const idx = r * 12 + c;
+            if (dist > 0 && dist <= range && !cells[idx]) {
+                reachable.push(idx);
+            }
+        }
+    }
+    return reachable;
+}
+
+function doRelinquish() {
+    if (gameState !== 'PLAY' || currentPlayer !== myPlayer) return;
+    if (relinquishCount[currentPlayer] >= RELINQUISH_LIMIT) return;
+    performRelinquish(false);
+    sendNet({ type: 'relinquish' });
+}
+
+function performRelinquish(isRemote) {
+    if (relinquishCount[currentPlayer] >= RELINQUISH_LIMIT) return;
+    const rName = 'Гравець ' + currentPlayer;
+    relinquishCount[currentPlayer]++;
+    relinquished[currentPlayer] = true;
+    const remaining = RELINQUISH_LIMIT - relinquishCount[currentPlayer];
+    if (relinquished[1] && relinquished[2]) {
+        gameState = 'END';
+        addSystemMsg('Обидва гравці пропустили. Гру завершено.');
+    } else {
+        addSystemMsg(`Гравець ${currentPlayer} пропустив свій хід. (залишилось ${remaining})`);
+        currentPlayer = currentPlayer === 1 ? 2 : 1;
+    }
+    // Snapshot after the switch (parity with local; correct review history).
+    saveSnapshot(`${rName} пропускає хід (залишилось ${remaining})`);
+    updateUI(); render();
+}
+
+function computeWinner() {
+    let winsP1 = 0, winsP2 = 0, maxSingleP1 = 0, maxSingleP2 = 0;
+    allColors.forEach(c => {
+        const s1 = scores[1][c] || 0;
+        const s2 = scores[2][c] || 0;
+        if (s1 > s2) winsP1++;
+        else if (s2 > s1) winsP2++;
+        if (s1 > maxSingleP1) maxSingleP1 = s1;
+        if (s2 > maxSingleP2) maxSingleP2 = s2;
+    });
+    let winner = null, tiebroken = false;
+    if (winsP1 > winsP2) winner = 'P1';
+    else if (winsP2 > winsP1) winner = 'P2';
+    else if (maxSingleP1 > maxSingleP2) { winner = 'P1'; tiebroken = true; }
+    else if (maxSingleP2 > maxSingleP1) { winner = 'P2'; tiebroken = true; }
+    const scoreFmt = `${winsP1}\u2013${winsP2}`;
+    const shortText = winner
+        ? (tiebroken ? `${winner} перемагає (за додатковим показником)! ${scoreFmt}` : `${winner} перемагає! ${scoreFmt}`)
+        : `Нічия ${scoreFmt}`;
+    return { winsP1, winsP2, maxSingleP1, maxSingleP2, winner, tiebroken, shortText };
+}
+
+// ─── UI ──────────────────────────────────────────────────────
+function updateUI() {
+    const statusEl = document.getElementById('status-text');
+    const isMe = currentPlayer === myPlayer;
+    const who = isMe ? 'Ви' : 'Суперник';
+
+    switch (gameState) {
+        case 'END':
+            const w = computeWinner();
+            statusEl.innerHTML = w.winner
+                ? `<span class="player-indicator ${w.winner === 'P1' ? 'p1' : 'p2'}"></span> ${w.shortText}`
+                : `🏁 ${w.shortText}`;
+            statusEl.classList.remove('your-turn');
+            if (moveHistory.length > 0) {
+                document.getElementById('history-controls').style.display = 'block';
+                historyIndex = moveHistory.length - 1;
+                updateHistoryControls();
+            }
+            break;
+        case 'PLACEMENT':
+            const which = collectors[1] ? 'білий' : 'чорний';
+            statusEl.innerHTML = (myPlayer === 1)
+                ? `<span class="player-indicator p1"></span> Розставте ${which} колектор.`
+                : `<span class="player-indicator p1"></span> Очікування, поки Гравець 1 розставить колектори…`;
+            statusEl.classList.toggle('your-turn', myPlayer === 1);
+            break;
+        case 'P2_CHOOSE':
+            statusEl.innerHTML = (myPlayer === 2)
+                ? '<span class="player-indicator p2"></span> Оберіть свій колір угорі.'
+                : '<span class="player-indicator p2"></span> Очікування, поки Гравець 2 обере колір…';
+            statusEl.classList.toggle('your-turn', myPlayer === 2);
+            break;
+        case 'SETUP':
+            statusEl.textContent = (myRole === 'host') ? 'Натисніть ▶ Почати угорі.' : 'Очікування, поки господар розпочне…';
+            statusEl.classList.remove('your-turn');
+            break;
+        case 'PLAY':
+            statusEl.innerHTML = `<span class="player-indicator p${currentPlayer}"></span> ${isMe ? 'ВАШ ХІД' : 'Хід суперника'}`;
+            statusEl.classList.toggle('your-turn', isMe);
+            break;
+        case 'DRAFT_PLACE':
+            statusEl.innerHTML = `<span class="player-indicator p${currentPlayer}"></span> ${isMe ? 'Розмістіть диск у своїй лінії огляду' : who + ': розміщує диск...'}`;
+            statusEl.classList.toggle('your-turn', isMe);
+            break;
+        case 'SACRIFICE_OPPONENT_SELECT':
+            if (myPlayer !== sacrificingPlayer) {
+                statusEl.innerHTML = `<span class="player-indicator p${sacrificingPlayer}"></span> Оберіть, який диск пожертвувати`;
+                statusEl.classList.add('your-turn');
+            } else {
+                statusEl.innerHTML = `<span class="player-indicator p${sacrificingPlayer}"></span> Суперник обирає пожертву...`;
+                statusEl.classList.remove('your-turn');
+            }
+            break;
+        case 'SACRIFICE_MOVE':
+            if (myPlayer === sacrificingPlayer) {
+                statusEl.innerHTML = `<span class="player-indicator p${sacrificingPlayer}"></span> Рухайте колектор (до ${sacrificeRange})`;
+                statusEl.classList.add('your-turn');
+            } else {
+                statusEl.innerHTML = `<span class="player-indicator p${sacrificingPlayer}"></span> Суперник рухається...`;
+                statusEl.classList.remove('your-turn');
+            }
+            break;
+    }
+
+    // Scores
+    renderScoreTable(scores, playerFlags);
+
+    // Bag count
+    const bagEl = document.getElementById('bag-count');
+    if (bagEl) bagEl.innerText = `Мішок: залишилось ${bag.length} дисків`;
+
+    // Show/hide sacrifice & relinquish buttons based on state
+    const inPlay = gameState === 'PLAY';
+    const isMyTurn = currentPlayer === myPlayer;
+    const stuck = inPlay && !hasValidMove(currentPlayer);
+    const canRelinquish = relinquishCount[currentPlayer] < RELINQUISH_LIMIT;
+    const sacBtn = document.getElementById('sacrifice-btn');
+    const relBtn = document.getElementById('relinquish-btn');
+    const stuckHint = document.getElementById('stuck-hint');
+    if (sacBtn) sacBtn.style.display = (stuck && isMyTurn) ? 'block' : 'none';
+    if (relBtn) {
+        relBtn.style.display = (inPlay && isMyTurn && canRelinquish) ? 'block' : 'none';
+        const remaining = RELINQUISH_LIMIT - relinquishCount[currentPlayer];
+        relBtn.innerText = `Пропустити хід (${remaining}/${RELINQUISH_LIMIT})`;
+    }
+    if (stuckHint) {
+        const noDiscs = collectedDiscs[currentPlayer].filter(d => d.type === 'primary').length === 0;
+        if (stuck && noDiscs) {
+            stuckHint.innerText = 'Немає ходів і нічого пожертвувати — натисніть «Пожертвувати та рухатись», щоб вийти на відстань до 2 клітинок.';
+        } else if (stuck && !canRelinquish) {
+            stuckHint.innerText = 'Немає доступних ходів! Пропусків не залишилось — ви мусите пожертвувати диск!';
+        } else if (stuck) {
+            stuckHint.innerText = 'Немає доступних ходів! Пожертвуйте диск (суперник обирає) або пропустіть хід.';
+        }
+        stuckHint.style.display = (stuck && isMyTurn) ? 'block' : 'none';
+    }
+    // Stuck, no relinquishes left, nothing to sacrifice: grant a free escape
+    // move (Walter's rule) instead of ending; only end if truly boxed in.
+    if (stuck && isMyTurn && !canRelinquish) {
+        const primaryDiscs = collectedDiscs[currentPlayer].filter(d => d.type === 'primary');
+        if (primaryDiscs.length === 0) {
+            const fName = 'Гравець ' + currentPlayer;
+            if (freeEscapeMove(currentPlayer)) {
+                addSystemMsg(`${fName} не має чого пожертвувати — вільний хід (до 2).`);
+                saveSnapshot(`${fName} не має чого пожертвувати — вільний хід (до 2)`);
+            } else {
+                relinquished[currentPlayer] = true;
+                if (relinquished[1] && relinquished[2]) {
+                    gameState = 'END';
+                    addSystemMsg('Гру завершено — ходів немає.');
+                } else {
+                    addSystemMsg('Гравець ' + currentPlayer + ' не може ходити чи пожертвувати.');
+                    currentPlayer = currentPlayer === 1 ? 2 : 1;
+                }
+                saveSnapshot(`${fName} вимушене завершення (немає виходу)`);
+            }
+            syncState();
+            updateUI(); render();
+        }
+    }
+}
+
+function downloadCSV() {
+    if (moveHistory.length === 0) {
+        alert('Немає даних про ходи для експорту.');
+        return;
+    }
+
+    const rows = [];
+    rows.push('Move,Player,Description,Bag_Remaining,' +
+        allColors.map(c => `Black_${c}`).join(',') + ',' +
+        allColors.map(c => `White_${c}`).join(',') + ',' +
+        allColors.map(c => `Flag_Black_${c}`).join(',') + ',' +
+        allColors.map(c => `Flag_White_${c}`).join(',') + ',' +
+        'Black_X,Black_Y,White_X,White_Y,Discs_On_Board');
+
+    moveHistory.forEach((snap, idx) => {
+        const desc = (snap.desc || '').replace(/"/g, '""');
+        const discsOnBoard = snap.cells.filter(c => c && c.type !== 'collector').length;
+        const bx = snap.collectors[1] != null ? (snap.collectors[1] % 12) : '';
+        const by = snap.collectors[1] != null ? Math.floor(snap.collectors[1] / 12) : '';
+        const wx = snap.collectors[2] != null ? (snap.collectors[2] % 12) : '';
+        const wy = snap.collectors[2] != null ? Math.floor(snap.collectors[2] / 12) : '';
+        const row = [
+            idx + 1,
+            snap.currentPlayer === 1 ? 'Black' : 'White',
+            `"${desc}"`,
+            snap.bagLen,
+            ...allColors.map(c => snap.scores[1][c] || 0),
+            ...allColors.map(c => snap.scores[2][c] || 0),
+            ...allColors.map(c => snap.playerFlags[1][c] ? 1 : 0),
+            ...allColors.map(c => snap.playerFlags[2][c] ? 1 : 0),
+            bx, by, wx, wy,
+            discsOnBoard
+        ];
+        rows.push(row.join(','));
+    });
+
+    const csvContent = rows.join('\n');
+
+    // POST to server
+    fetch('cgi-bin/save_csv.py', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({game: 'makalaina_remote_ua', csv: csvContent})
+    }).then(r => r.json()).then(d => {
+        if (d.ok) console.log('CSV saved on server: ' + d.filename);
+        else console.warn('Server CSV save failed: ' + (d.error || 'unknown'));
+    }).catch(e => console.warn('Server CSV save failed: ' + e));
+
+    // Local download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const fname = `makalaina_remote_ua_${pad(now.getHours())}${pad(now.getMinutes())}_${pad(now.getDate())}.${pad(now.getMonth()+1)}.${now.getFullYear()}.csv`;
+    link.download = fname;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+// Serialise the current board (discs AND both collectors) as a position
+// CSV. Unlike the editor export (disc-only — collectors are normally
+// live), the in-game "Export opening" keeps the collectors so a whole
+// opening can be captured (Walter, 2026-05-17). collector_black = P1,
+// collector_white = P2. Both peers have a synced `collectors` + `cells`.
+function buildOpeningCSV() {
+    const lines = ['position_id,element,x,y,color,number'];
+    for (let i = 0; i < 144; i++) {
+        const c = cells[i];
+        if (!c) continue;
+        const x = i % 12, y = Math.floor(i / 12);
+        if (c.type === 'collector') {
+            lines.push(`1,${c.player === 1 ? 'collector_black' : 'collector_white'},${x},${y},,`);
+        } else {
+            lines.push(`1,disc,${x},${y},${c.color},${c.num === '' || c.num == null ? '' : c.num}`);
+        }
+    }
+    return lines.join('\n') + '\n';
+}
+
+// Put text on the clipboard so it can be pasted directly into a WhatsApp
+// message box. navigator.clipboard first, then a temp-textarea +
+// execCommand fallback (works inside the app WebView).
+function mlCopyTextToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        return navigator.clipboard.writeText(text).then(() => true, () => mlLegacyCopy(text));
+    }
+    return Promise.resolve(mlLegacyCopy(text));
+}
+function mlLegacyCopy(text) {
+    try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        return ok;
+    } catch (e) { return false; }
+}
+
+async function exportOpeningCSV() {
+    if (collectors[1] == null || collectors[2] == null) {
+        alert('Спершу розставте обидва колектори — тоді дебют можна експортувати.');
+        return;
+    }
+    const csv = buildOpeningCSV();
+    const filename = 'makalaina_opening.csv';
+    // Copy the opening to the clipboard up front, so it can be pasted as
+    // text into WhatsApp even if the file share is dropped/unavailable.
+    const copied = await mlCopyTextToClipboard(csv);
+    // Fire-and-forget server copy (same endpoint as the move-log export).
+    fetch('cgi-bin/save_csv.py', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ game: 'makalaina_remote_opening_ua', csv })
+    }).then(r => r.json()).then(d => {
+        if (!d.ok) console.warn('Server CSV save failed: ' + (d.error || 'unknown'));
+    }).catch(e => console.warn('Server CSV save failed: ' + e));
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    try {
+        if (navigator.canShare) {
+            const file = new File([blob], filename, { type: 'text/csv' });
+            if (navigator.canShare({ files: [file] })) {
+                // No `text:` alongside `files:` — Android WhatsApp drops the
+                // file when both are present (Divided Loyalties lesson).
+                await navigator.share({ files: [file], title: 'Дебют MAKA LAINA' });
+                return;
+            }
+        }
+    } catch (e) {
+        if (e && e.name === 'AbortError') return;
+        console.warn('navigator.share failed, falling back:', e);
+    }
+    // Fallback: download + clipboard — never wa.me on Android WebView.
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    alert(copied
+        ? `Дебют скопійовано в буфер обміну — утримайте поле повідомлення WhatsApp і вставте його. (Також збережено як ${filename}.)`
+        : `Збережено ${filename}. Додайте його до повідомлення WhatsApp вручну.`);
+}
+
+function render() {
+    const los = showLOS && (gameState === 'PLAY' || gameState === 'DRAFT_PLACE') ? getLOS(collectors[currentPlayer]) : [];
+    const reachable = (gameState === 'SACRIFICE_MOVE') ? getReachableCells(collectors[currentPlayer], sacrificeRange) : [];
+
+    for (let i = 0; i < 144; i++) {
+        const el = document.getElementById(`cell-${i}`);
+        el.innerHTML = '';
+        let cls = 'cell';
+        if (los.includes(i)) cls += ' los';
+        if (selectedIdx === i) cls += ' selected';
+        if (reachable.includes(i)) cls += ' reachable';
+        if (showLOS && gameState === 'DRAFT_PLACE' && !cells[i] && getLOS(collectors[currentPlayer]).includes(i)) cls += ' placeable';
+        el.className = cls;
+
+        if (cells[i]) {
+            const d = document.createElement('div');
+            if (cells[i].type === 'collector') {
+                d.className = `collector p${cells[i].player}`;
+                d.textContent = cells[i].player === 1 ? '♚' : '♛';
+            } else {
+                d.className = 'disc';
+                d.style.backgroundColor = discColorMap[cells[i].color] || cells[i].color;
+                d.textContent = cells[i].num;
+            }
+            el.appendChild(d);
+        }
+    }
+}
+
+// ─── INIT ────────────────────────────────────────────────────
+createBoard();
+render();
+
+// #rules deep-link — share rules per game/language
+function applyRulesHash() { if (location.hash === '#rules') toggleRules(true); }
+window.addEventListener('hashchange', applyRulesHash);
+applyRulesHash();
+</script>
+</body>
+</html>
