@@ -5,20 +5,69 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>MAKA LAINA - 戦略のラストスパート</title>
     <style>
-        :root { --cs: 42px; --disc-size: calc(var(--cs) - 8px); --collector-size: calc(var(--cs) - 6px); }
+        :root {
+            --cs: 42px; --disc-size: calc(var(--cs) - 8px); --collector-size: calc(var(--cs) - 6px);
+            /* Light theme (the original look -- unchanged).  Dark values live
+               in the [data-theme="dark"] block below.  Discs, collectors and
+               the coloured buttons are game state and are NOT themed. */
+            --bg: #f0f2f5;
+            --surface: #ffffff;
+            --surface2: #f5f5f5;
+            --text: #000000;
+            --text-strong: #2c3e50;
+            --muted: #7f8c8d;
+            --border: #bbbbbb;
+            --border-soft: #eeeeee;
+            --board-frame: #2c3e50;
+            --cell: #ffffff;
+            --cell-los: #fffde7;
+            --cell-selected: #e3f2fd;
+            --cell-selected-border: #2196f3;
+            --cell-reachable: #e8f5e9;
+            --panel-info-bg: #f0f7ff;
+            --panel-info-border: #90caf9;
+            --panel-warn-bg: #fdf0f0;
+            --panel-warn-border: #ef9a9a;
+            --chip-warn-bg: #ffddee;
+            --btn-face: #ffffff;
+            --btn-face-hover: #e0e0e0;
+        }
+        :root[data-theme="dark"] {
+            --bg: #12161c;
+            --surface: #1c222b;
+            --surface2: #232a34;
+            --text: #e6e8eb;
+            --text-strong: #dfe6ee;
+            --muted: #98a2ad;
+            --border: #3a434f;
+            --border-soft: #2c343d;
+            --board-frame: #080b0e;
+            --cell: #2a323c;
+            --cell-los: #3d3820;
+            --cell-selected: #1d3f5c;
+            --cell-selected-border: #4aa3e8;
+            --cell-reachable: #1e4029;
+            --panel-info-bg: #16283a;
+            --panel-info-border: #35648f;
+            --panel-warn-bg: #3a2020;
+            --panel-warn-border: #8f4747;
+            --chip-warn-bg: #5a2233;
+            --btn-face: #2b333d;
+            --btn-face-hover: #3a444f;
+        }
         * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 10px; margin: 0; min-height: 100vh; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; padding: 10px; margin: 0; min-height: 100vh; }
         h1 { font-size: 1.5em; margin: 5px 0; }
         #game-container { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; width: 100%; }
         #board {
             display: grid; grid-template-columns: repeat(12, var(--cs));
             grid-template-rows: repeat(12, var(--cs)); gap: 1px;
-            background: #2c3e50; border: 4px solid #2c3e50; border-radius: 4px;
+            background: var(--board-frame); border: 4px solid var(--board-frame); border-radius: 4px;
         }
-        .cell { width: var(--cs); height: var(--cs); background: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; }
-        .cell.los { background: #fffde7; }
-        .cell.selected { background: #e3f2fd; border: 2px solid #2196f3; box-sizing: border-box; }
-        .cell.reachable { background: #e8f5e9; box-shadow: inset 0 0 6px rgba(76, 175, 80, 0.4); }
+        .cell { width: var(--cs); height: var(--cs); background: var(--cell); display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; }
+        .cell.los { background: var(--cell-los); }
+        .cell.selected { background: var(--cell-selected); border: 2px solid var(--cell-selected-border); box-sizing: border-box; }
+        .cell.reachable { background: var(--cell-reachable); box-shadow: inset 0 0 6px rgba(76, 175, 80, 0.4); }
         .cell.placeable { background: #b2ff59; box-shadow: inset 0 0 8px rgba(76, 175, 80, 0.6); cursor: crosshair; }
         @keyframes pulse-placeable { 0%,100% { box-shadow: inset 0 0 6px rgba(76,175,80,0.4); } 50% { box-shadow: inset 0 0 12px rgba(76,175,80,0.8); } }
         .cell.placeable { animation: pulse-placeable 1.2s ease-in-out infinite; }
@@ -27,95 +76,124 @@
         .black { background: #000; }
         .white { background: #fff; border-color: #000; }
 
-        #ui { width: 100%; max-width: 380px; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        #ui { width: 100%; max-width: 380px; background: var(--surface); padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .btn { width: 100%; padding: 10px; margin-top: 8px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; transition: 0.2s; font-size: 0.9em; }
         .btn-rules { background: #3498db; color: white; }
         .btn-action { background: #9b59b6; color: white; }
         .btn-cancel { background: #95a5a6; color: white; }
         .btn-reset { background: #e74c3c; color: white; margin-top: 15px; }
 
-        #draft-panel { display: none; background: #f0f7ff; border-radius: 8px; padding: 12px; margin-top: 10px; text-align: center; border: 2px solid #90caf9; }
+        #draft-panel { display: none; background: var(--panel-info-bg); border-radius: 8px; padding: 12px; margin-top: 10px; text-align: center; border: 2px solid var(--panel-info-border); }
         #draft-choices { display: flex; gap: 12px; justify-content: center; margin: 10px 0; }
         #draft-choices .disc { width: 50px; height: 50px; font-size: 1.1em; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
         #draft-choices .disc:hover { transform: scale(1.15); box-shadow: 0 0 12px rgba(33, 150, 243, 0.5); }
 
-        #sacrifice-panel { display: none; background: #fdf0f0; border-radius: 8px; padding: 12px; margin-top: 10px; text-align: center; border: 2px solid #ef9a9a; }
+        #sacrifice-panel { display: none; background: var(--panel-warn-bg); border-radius: 8px; padding: 12px; margin-top: 10px; text-align: center; border: 2px solid var(--panel-warn-border); }
         #sacrifice-choices { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 10px 0; }
         #sacrifice-choices .disc { width: 38px; height: 38px; cursor: pointer; transition: transform 0.2s; }
         #sacrifice-choices .disc:hover { transform: scale(1.15); box-shadow: 0 0 8px rgba(155, 89, 182, 0.5); }
 
         #modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 100; justify-content: center; align-items: center; }
-        #modal { background: white; width: 92%; max-width: 600px; padding: 25px; border-radius: 12px; max-height: 85vh; overflow-y: auto; }
+        #modal { background: var(--surface); width: 92%; max-width: 600px; padding: 25px; border-radius: 12px; max-height: 85vh; overflow-y: auto; }
         .scoring-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85em; }
-        .scoring-table td, .scoring-table th { border: 1px solid #eee; padding: 5px; text-align: center; }
-        .worthless { color: #888; }
-        .worthless-box { display: inline-block; border: 2px solid #e74c3c; background: #fde; padding: 1px 5px; border-radius: 4px; font-weight: bold; }
+        .scoring-table td, .scoring-table th { border: 1px solid var(--border-soft); padding: 5px; text-align: center; }
+        .worthless { color: var(--muted); }
+        .worthless-box { display: inline-block; border: 2px solid #e74c3c; background: var(--chip-warn-bg); padding: 1px 5px; border-radius: 4px; font-weight: bold; }
         .leader-dot { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: middle; }
         .leader-dot.black { background: #000; }
         .leader-dot.white { background: #fff; border: 1px solid #999; }
         .leader-dot.tied { background: #bbb; }
 
         #winner-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 200; justify-content: center; align-items: center; }
-        #winner-box { background: white; padding: 30px; border-radius: 16px; text-align: center; max-width: 90%; width: 400px; }
+        #winner-box { background: var(--surface); padding: 30px; border-radius: 16px; text-align: center; max-width: 90%; width: 400px; }
         #winner-box h2 { font-size: 1.8em; margin-bottom: 15px; }
         #winner-box .score-final { font-size: 1.2em; margin: 10px 0; }
         #winner-box button { margin-top: 15px; padding: 12px 30px; font-size: 1em; cursor: pointer; border: none; border-radius: 8px; background: #3498db; color: white; font-weight: bold; }
 
-        #bag-count { font-size: 0.8em; color: #7f8c8d; text-align: center; margin-top: 6px; }
+        #bag-count { font-size: 0.8em; color: var(--muted); text-align: center; margin-top: 6px; }
 
-        #history-controls { display: none; background: #f5f5f5; border-radius: 8px; padding: 10px; margin-top: 10px; text-align: center; border: 2px solid #bbb; }
+        #history-controls { display: none; background: var(--surface2); border-radius: 8px; padding: 10px; margin-top: 10px; text-align: center; border: 2px solid var(--border); }
         #history-controls .history-nav { display: flex; gap: 6px; justify-content: center; align-items: center; margin-top: 6px; }
-        #history-controls .history-nav button { padding: 6px 14px; cursor: pointer; border: 1px solid #999; border-radius: 4px; background: #fff; font-weight: bold; font-size: 1em; }
-        #history-controls .history-nav button:hover { background: #e0e0e0; }
+        #history-controls .history-nav button { padding: 6px 14px; cursor: pointer; border: 1px solid var(--border); border-radius: 4px; background: var(--btn-face); font-weight: bold; font-size: 1em; }
+        #history-controls .history-nav button:hover { background: var(--btn-face-hover); }
         #history-controls .history-nav button:disabled { opacity: 0.4; cursor: default; }
-        #history-label { font-weight: bold; color: #2c3e50; margin: 0; font-size: 0.9em; }
-        #history-desc { font-size: 0.8em; color: #555; margin: 4px 0 0; }
+        #history-label { font-weight: bold; color: var(--text-strong); margin: 0; font-size: 0.9em; }
+        #history-desc { font-size: 0.8em; color: var(--muted); margin: 4px 0 0; }
 
         @media (max-width: 600px) {
             #game-container { flex-direction: column; align-items: center; }
             #ui { max-width: 100%; }
         }
     </style>
+<script>
+    // Light / dark theme toggle (Lucas Holowaychuk, 2026-07-12: "One
+    // improvement would be a light/dark mode toggle").  This runs in <head>,
+    // before the body paints, so a dark-mode user never sees a white flash.
+    // Only SURFACES are themed -- the disc palette (COLOR_HEX / ml_colors),
+    // the black/white collectors and the coloured buttons are game state and
+    // stay exactly as they are.  Light stays the DEFAULT, so nothing changes
+    // for anyone who does not touch the button.
+    const ML_THEME_KEY = 'ml_theme';
+    function mlApplyTheme(mode) {
+        document.documentElement.setAttribute('data-theme', mode);
+        const btn = document.getElementById('theme-toggle');
+        if (btn) btn.textContent = mode === 'dark' ? '☀️ ライト' : '🌙 ダーク';
+    }
+    function mlToggleTheme() {
+        const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        try { localStorage.setItem(ML_THEME_KEY, next); } catch (e) {}
+        mlApplyTheme(next);
+    }
+    (function () {
+        let saved = null;
+        try { saved = localStorage.getItem(ML_THEME_KEY); } catch (e) {}
+        mlApplyTheme(saved === 'dark' ? 'dark' : 'light');
+        document.addEventListener('DOMContentLoaded', function () {
+            mlApplyTheme(document.documentElement.getAttribute('data-theme'));
+        });
+    })();
+</script>
 </head>
 <body>
 
     <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
-        <h1 style="margin:5px 0;">MAKA LAINA<span id="position-title" style="color:#7f8c8d; font-weight:normal;"></span></h1>
+        <h1 style="margin:5px 0;">MAKA LAINA<span id="position-title" style="color:var(--muted); font-weight:normal;"></span></h1>
         <button class="btn" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">WhatsApp で共有</button>
+        <button class="btn" id="theme-toggle" style="width:auto; padding:8px 16px; background:var(--surface2); color:var(--text); border:1px solid var(--border); margin-top:0;" onclick="mlToggleTheme()">🌙 ダーク</button>
     </div>
-    <div id="setup-panel" style="margin-bottom:15px; text-align:center; background:white; padding:15px 20px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
+    <div id="setup-panel" style="margin-bottom:15px; text-align:center; background:var(--surface); padding:15px 20px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
         <div id="ml-resume-slot"></div>
-        <p style="font-weight:bold; margin:0 0 10px; color:#2c3e50;">新しいゲームを始める：</p>
+        <p style="font-weight:bold; margin:0 0 10px; color:var(--text-strong);">新しいゲームを始める：</p>
         <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
             <button class="btn" style="width:auto; padding:10px 24px; background:#27ae60; color:white; font-size:1em;" onclick="startRandom()">▶ スタート</button>
         </div>
-        <p style="margin:10px 0 0; font-size:0.85em; color:#7f8c8d;">まず 24 枚のディスクがランダムに配置されます。次に <b>プレイヤー 1</b> が両方のコレクターを置きます。<b>プレイヤー 2</b> がどちらの色でプレイするかを選びます。</p>
+        <p style="margin:10px 0 0; font-size:0.85em; color:var(--muted);">まず 24 枚のディスクがランダムに配置されます。次に <b>プレイヤー 1</b> が両方のコレクターを置きます。<b>プレイヤー 2</b> がどちらの色でプレイするかを選びます。</p>
         <div style="margin-top:14px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
             <button class="btn" style="width:auto; padding:8px 16px; background:#9b59b6; color:white;" onclick="mlOpenEditor(null)">✏️ エディター — カスタム配置</button>
             <button class="btn" style="width:auto; padding:8px 16px; background:#6d4c41; color:white;" onclick="document.getElementById('ml-opening-file').click()">📥 開始配置を読み込む (CSV)</button>
             <input type="file" id="ml-opening-file" accept=".csv,text/csv" style="display:none;" onchange="mlImportOpeningFile(this)">
         </div>
-        <p style="margin:8px 0 0; font-size:0.8em; color:#7f8c8d;">両方のコレクターを含む<b>開始配置エクスポート</b>の CSV はプリセットとして読み込まれます。ディスク<i>と</i>コレクターが固定され、ライブ配置はなく、プレイヤー 2 が色を選びます。</p>
+        <p style="margin:8px 0 0; font-size:0.8em; color:var(--muted);">両方のコレクターを含む<b>開始配置エクスポート</b>の CSV はプリセットとして読み込まれます。ディスク<i>と</i>コレクターが固定され、ライブ配置はなく、プレイヤー 2 が色を選びます。</p>
         <div id="ml-custom-list" style="margin-top:12px;"></div>
     </div>
     <div id="ml-editor-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.92); z-index:2500; overflow-y:auto; padding:15px 8px;">
-        <div style="max-width:760px; margin:0 auto; background:#fff; border-radius:8px; padding:15px;">
+        <div style="max-width:760px; margin:0 auto; background:var(--surface); border-radius:8px; padding:15px;">
             <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:10px;">
                 <h2 style="margin:0; font-size:1.2em;">エディター — カスタム MAKA LAINA 配置</h2>
             </div>
-            <p style="margin:0 0 8px; color:#555; font-size:0.9em;">
+            <p style="margin:0 0 8px; color:var(--muted); font-size:0.9em;">
                 ブラシを選び、12×12 の盤上のマスをクリックしてディスク配置を描きます。<b>コレクターは任意です：</b>両方（黒 = プレイヤー 1、白 = プレイヤー 2）を置くと<b>プリセット開始配置</b>になります。ライブ配置はなく、プレイヤー 2 が色を選びます。置かない場合はディスクのみの配置となり、プレイヤー 1 がゲーム中に置きます。
             </p>
             <div id="ml-editor-brush-bar" style="display:flex; flex-direction:column; gap:5px; margin-bottom:10px;"></div>
             <details style="margin-bottom:10px; border:1px solid #ddd; border-radius:4px; padding:6px 8px;">
-                <summary style="cursor:pointer; font-size:0.9em; color:#555; font-weight:bold;">🎨 ディスクの色 — 自分で選ぶ</summary>
+                <summary style="cursor:pointer; font-size:0.9em; color:var(--muted); font-weight:bold;">🎨 ディスクの色 — 自分で選ぶ</summary>
                 <div id="ml-editor-colors" style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:8px;"></div>
-                <p style="margin:8px 0 0; color:#777; font-size:0.8em;">この端末のすべての MAKA LAINA ゲームに適用されます（盤面、スコア表、エディター）。自動的に保存されます。</p>
+                <p style="margin:8px 0 0; color:var(--muted); font-size:0.8em;">この端末のすべての MAKA LAINA ゲームに適用されます（盤面、スコア表、エディター）。自動的に保存されます。</p>
             </details>
             <div style="overflow:auto; margin-bottom:10px;">
-                <div id="ml-editor-grid" style="display:grid; gap:1px; background:#2c3e50; padding:2px; border-radius:4px; width:max-content; margin:0 auto;"></div>
+                <div id="ml-editor-grid" style="display:grid; gap:1px; background:var(--board-frame); padding:2px; border-radius:4px; width:max-content; margin:0 auto;"></div>
             </div>
-            <div id="ml-editor-summary" style="font-size:0.85em; color:#555; text-align:center; margin-bottom:10px;"></div>
+            <div id="ml-editor-summary" style="font-size:0.85em; color:var(--muted); text-align:center; margin-bottom:10px;"></div>
             <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:center;">
                 <button class="btn" style="width:auto; background:#27ae60; color:white;" onclick="mlSaveCustomPosition()">💾 保存（ブラウザ）</button>
                 <button class="btn" style="width:auto; background:#3498db; color:white;" onclick="mlPlayFromEditor()">▶ 試し打ち</button>
@@ -126,9 +204,9 @@
         </div>
     </div>
     <div id="ml-csv-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:2600; justify-content:center; align-items:center;">
-        <div style="background:#fff; width:92%; max-width:640px; padding:20px; border-radius:10px;">
+        <div style="background:var(--surface); width:92%; max-width:640px; padding:20px; border-radius:10px;">
             <h3 style="margin:0 0 10px;">CSV — カスタム配置</h3>
-            <p style="margin:0 0 8px; color:#555; font-size:0.9em;">縦長フォーマットです。両方のコレクターを置いた場合、CSV には <code>collector_black</code> / <code>collector_white</code> の行が含まれ、プリセット開始配置として読み込めます。置かなかった場合はディスクのみです（プレイヤー 1 がゲーム中にコレクターを置きます）。</p>
+            <p style="margin:0 0 8px; color:var(--muted); font-size:0.9em;">縦長フォーマットです。両方のコレクターを置いた場合、CSV には <code>collector_black</code> / <code>collector_white</code> の行が含まれ、プリセット開始配置として読み込めます。置かなかった場合はディスクのみです（プレイヤー 1 がゲーム中にコレクターを置きます）。</p>
             <textarea id="ml-csv-output" readonly style="width:100%; height:240px; font-family:monospace; font-size:0.85em; padding:8px; border:1px solid #ccc; border-radius:4px;"></textarea>
             <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; margin-top:10px;">
                 <button class="btn" style="width:auto; background:#3498db; color:white;" onclick="mlCopyCSVToClipboard()">📋 コピー</button>
@@ -137,9 +215,9 @@
             </div>
         </div>
     </div>
-    <div id="starter-panel" style="display:none; margin-bottom:15px; text-align:center; background:white; padding:15px 20px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
-        <p style="font-weight:bold; margin:0 0 4px; color:#2c3e50;">プレイヤー 2：色を選んでください</p>
-        <p style="margin:0 0 10px; font-size:0.85em; color:#7f8c8d;">プレイヤー 1 はもう一方の色でゲームを始めます。</p>
+    <div id="starter-panel" style="display:none; margin-bottom:15px; text-align:center; background:var(--surface); padding:15px 20px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
+        <p style="font-weight:bold; margin:0 0 4px; color:var(--text-strong);">プレイヤー 2：色を選んでください</p>
+        <p style="margin:0 0 10px; font-size:0.85em; color:var(--muted);">プレイヤー 1 はもう一方の色でゲームを始めます。</p>
         <div style="display:flex; gap:12px; justify-content:center;">
             <button class="btn" style="width:auto; padding:10px 24px; background:#222; color:white; font-size:1em;" onclick="p2PicksColor(1)">&#9632; 黒でプレイ</button>
             <button class="btn" style="width:auto; padding:10px 24px; background:#f5f5f5; color:#222; border:2px solid #999; font-size:1em;" onclick="p2PicksColor(2)">&#9633; 白でプレイ</button>
@@ -148,7 +226,7 @@
     <div id="game-container">
         <div id="board"></div>
         <div id="ui">
-            <div id="status" style="font-weight: bold; margin-bottom: 10px; color: #2c3e50;">セットアップ：上の ▶ スタート をクリックしてください。</div>
+            <div id="status" style="font-weight: bold; margin-bottom: 10px; color: var(--text-strong);">セットアップ：上の ▶ スタート をクリックしてください。</div>
             <button class="btn btn-rules" onclick="toggleRules(true)">ルールを見る</button>
             <button id="los-toggle" class="btn" style="background:#7f8c8d;color:white;" onclick="toggleLOS()">視線を表示</button>
             <button id="csv-export-btn" class="btn" style="background:#27ae60;color:white;display:none;" onclick="downloadCSV()">CSV をエクスポート</button>
@@ -158,15 +236,15 @@
                 <button id="undo-btn" class="btn" style="background:#5d4037; color:white;" onclick="undoMove()">↶ 手を戻す</button>
                 <button id="sacrifice-btn" class="btn btn-action" onclick="sacrificeTurn()">犠牲にして移動</button>
                 <button id="relinquish-btn" class="btn btn-cancel" onclick="relinquishTurn()" style="display:none;">手番を放棄</button>
-                <p id="stuck-hint" style="display:none; font-size: 0.75em; color: #7f8c8d; text-align: center;">有効な手がありません！ディスクを犠牲にする（相手が選択）か、手番を放棄してください。</p>
+                <p id="stuck-hint" style="display:none; font-size: 0.75em; color: var(--muted); text-align: center;">有効な手がありません！ディスクを犠牲にする（相手が選択）か、手番を放棄してください。</p>
                 <div id="bag-count"></div>
             </div>
             <div id="draft-panel">
-                <p id="draft-label" style="font-weight:bold; color:#2c3e50; margin-bottom:8px;">このディスクを自分の視線内に置いてください：</p>
+                <p id="draft-label" style="font-weight:bold; color:var(--text-strong); margin-bottom:8px;">このディスクを自分の視線内に置いてください：</p>
                 <div id="draft-choices"></div>
             </div>
             <div id="sacrifice-panel">
-                <p id="sacrifice-label" style="font-weight:bold; color:#2c3e50; margin-bottom:8px;">犠牲：ディスクを選択（数字 = 移動範囲）</p>
+                <p id="sacrifice-label" style="font-weight:bold; color:var(--text-strong); margin-bottom:8px;">犠牲：ディスクを選択（数字 = 移動範囲）</p>
                 <div id="sacrifice-choices"></div>
             </div>
             <table class="scoring-table">
@@ -1814,13 +1892,13 @@
             if (label) {
                 const lab = document.createElement('span');
                 lab.textContent = label;
-                lab.style.cssText = 'min-width:60px; font-size:0.85em; color:#555;';
+                lab.style.cssText = 'min-width:60px; font-size:0.85em; color:var(--muted);';
                 row.appendChild(lab);
             }
             tokens.forEach(tok => {
                 const btn = document.createElement('button');
                 btn.type = 'button';
-                btn.style.cssText = 'padding:4px 6px; background:#fff; border:1px solid #ccc; border-radius:4px; cursor:pointer; line-height:0;';
+                btn.style.cssText = 'padding:4px 6px; background:var(--btn-face); border:1px solid var(--border); border-radius:4px; cursor:pointer; line-height:0;';
                 btn.innerHTML = mlBrushSwatch(tok, mlEditorBrush === tok);
                 btn.onclick = () => { mlEditorBrush = tok; mlRenderBrushBar(); };
                 row.appendChild(btn);
@@ -1838,7 +1916,7 @@
                 const eraser = document.createElement('button');
                 eraser.type = 'button';
                 eraser.textContent = '✕ 消去';
-                eraser.style.cssText = `margin-left:auto; padding:6px 10px; background:#fff; color:#000; border:3px solid ${mlEditorBrush==='erase'?'#FFEB3B':'rgba(0,0,0,0.25)'}; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.85em;`;
+                eraser.style.cssText = `margin-left:auto; padding:6px 10px; background:var(--cell); color:var(--text); border:3px solid ${mlEditorBrush==='erase'?'#FFEB3B':'rgba(0,0,0,0.25)'}; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.85em;`;
                 eraser.onclick = () => { mlEditorBrush = 'erase'; mlRenderBrushBar(); };
                 extras.push(eraser);
             }
@@ -1851,7 +1929,7 @@
         // colour (Walter, 2026-05-19). Leave them out for a disc-only layout.
         const cap = document.createElement('span');
         cap.textContent = '黒 = P1 · 白 = P2（プリセット開始配置には両方を置く、または両方置かない）';
-        cap.style.cssText = 'font-size:0.78em; color:#777; margin-left:6px;';
+        cap.style.cssText = 'font-size:0.78em; color:var(--muted); margin-left:6px;';
         mkRow('コレクター', ['CB', 'CW'], [cap]);
     }
 
@@ -1885,7 +1963,7 @@
         box.innerHTML = '';
         ML_COLOR_NAMES.forEach(name => {
             const wrap = document.createElement('label');
-            wrap.style.cssText = 'display:inline-flex; flex-direction:column; align-items:center; gap:3px; font-size:0.78em; color:#555; text-transform:capitalize;';
+            wrap.style.cssText = 'display:inline-flex; flex-direction:column; align-items:center; gap:3px; font-size:0.78em; color:var(--muted); text-transform:capitalize;';
             const inp = document.createElement('input');
             inp.type = 'color';
             inp.value = COLOR_HEX[name];
@@ -1900,7 +1978,7 @@
         const reset = document.createElement('button');
         reset.type = 'button';
         reset.textContent = '↺ 既定値に戻す';
-        reset.style.cssText = 'margin-left:auto; padding:6px 10px; background:#fff; border:1px solid #ccc; border-radius:4px; cursor:pointer; font-size:0.8em;';
+        reset.style.cssText = 'margin-left:auto; padding:6px 10px; background:var(--btn-face); border:1px solid var(--border); border-radius:4px; cursor:pointer; font-size:0.8em;';
         reset.onclick = mlResetColors;
         box.appendChild(reset);
     }
@@ -1914,7 +1992,7 @@
         const numFont = Math.max(9, Math.floor(ecs * 0.42));
         for (let i = 0; i < 144; i++) {
             const c = document.createElement('div');
-            c.style.cssText = `width:${ecs}px; height:${ecs}px; background:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative;`;
+            c.style.cssText = `width:${ecs}px; height:${ecs}px; background:var(--cell); display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative;`;
             const tok = mlEditorPaint[i];
             if (tok === 'CB' || tok === 'CW') {
                 const col = document.createElement('div');
@@ -2149,7 +2227,7 @@
         // localStorage, not editable (the disc-only editor would strip the
         // baked-in collectors). Each runs the preset flow via loadBuiltinOpening.
         const bTitle = document.createElement('p');
-        bTitle.style.cssText = 'font-weight:bold; margin:6px 0; color:#2c3e50; font-size:0.95em;';
+        bTitle.style.cssText = 'font-weight:bold; margin:6px 0; color:var(--text-strong); font-size:0.95em;';
         bTitle.textContent = 'プリセット開始配置（コレクター固定 — プレイヤー 2 が色を選択）：';
         host.appendChild(bTitle);
         const bRow = document.createElement('div');
@@ -2168,7 +2246,7 @@
         const customs = mlLoadCustomPositions();
         if (!customs.length) return;
         const title = document.createElement('p');
-        title.style.cssText = 'font-weight:bold; margin:14px 0 6px; color:#2c3e50; font-size:0.95em;';
+        title.style.cssText = 'font-weight:bold; margin:14px 0 6px; color:var(--text-strong); font-size:0.95em;';
         title.textContent = 'あなたのカスタム配置：';
         host.appendChild(title);
         const row = document.createElement('div');
