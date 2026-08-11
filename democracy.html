@@ -90,7 +90,8 @@
         <h3>Regel 12</h3>
         <p>Zwei verbundene gleichfarbige Satelliten dürfen nicht orthogonal benachbart sein.</p>
         <h3>Spielende (Regel 13–14)</h3>
-        <p>Wenn ein Spieler alle 12 verbunden hat → andere bekommt 3 Extra-Züge. Sofort Ende bei 23 verbundenen Satelliten.</p>
+        <p><b>Sofort-Ende:</b> Sobald insgesamt 23 Satelliten verbunden sind, endet das Spiel augenblicklich.<br>
+           <b>Gnaden-Züge:</b> Wer als Erster alle 12 eigenen Satelliten verbunden hat, ist fertig und zieht nicht mehr. Nur der andere Spieler zieht weiter — er bekommt genau <b>3 Gnaden-Züge</b>, die die ⚡-Anzeige oben herunterzählt. Nach dem letzten endet das Spiel und wird gewertet.</p>
         <h3>Wertung (Regel 15–16)</h3>
         <p>Meiste Kolonien kontrolliert gewinnt. Tiebreak: wer die Kolonie mit dem niedrigsten Gesamtwert kontrolliert.</p>
         <button class="btn" onclick="toggleRules()" style="margin-top:10px;">Schließen</button>
@@ -792,13 +793,29 @@
         const cs = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cs')) + 1;
 
         for (const [r1, c1, r2, c2] of pairs) {
-            const x1 = c1 * cs + cs / 2;
-            const y1 = r1 * cs + cs / 2;
-            const x2 = c2 * cs + cs / 2;
-            const y2 = r2 * cs + cs / 2;
-            const midX = (x1 + x2) / 2;
-            const midY = (y1 + y2) / 2;
+            const cx1 = c1 * cs + cs / 2;
+            const cy1 = r1 * cs + cs / 2;
+            const cx2 = c2 * cs + cs / 2;
+            const cy2 = r2 * cs + cs / 2;
+            const midX = (cx1 + cx2) / 2;
+            const midY = (cy1 + cy2) / 2;
             const isHorizontal = r1 === r2;
+
+            // The bridge stops in the GAP between the two satellites instead of
+            // running centre-to-centre, so it can never paint over the numbers
+            // (Lucas, 2026-07-12: "the connection graphic covers the numbers").
+            // The core disc carrying the number is 0.49*cs wide (+ a 2px gold
+            // ring when connected), so pulling each end back by 0.30*cs docks
+            // the bridge right at that ring.  Connections are always
+            // orthogonally adjacent, so the inset runs along a single axis and
+            // midX / midY are unchanged.
+            const inset = cs * 0.30;
+            const stepX = isHorizontal ? Math.sign(cx2 - cx1) * inset : 0;
+            const stepY = isHorizontal ? 0 : Math.sign(cy2 - cy1) * inset;
+            const x1 = cx1 + stepX;
+            const y1 = cy1 + stepY;
+            const x2 = cx2 - stepX;
+            const y2 = cy2 - stepY;
 
             ctx.save();
 
