@@ -162,25 +162,18 @@ footer {
 }
 
 #theme-toggle {
-    position: fixed;
-    /* Respect the iOS notch / status-bar safe area so the pill isn't hidden
-       under it (env() is 0 on non-notched / non-cover layouts, so this also
-       just means 12/14px there). */
-    top: calc(env(safe-area-inset-top, 0px) + 12px);
-    left: calc(env(safe-area-inset-left, 0px) + 14px);
-    z-index: 1000;
-    padding: 9px 16px;
-    border-radius: 20px;
+    display: inline-block;
+    margin-top: 4px;
+    padding: 6px 14px;
+    border-radius: 16px;
     border: none;
-    /* Fixed bright gold in BOTH themes so it stands out on the dark AND the
-       light background (a surface-coloured button blended into the page). */
+    /* Bright gold in both themes so it's easy to spot in the footer. */
     background: #ffd700;
     color: #263238;
     font-family: inherit;
-    font-size: 0.9em;
+    font-size: 0.85em;
     font-weight: 700;
     cursor: pointer;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.35);
 }
 #theme-toggle:hover { background: #ffe34d; }
 
@@ -204,8 +197,6 @@ footer a:hover { text-decoration: underline; }
 </script>
 </head>
 <body>
-
-<button id="theme-toggle" onclick="toggleIndexTheme()">☀️ Light</button>
 
 <header>
     <h1>PARADOS</h1>
@@ -388,6 +379,9 @@ footer a:hover { text-decoration: underline; }
     <a href="https://game.ywesee.com/parados/docs/video/index.html">Videos</a> &middot;
     <a href="https://github.com/zdavatz/parados">GitHub</a> &middot;
     All games run entirely in your browser &mdash; no accounts, no downloads.
+    <div style="margin-top:16px;">
+        <button id="theme-toggle" onclick="toggleIndexTheme()">☀️ Light</button>
+    </div>
 </footer>
 
 <script>
