@@ -23,6 +23,16 @@
             --tower-width: 72px;
         }
 
+        /* Light theme — SURFACE tokens only (dark is default; shared parados_theme key).
+           Game-state colours (stones, jokers, towers, accent/21 highlights, win, WhatsApp) are NOT themed. */
+        :root[data-theme="light"] {
+            --bg: #eceff1;
+            --panel-bg: #ffffff;
+            --panel-hover: #dde3e7;
+            --text: #1c2529;
+            --text-dim: #56676f;
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
@@ -420,6 +430,7 @@
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .animate-in { animation: slideUp 0.3s ease-out; }
     </style>
+    <script>(function(){try{var s=localStorage.getItem('parados_theme');document.documentElement.setAttribute('data-theme',s==='light'?'light':'dark');}catch(e){}})();</script>
 </head>
 <body>
 
@@ -428,6 +439,7 @@
     <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
         <h1 style="margin:5px 0;">RAINBOW BLACKJACK</h1>
         <button class="btn btn-small" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">Auf WhatsApp teilen</button>
+        <button class="btn btn-small" id="theme-toggle" style="width:auto; padding:8px 16px; background:var(--panel-bg); color:var(--text); border:1px solid var(--panel-hover); margin-top:0;" onclick="rbToggleTheme()">☀️ Hell</button>
     </div>
     <p class="subtitle">Farbiges 21 — ein Spiel von Walter Prossnitz</p>
     <div class="intro">
@@ -1553,6 +1565,19 @@ document.addEventListener('keydown', e => {
 function applyRulesHash() { if (location.hash === '#rules') openRules(); }
 window.addEventListener('hashchange', applyRulesHash);
 applyRulesHash();
+
+// --- Light/dark theme (dark default; shared parados_theme key; surfaces only) ---
+function rbApplyTheme(mode) {
+    document.documentElement.setAttribute('data-theme', mode);
+    var b = document.getElementById('theme-toggle');
+    if (b) b.textContent = mode === 'dark' ? '☀️ Hell' : '🌙 Dunkel';
+}
+function rbToggleTheme() {
+    var n = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    try { localStorage.setItem('parados_theme', n); } catch (e) {}
+    rbApplyTheme(n);
+}
+rbApplyTheme(document.documentElement.getAttribute('data-theme') || 'dark');
 </script>
 </body>
 </html>

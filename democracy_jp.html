@@ -5,9 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>宇宙の民主主義</title>
     <style>
-        :root { --bg: #0b0e14; --p1: #e94560; --p2: #00d2ff; --accent: #f0a500; --panel: #16213e; --warn: #ffcc00; --cs: 45px; }
+        /* Dark is the default (Democracy's original look). Only SURFACE tokens are themed;
+           game state (player colours --p1/--p2, --accent connections, --warn, the board
+           cells, satellites, canvas laser lines, stars) stays fixed. Global theme: shares
+           the localStorage "parados_theme" key with index.html + the other themeable games. */
+        :root { --bg: #0b0e14; --p1: #e94560; --p2: #00d2ff; --accent: #f0a500; --panel: #16213e; --warn: #ffcc00; --text: #ffffff; --panel-border: #444; --sunken: #0b0e14; --cs: 45px; }
+        :root[data-theme="light"] { --bg: #e9edf2; --panel: #ffffff; --text: #14203a; --panel-border: #c3cddd; --sunken: #eef2f8; }
         * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; display: flex; flex-direction: column; align-items: center; margin: 0; padding: 10px; min-height: 100vh; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; margin: 0; padding: 10px; min-height: 100vh; }
         #top-bar { background: var(--panel); padding: 10px; border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--accent); width: 100%; max-width: 960px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 0.85rem; }
         .main-container { display: flex; gap: 15px; align-items: flex-start; flex-wrap: wrap; justify-content: center; width: 100%; }
         #board-container { position: relative; }
@@ -24,13 +29,13 @@
         .p2 .core { background: var(--p2); color: black; }
         .connected .core { border-radius: 50%; border: 2px solid gold; }
         .selected .core { outline: 2px solid white; transform: scale(1.15); }
-        #sidebar { width: 100%; max-width: 370px; background: var(--panel); padding: 12px; border-radius: 8px; min-height: 200px; display: flex; flex-direction: column; border: 1px solid #444; }
-        #score-panel { background: #0b0e14; padding: 8px; border-radius: 4px; margin-bottom: 8px; border: 1px solid #333; font-size: 0.85rem; }
+        #sidebar { width: 100%; max-width: 370px; background: var(--panel); padding: 12px; border-radius: 8px; min-height: 200px; display: flex; flex-direction: column; border: 1px solid var(--panel-border); }
+        #score-panel { background: var(--sunken); padding: 8px; border-radius: 4px; margin-bottom: 8px; border: 1px solid var(--panel-border); font-size: 0.85rem; }
         #colony-list { font-size: 0.8rem; max-height: 120px; overflow-y: auto; margin-top: 5px; }
         .colony-entry { padding: 3px 0; border-bottom: 1px solid #222; display: flex; justify-content: space-between; }
         .colony-owner-1 { color: var(--p1); }
         .colony-owner-2 { color: var(--p2); }
-        #chat-messages { flex-grow: 1; overflow-y: auto; font-size: 0.82rem; background: #0b0e14; padding: 8px; border-radius: 4px; margin-bottom: 8px; border: 1px solid #333; min-height: 80px; }
+        #chat-messages { flex-grow: 1; overflow-y: auto; font-size: 0.82rem; background: var(--sunken); padding: 8px; border-radius: 4px; margin-bottom: 8px; border: 1px solid var(--panel-border); min-height: 80px; }
         .btn { padding: 8px 12px; cursor: pointer; background: #333; border: 1px solid #555; color: white; border-radius: 4px; font-size: 0.85rem; }
         #rules-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 1000; justify-content: center; align-items: center; overflow-y: auto; }
         .modal-content { background: #1a1f29; border: 2px solid var(--accent); padding: 20px; border-radius: 12px; max-width: 650px; width: 92%; max-height: 90vh; overflow-y: auto; line-height: 1.5; font-size: 0.9rem; margin: 20px; }
@@ -69,6 +74,7 @@
             #top-bar { font-size: 0.8rem; }
         }
     </style>
+    <script>(function(){try{var s=localStorage.getItem('parados_theme');document.documentElement.setAttribute('data-theme',s==='light'?'light':'dark');}catch(e){}})();</script>
 </head>
 <body>
 
@@ -101,6 +107,7 @@
 <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
     <h1 style="margin:5px 0; color: var(--accent);">宇宙の民主主義</h1>
     <button class="btn" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">WhatsApp で共有</button>
+    <button class="btn" id="theme-toggle" style="width:auto; padding:8px 16px; background:var(--panel); color:var(--text); border:1px solid var(--panel-border); margin-top:0;" onclick="demoToggleTheme()">☀️ ライト</button>
 </div>
 
 <div id="top-bar">
@@ -999,6 +1006,19 @@
     }
     window.addEventListener('hashchange', applyRulesHash);
     applyRulesHash();
+
+    // --- Light/dark theme (dark default; shared parados_theme key; surfaces only) ---
+    function demoApplyTheme(mode) {
+        document.documentElement.setAttribute('data-theme', mode);
+        var b = document.getElementById('theme-toggle');
+        if (b) b.textContent = mode === 'dark' ? '☀️ ライト' : '🌙 ダーク';
+    }
+    function demoToggleTheme() {
+        var n = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        try { localStorage.setItem('parados_theme', n); } catch (e) {}
+        demoApplyTheme(n);
+    }
+    demoApplyTheme(document.documentElement.getAttribute('data-theme') || 'dark');
 </script>
 </body>
 </html>

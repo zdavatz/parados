@@ -7,6 +7,8 @@
 <style>
 :root {
     --bg: #263238;
+    --text: #eceff1;
+    --muted: #90a4ae;
     --board-bg: #1a2027;
     --panel-bg: #37474f;
     --cell-size: 42px;
@@ -24,12 +26,24 @@
     --modal-bg: rgba(0, 0, 0, 0.9);
 }
 
+/* Dark is the default (Capovolto's original look). Only SURFACE tokens are
+   themed; game state (disc colours, board cells/polyomino colours, disc
+   numbers, flip/valid highlights, the golden ring, turn accents, the WhatsApp
+   button) stays fixed. Global theme: shares the localStorage "parados_theme"
+   key with index.html + the other themeable games. */
+:root[data-theme="light"] {
+    --bg: #e9ede8;
+    --text: #1f2a2e;
+    --muted: #5a6b73;
+    --panel-bg: #f4f7f2;
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: var(--bg);
-    color: #eceff1;
+    color: var(--text);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -48,7 +62,7 @@ h1 {
 
 .subtitle {
     font-size: 0.9em;
-    color: #90a4ae;
+    color: var(--muted);
     margin-bottom: 8px;
 }
 
@@ -70,8 +84,8 @@ h1 {
 }
 
 #phaseInfo { color: var(--accent); }
-#turnInfo { color: #e0e0e0; }
-#roundInfo { color: #90a4ae; }
+#turnInfo { color: var(--text); }
+#roundInfo { color: var(--muted); }
 
 .main-area {
     display: flex;
@@ -522,11 +536,13 @@ button:disabled {
     h1 { font-size: 1.5em; }
 }
 </style>
+<script>(function(){try{var s=localStorage.getItem('parados_theme');document.documentElement.setAttribute('data-theme',s==='light'?'light':'dark');}catch(e){}})();</script>
 </head>
 <body>
 <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
     <h1 style="margin:5px 0;">CAPOVOLTO</h1>
     <button class="btn-secondary" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">Auf WhatsApp teilen</button>
+    <button id="theme-toggle" style="width:auto; padding:8px 16px; background:var(--panel-bg); color:var(--text); margin-top:0;" onclick="capoToggleTheme()">☀️ Hell</button>
 </div>
 <div class="subtitle">Das Wendespiel &mdash; f&uuml;r 2 Spieler</div>
 
@@ -2005,6 +2021,11 @@ function updateCellSize() {
 }
 
 window.addEventListener('resize', () => { updateCellSize(); renderBoard(); });
+
+// --- Light/dark theme (dark default; shared parados_theme key; surfaces only) ---
+function capoApplyTheme(mode){document.documentElement.setAttribute('data-theme',mode);var b=document.getElementById('theme-toggle');if(b)b.textContent=mode==='dark'?'☀️ Hell':'🌙 Dunkel';}
+function capoToggleTheme(){var n=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';try{localStorage.setItem('parados_theme',n);}catch(e){}capoApplyTheme(n);}
+capoApplyTheme(document.documentElement.getAttribute('data-theme')||'dark');
 
 updateCellSize();
 initGame();

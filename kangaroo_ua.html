@@ -13,12 +13,26 @@
             --kangy-color: #d84315;
             --modal-bg: rgba(0, 0, 0, 0.9);
             --cell-size: 45px;
+            /* SURFACE tokens only (dark is the original look; light is the override).
+               Game state — outback --bg-color/--grid-color, the dishes, kangy, the
+               coloured mode cards, yellow highlights, dish counters — stays fixed.
+               Shares the localStorage "parados_theme" key with the rest of the app. */
+            --bg: #263238;
+            --text: #eceff1;
+            --panel: #37474f;
+            --panel-border: #455a64;
+        }
+        :root[data-theme="light"] {
+            --bg: #e9ede8;
+            --text: #1f2a24;
+            --panel: #f4f7f2;
+            --panel-border: #cdd8cd;
         }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #263238;
-            color: #eceff1;
+            background-color: var(--bg);
+            color: var(--text);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -203,12 +217,17 @@
         .modal-content li { margin-bottom: 10px; font-size: 0.95em; }
         .emphasis { font-weight: bold; color: #c62828; }
     </style>
+    <script>
+      (function(){ try { var s=localStorage.getItem('parados_theme');
+        document.documentElement.setAttribute('data-theme', s==='light'?'light':'dark'); } catch(e){} })();
+    </script>
 </head>
 <body>
 
     <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
         <h1 style="margin:5px 0;">Нетерпляче Кенгуру 🦘<span id="position-title" style="color:#7f8c8d; font-weight:normal;"></span></h1>
         <button class="btn" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">Поділитися у WhatsApp</button>
+        <button id="theme-toggle" style="width:auto; padding:8px 16px; background:var(--panel); color:var(--text); border:1px solid var(--panel-border); border-radius:6px; cursor:pointer; font-weight:600;" onclick="kangarooToggleTheme()">☀️ Світла</button>
     </div>
 
     <div class="game-wrapper">
@@ -1240,7 +1259,14 @@
 
     if (!localStorage.getItem('kangy_master_ua_v2')) openRules();
 
+    // --- Light/dark theme (dark default; shared parados_theme key; surfaces only) ---
+    function kangarooApplyTheme(mode){ document.documentElement.setAttribute('data-theme',mode);
+      var b=document.getElementById('theme-toggle'); if(b) b.textContent = mode==='dark' ? '☀️ Світла' : '🌙 Темна'; }
+    function kangarooToggleTheme(){ var n=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
+      try{localStorage.setItem('parados_theme',n);}catch(e){} kangarooApplyTheme(n); }
+
     // СТАРТ
+    kangarooApplyTheme(document.documentElement.getAttribute('data-theme')||'dark');
     populateLevelButtons();
 
     function applyHashLevel() {

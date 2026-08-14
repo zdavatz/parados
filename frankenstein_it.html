@@ -28,6 +28,18 @@
     --modal-bg: rgba(0, 0, 0, 0.9);
 }
 
+/* Dark is the default (Frankenstein's original look). Only SURFACE tokens are
+   themed; game state (card backs/faces, head/limb art --green/--orange/--purple/
+   --blue, ear halves, --golden accents, matched-pair highlights, player colours)
+   stays fixed. Global theme: shares the localStorage "parados_theme" key with the
+   other themeable games. */
+:root[data-theme="light"] {
+    --bg: #eceff1;
+    --panel-bg: #ffffff;
+    --text: #1c2429;
+    --text-dim: #546e7a;
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
@@ -664,12 +676,14 @@ h1 {
     #statusBar { font-size: 0.85em; }
 }
 </style>
+<script>(function(){try{var s=localStorage.getItem('parados_theme');document.documentElement.setAttribute('data-theme',s==='light'?'light':'dark');}catch(e){}})();</script>
 </head>
 <body>
 
 <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
     <h1 style="margin:5px 0;">FRANKENSTEIN</h1>
     <button class="btn-rules" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">Condividi su WhatsApp</button>
+    <button id="theme-toggle" style="width:auto; padding:8px 16px; background:var(--panel-bg); color:var(--text); border:1px solid var(--text-dim); border-radius:6px; cursor:pointer; margin-top:0;" onclick="frankToggleTheme()">☀️ Chiaro</button>
 </div>
 <p class="subtitle">Dov'è quel gomito verde?? &mdash; Un gioco di memoria di Walter Prossnitz</p>
 
@@ -2181,6 +2195,11 @@ if (!localStorage.getItem('frankenstein_rules_v1')) {
 function applyRulesHash() { if (location.hash === '#rules') openRules(); }
 window.addEventListener('hashchange', applyRulesHash);
 applyRulesHash();
+
+// ─── Light/dark theme (dark default; shared parados_theme key; surfaces only) ───
+function frankApplyTheme(mode){document.documentElement.setAttribute('data-theme',mode);var b=document.getElementById('theme-toggle');if(b)b.textContent=mode==='dark'?'☀️ Chiaro':'🌙 Scuro';}
+function frankToggleTheme(){var n=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';try{localStorage.setItem('parados_theme',n);}catch(e){}frankApplyTheme(n);}
+frankApplyTheme(document.documentElement.getAttribute('data-theme')||'dark');
 </script>
 </body>
 </html>
