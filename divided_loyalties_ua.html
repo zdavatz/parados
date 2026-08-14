@@ -5,8 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Divided Loyalties: Епічне видання</title>
     <style>
+        /* Dark is the default (DL's original look). Only SURFACE tokens are themed;
+           game state (stones/bridges --blue..--orange, board grays, white board
+           frame, blue/yellow turn indicators) stays fixed. Global theme: shares the
+           localStorage "parados_theme" key with index.html + the other themeable games. */
         :root {
             --bg: #3d5245; --panel: #4d6758;
+            --text: #f5f5f5; --panel-border: #3d5245; --sunken: rgba(0,0,0,0.22);
             --blue: #2196F3; --yellow: #FFEB3B;
             --red: #F44336; --green: #2E7D32; --purple: #BA68C8; --orange: #FFA726;
             --cs: 44px;
@@ -15,8 +20,12 @@
             --tile-size: calc(var(--cs) - 4px);
             --step: calc(var(--cs) + var(--gap));
         }
+        :root[data-theme="light"] {
+            --bg: #e9ede8; --panel: #f4f7f2;
+            --text: #1f2a24; --panel-border: #cdd8cd; --sunken: rgba(0,0,0,0.05);
+        }
         * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #f5f5f5; display: flex; flex-direction: column; align-items: center; margin: 0; padding: 10px; min-height: 100vh; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; margin: 0; padding: 10px; min-height: 100vh; }
         h1 { font-size: 1.5em; margin: 5px 0; }
         #game-layout { display: flex; align-items: flex-start; flex-wrap: wrap; justify-content: center; gap: 15px; width: 100%; }
         #meta-grid { display: grid; grid-template-columns: repeat(11, var(--cs)); grid-template-rows: repeat(11, var(--cs)); gap: var(--gap); position: relative; background: #fff; padding: var(--pad); border-radius: 4px; }
@@ -61,7 +70,7 @@
         .tile.bridge-pending { outline: 3px solid #64ffda; outline-offset: 1px; box-shadow: 0 0 0 2px rgba(100,255,218,0.45), 0 4px 8px rgba(0,0,0,0.6); }
         .tile.bridge-rejected { animation: rejectFlash 0.55s ease-out; }
         @keyframes rejectFlash { 0% { outline: 3px solid #D32F2F; outline-offset: 1px; box-shadow: 0 0 0 4px rgba(211,47,47,0.55), 0 0 14px rgba(255,23,68,0.7); } 100% { outline: 0 solid transparent; box-shadow: none; } }
-        #ui-panel { width: 100%; max-width: 340px; padding: 15px; background: var(--panel); border-radius: 8px; border: 1px solid #3d5245; }
+        #ui-panel { width: 100%; max-width: 340px; padding: 15px; background: var(--panel); border-radius: 8px; border: 1px solid var(--panel-border); }
         .current-player { font-size: 1.1em; margin-bottom: 12px; padding: 10px; border-radius: 4px; text-align: center; font-weight: bold; }
         .blue-turn { background: #1565C0; color: white; } .yellow-turn { background: #fbc02d; color: #333; }
         #bridge-layer { position: absolute; top: var(--pad); left: var(--pad); width: calc(100% - 2 * var(--pad)); height: calc(100% - 2 * var(--pad)); pointer-events: none; z-index: 20; }
@@ -69,7 +78,7 @@
         .flash-red { animation: flashRed 0.7s; }
         @keyframes flashRed { 0% { stroke: white; stroke-width: 12; } 50% { stroke: #ff1744; stroke-width: 15; } 100% { stroke: #555; stroke-width: 6; } }
         .btn { background: #6d4c41; color: white; border: none; padding: 12px; border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 8px; font-size: 0.95em; }
-        .inv-slot { background: rgba(0,0,0,0.2); padding: 6px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+        .inv-slot { background: var(--sunken); padding: 6px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
         .inv-tile { width: 28px; height: 28px; border-radius: 2px; cursor: pointer; border: 2px solid transparent; }
         .inv-tile.blue { background: var(--blue); } .inv-tile.yellow { background: var(--yellow); }
         .inv-tile.red { background: var(--red); } .inv-tile.green { background: var(--green); }
@@ -99,12 +108,22 @@
             #ui-panel { max-width: 100%; }
         }
     </style>
+    <script>
+        // Apply the shared theme before the body paints (dark is the default here).
+        (function () {
+            try {
+                var s = localStorage.getItem('parados_theme');
+                document.documentElement.setAttribute('data-theme', s === 'light' ? 'light' : 'dark');
+            } catch (e) {}
+        })();
+    </script>
 </head>
 <body>
 
     <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
         <h1 style="margin:5px 0;">DIVIDED LOYALTIES<span id="position-title" style="color:#bdbdbd; font-weight:normal;"></span></h1>
         <button class="btn" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="openShareDialog()">Поділитися у WhatsApp</button>
+        <button class="btn" id="theme-toggle" style="width:auto; padding:8px 16px; background:var(--panel); color:var(--text); border:1px solid var(--panel-border); margin-top:0;" onclick="dlToggleTheme()">☀️ Світла</button>
     </div>
 
     <div id="share-modal" onclick="closeShareDialog()">
@@ -2104,7 +2123,20 @@
             } else { fallback(); alert('Пряме посилання скопійовано:\n' + link); }
         }
 
+        // --- Light/dark theme (dark default; shared parados_theme key; surfaces only) ---
+        function dlApplyTheme(mode) {
+            document.documentElement.setAttribute('data-theme', mode);
+            var btn = document.getElementById('theme-toggle');
+            if (btn) btn.textContent = mode === 'dark' ? '☀️ Світла' : '🌙 Темна';
+        }
+        function dlToggleTheme() {
+            var next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            try { localStorage.setItem('parados_theme', next); } catch (e) {}
+            dlApplyTheme(next);
+        }
+
         async function startup() {
+            dlApplyTheme(document.documentElement.getAttribute('data-theme') || 'dark');
             STARTING_POSITIONS = await loadPositions();
             if (location.hash === '#rules') {
                 showSetup();
