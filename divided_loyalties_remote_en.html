@@ -132,7 +132,7 @@
         // only a light-mode user would otherwise see a dark flash on load).
         (function () {
             try {
-                var s = localStorage.getItem('dl_theme');
+                var s = localStorage.getItem('parados_theme');
                 document.documentElement.setAttribute('data-theme', s === 'light' ? 'light' : 'dark');
             } catch (e) {}
         })();
@@ -2341,7 +2341,7 @@
         }
 
         // --- Light/dark theme (dark is the default; only surfaces are themed) ---
-        const DL_THEME_KEY = 'dl_theme';
+        const DL_THEME_KEY = 'parados_theme';
         function dlApplyTheme(mode) {
             document.documentElement.setAttribute('data-theme', mode);
             const btn = document.getElementById('theme-toggle');

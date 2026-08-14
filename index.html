@@ -8,7 +8,8 @@
 /* Dark is the default (the original look). Light is a data-theme override.
    The coloured launch buttons (green/orange/blue/purple/red/teal) stay as-is
    in both themes — they work on either background. Toggle themes THIS page
-   only (key "index_theme"); the games keep their own theme settings. */
+   AND every themeable game (shared key "parados_theme"), so the choice
+   follows you into the games that support theming. */
 :root {
     --bg: #263238;
     --card-bg: #37474f;
@@ -187,10 +188,11 @@ footer a:hover { text-decoration: underline; }
 </style>
 <script>
     // Apply the saved theme before the body paints (dark is the default, so a
-    // light-mode visitor never sees a dark flash). Themes this page only.
+    // light-mode visitor never sees a dark flash). Shared "parados_theme" key
+    // so the choice propagates to the themeable games (read on their load).
     (function () {
         try {
-            var s = localStorage.getItem('index_theme');
+            var s = localStorage.getItem('parados_theme');
             document.documentElement.setAttribute('data-theme', s === 'light' ? 'light' : 'dark');
         } catch (e) {}
     })();
@@ -392,7 +394,7 @@ footer a:hover { text-decoration: underline; }
     }
     function toggleIndexTheme() {
         var next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-        try { localStorage.setItem('index_theme', next); } catch (e) {}
+        try { localStorage.setItem('parados_theme', next); } catch (e) {}
         applyIndexTheme(next);
     }
     applyIndexTheme(document.documentElement.getAttribute('data-theme') || 'dark');
