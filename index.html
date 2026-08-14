@@ -163,8 +163,11 @@ footer {
 
 #theme-toggle {
     position: fixed;
-    top: 12px;
-    left: 14px;
+    /* Respect the iOS notch / status-bar safe area so the pill isn't hidden
+       under it (env() is 0 on non-notched / non-cover layouts, so this also
+       just means 12/14px there). */
+    top: calc(env(safe-area-inset-top, 0px) + 12px);
+    left: calc(env(safe-area-inset-left, 0px) + 14px);
     z-index: 1000;
     padding: 9px 16px;
     border-radius: 20px;
