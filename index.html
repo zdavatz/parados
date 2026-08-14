@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Parados &mdash; Board Games by Walter Prossnitz</title>
 <style>
+/* Dark is the default (the original look). Light is a data-theme override.
+   The coloured launch buttons (green/orange/blue/purple/red/teal) stay as-is
+   in both themes — they work on either background. Toggle themes THIS page
+   only (key "index_theme"); the games keep their own theme settings. */
 :root {
     --bg: #263238;
     --card-bg: #37474f;
@@ -12,6 +16,20 @@
     --accent: #ffd700;
     --text: #eceff1;
     --text-dim: #90a4ae;
+    --desc: #cfd8dc;
+    --border: rgba(255,255,255,0.05);
+    --toggle-bg: #37474f;
+}
+:root[data-theme="light"] {
+    --bg: #eceff1;
+    --card-bg: #ffffff;
+    --card-hover: #e7ecef;
+    --accent: #b8860b;
+    --text: #1b2327;
+    --text-dim: #546e7a;
+    --desc: #37474f;
+    --border: rgba(0,0,0,0.08);
+    --toggle-bg: #ffffff;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -79,7 +97,7 @@ header p {
 }
 
 .game-card .desc {
-    color: #cfd8dc;
+    color: var(--desc);
     font-size: 0.95em;
     line-height: 1.5;
     flex: 1;
@@ -142,7 +160,24 @@ footer {
     font-size: 0.85em;
     margin-top: 40px;
     padding: 20px 10px;
-    border-top: 1px solid rgba(255,255,255,0.05);
+    border-top: 1px solid var(--border);
+}
+
+#theme-toggle {
+    position: fixed;
+    top: 12px;
+    left: 14px;
+    z-index: 1000;
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--toggle-bg);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.85em;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
 }
 
 footer a { color: var(--accent); text-decoration: none; }
@@ -153,8 +188,20 @@ footer a:hover { text-decoration: underline; }
     .games-grid { grid-template-columns: 1fr; }
 }
 </style>
+<script>
+    // Apply the saved theme before the body paints (dark is the default, so a
+    // light-mode visitor never sees a dark flash). Themes this page only.
+    (function () {
+        try {
+            var s = localStorage.getItem('index_theme');
+            document.documentElement.setAttribute('data-theme', s === 'light' ? 'light' : 'dark');
+        } catch (e) {}
+    })();
+</script>
 </head>
 <body>
+
+<button id="theme-toggle" onclick="toggleIndexTheme()">☀️ Light</button>
 
 <header>
     <h1>PARADOS</h1>
@@ -338,6 +385,20 @@ footer a:hover { text-decoration: underline; }
     <a href="https://github.com/zdavatz/parados">GitHub</a> &middot;
     All games run entirely in your browser &mdash; no accounts, no downloads.
 </footer>
+
+<script>
+    function applyIndexTheme(mode) {
+        document.documentElement.setAttribute('data-theme', mode);
+        var btn = document.getElementById('theme-toggle');
+        if (btn) btn.textContent = mode === 'dark' ? '☀️ Light' : '🌙 Dark';
+    }
+    function toggleIndexTheme() {
+        var next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        try { localStorage.setItem('index_theme', next); } catch (e) {}
+        applyIndexTheme(next);
+    }
+    applyIndexTheme(document.documentElement.getAttribute('data-theme') || 'dark');
+</script>
 
 </body>
 </html>
