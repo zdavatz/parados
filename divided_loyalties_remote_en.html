@@ -6,8 +6,16 @@
     <title>Divided Loyalties Remote: Epic Master Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
     <style>
+        /* Dark is the default (DL's original look). Only SURFACE tokens below are
+           themed; the game colours (stones/bridges --blue/--yellow/--red/--green/
+           --purple/--orange), the board grays, the white board frame and the
+           blue/yellow turn indicators are game state and stay fixed in both themes.
+           The light overrides live in the :root[data-theme="light"] block. */
         :root {
             --bg: #3d5245; --panel: #4d6758;
+            --text: #f5f5f5; --panel-border: #3d5245;
+            --sunken: rgba(0,0,0,0.22); --chat-border: rgba(255,255,255,0.2);
+            --chat-me: #90CAF9; --chat-them: #FFE082; --chat-sys: #b0bec5;
             --blue: #2196F3; --yellow: #FFEB3B;
             --red: #F44336; --green: #2E7D32; --purple: #BA68C8; --orange: #FFA726;
             --cs: 44px;
@@ -16,8 +24,14 @@
             --tile-size: calc(var(--cs) - 4px);
             --step: calc(var(--cs) + var(--gap));
         }
+        :root[data-theme="light"] {
+            --bg: #e9ede8; --panel: #f4f7f2;
+            --text: #1f2a24; --panel-border: #cdd8cd;
+            --sunken: rgba(0,0,0,0.05); --chat-border: rgba(0,0,0,0.14);
+            --chat-me: #1565C0; --chat-them: #b26a00; --chat-sys: #5a6b62;
+        }
         * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #f5f5f5; display: flex; flex-direction: column; align-items: center; margin: 0; padding: 10px; min-height: 100vh; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; margin: 0; padding: 10px; min-height: 100vh; }
         h1 { font-size: 1.5em; margin: 5px 0; }
         #game-layout { display: flex; align-items: flex-start; flex-wrap: wrap; justify-content: center; gap: 15px; width: 100%; }
         #meta-grid { display: grid; grid-template-columns: repeat(11, var(--cs)); grid-template-rows: repeat(11, var(--cs)); gap: var(--gap); position: relative; background: #fff; padding: var(--pad); border-radius: 4px; }
@@ -62,7 +76,7 @@
         .tile.bridge-pending { outline: 3px solid #64ffda; outline-offset: 1px; box-shadow: 0 0 0 2px rgba(100,255,218,0.45), 0 4px 8px rgba(0,0,0,0.6); }
         .tile.bridge-rejected { animation: rejectFlash 0.55s ease-out; }
         @keyframes rejectFlash { 0% { outline: 3px solid #D32F2F; outline-offset: 1px; box-shadow: 0 0 0 4px rgba(211,47,47,0.55), 0 0 14px rgba(255,23,68,0.7); } 100% { outline: 0 solid transparent; box-shadow: none; } }
-        #ui-panel { width: 100%; max-width: 340px; padding: 15px; background: var(--panel); border-radius: 8px; border: 1px solid #3d5245; }
+        #ui-panel { width: 100%; max-width: 340px; padding: 15px; background: var(--panel); border-radius: 8px; border: 1px solid var(--panel-border); }
         .current-player { font-size: 1.1em; margin-bottom: 12px; padding: 10px; border-radius: 4px; text-align: center; font-weight: bold; }
         .blue-turn { background: #1565C0; color: white; } .yellow-turn { background: #fbc02d; color: #333; }
         #bridge-layer { position: absolute; top: var(--pad); left: var(--pad); width: calc(100% - 2 * var(--pad)); height: calc(100% - 2 * var(--pad)); pointer-events: none; z-index: 20; }
@@ -70,7 +84,7 @@
         .flash-red { animation: flashRed 0.7s; }
         @keyframes flashRed { 0% { stroke: white; stroke-width: 12; } 50% { stroke: #ff1744; stroke-width: 15; } 100% { stroke: #555; stroke-width: 6; } }
         .btn { background: #6d4c41; color: white; border: none; padding: 12px; border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 8px; font-size: 0.95em; }
-        .inv-slot { background: rgba(0,0,0,0.2); padding: 6px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+        .inv-slot { background: var(--sunken); padding: 6px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
         .inv-tile { width: 28px; height: 28px; border-radius: 2px; cursor: pointer; border: 2px solid transparent; }
         .inv-tile.blue { background: var(--blue); } .inv-tile.yellow { background: var(--yellow); }
         .inv-tile.red { background: var(--red); } .inv-tile.green { background: var(--green); }
@@ -87,11 +101,11 @@
         #connect-status.error { color: #c62828; font-weight: bold; }
         #connect-status.success { color: #2e7d32; font-weight: bold; }
         #role-banner { text-align: center; font-weight: bold; padding: 6px 10px; border-radius: 6px; margin-bottom: 8px; font-size: 0.9em; }
-        #chat-panel { margin-top: 12px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 10px; }
-        #chat-log { height: 120px; overflow-y: auto; background: rgba(0,0,0,0.25); border-radius: 6px; padding: 6px 8px; font-size: 0.82em; line-height: 1.4; text-align: left; }
-        #chat-log .sys { color: #b0bec5; font-style: italic; }
-        #chat-log .me { color: #90CAF9; }
-        #chat-log .them { color: #FFE082; }
+        #chat-panel { margin-top: 12px; border-top: 1px solid var(--chat-border); padding-top: 10px; }
+        #chat-log { height: 120px; overflow-y: auto; background: var(--sunken); border-radius: 6px; padding: 6px 8px; font-size: 0.82em; line-height: 1.4; text-align: left; }
+        #chat-log .sys { color: var(--chat-sys); font-style: italic; }
+        #chat-log .me { color: var(--chat-me); }
+        #chat-log .them { color: var(--chat-them); }
         .chat-input-row { display: flex; gap: 6px; margin-top: 6px; }
         .chat-input-row input { flex: 1; padding: 8px; border: none; border-radius: 6px; font-size: 0.85em; }
         #position-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 15px; }
@@ -113,6 +127,16 @@
             #ui-panel { max-width: 100%; }
         }
     </style>
+    <script>
+        // Apply the saved theme before the body paints (dark is the default, so
+        // only a light-mode user would otherwise see a dark flash on load).
+        (function () {
+            try {
+                var s = localStorage.getItem('dl_theme');
+                document.documentElement.setAttribute('data-theme', s === 'light' ? 'light' : 'dark');
+            } catch (e) {}
+        })();
+    </script>
 </head>
 <body>
 
@@ -136,6 +160,7 @@
     <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
         <h1 style="margin:5px 0;">DIVIDED LOYALTIES<span id="position-title" style="color:#bdbdbd; font-weight:normal;"></span></h1>
         <button class="btn" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="openShareDialog()">Share on WhatsApp</button>
+        <button class="btn" id="theme-toggle" style="width:auto; padding:8px 16px; background:var(--panel); color:var(--text); border:1px solid var(--panel-border); margin-top:0;" onclick="dlToggleTheme()">☀️ Light</button>
     </div>
 
     <div id="share-modal" onclick="closeShareDialog()">
@@ -2315,7 +2340,21 @@
             } else { fallback(); alert('Direct link copied:\n' + link); }
         }
 
+        // --- Light/dark theme (dark is the default; only surfaces are themed) ---
+        const DL_THEME_KEY = 'dl_theme';
+        function dlApplyTheme(mode) {
+            document.documentElement.setAttribute('data-theme', mode);
+            const btn = document.getElementById('theme-toggle');
+            if (btn) btn.textContent = mode === 'dark' ? '☀️ Light' : '🌙 Dark';
+        }
+        function dlToggleTheme() {
+            const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            try { localStorage.setItem(DL_THEME_KEY, next); } catch (e) {}
+            dlApplyTheme(next);
+        }
+
         async function startup() {
+            dlApplyTheme(document.documentElement.getAttribute('data-theme') || 'dark');
             STARTING_POSITIONS = await loadPositions();
             // Remote: the connect screen stays up until two players join. The host
             // then picks the position (showSetup, called from setupConn). We do NOT
