@@ -43,7 +43,7 @@ body {
 
 header {
     text-align: center;
-    padding: 30px 10px 20px;
+    padding: 8px 10px 16px;
 }
 
 header h1 {
@@ -167,16 +167,16 @@ footer {
     margin-top: 4px;
     padding: 6px 14px;
     border-radius: 16px;
-    border: none;
-    /* Bright gold in both themes so it's easy to spot in the footer. */
-    background: #ffd700;
-    color: #263238;
+    /* Theme-aware chip: surface fill + accent outline (visible but not loud). */
+    border: 1px solid var(--accent);
+    background: var(--card-hover);
+    color: var(--text);
     font-family: inherit;
     font-size: 0.85em;
     font-weight: 700;
     cursor: pointer;
 }
-#theme-toggle:hover { background: #ffe34d; }
+#theme-toggle:hover { background: var(--card-bg); }
 
 footer a { color: var(--accent); text-decoration: none; }
 footer a:hover { text-decoration: underline; }
