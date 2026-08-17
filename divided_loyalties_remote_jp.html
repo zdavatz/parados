@@ -762,7 +762,7 @@
                 const x1 = (b.s % GRID_W) * step + cellSize / 2, y1 = Math.floor(b.s / GRID_W) * step + cellSize / 2;
                 const x2 = (b.e % GRID_W) * step + cellSize / 2, y2 = Math.floor(b.e / GRID_W) * step + cellSize / 2;
                 const angle = Math.atan2(y2 - y1, x2 - x1);
-                const off = cellSize * 0.50;
+                const off = cellSize * 0.42;
                 b.coords = { x1: x1 + Math.cos(angle) * off, y1: y1 + Math.sin(angle) * off, x2: x2 - Math.cos(angle) * off, y2: y2 - Math.sin(angle) * off };
                 drawBridge(b.coords, b.player, b.id, b.cut);
             }
@@ -1614,7 +1614,7 @@
             const x1 = (s%GRID_W)*step+cellSize/2, y1 = Math.floor(s/GRID_W)*step+cellSize/2;
             const x2 = (e%GRID_W)*step+cellSize/2, y2 = Math.floor(e/GRID_W)*step+cellSize/2;
             const angle = Math.atan2(y2-y1, x2-x1);
-            const off = cellSize * 0.50;
+            const off = cellSize * 0.42;
             const c = { x1: x1 + Math.cos(angle)*off, y1: y1 + Math.sin(angle)*off, x2: x2 - Math.cos(angle)*off, y2: y2 - Math.sin(angle)*off };
             if (cls.isRed) {
                 // Red sees ALL bridges (red AND scoring) when checking collisions —
