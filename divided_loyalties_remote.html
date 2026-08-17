@@ -16,7 +16,7 @@
             --text: #f5f5f5; --panel-border: #3d5245;
             --sunken: rgba(0,0,0,0.22); --chat-border: rgba(255,255,255,0.2);
             --chat-me: #90CAF9; --chat-them: #FFE082; --chat-sys: #b0bec5;
-            --blue: #2196F3; --yellow: #FFEB3B;
+            --blue: #2196F3; --yellow: #FFF59D;
             --red: #F44336; --green: #2E7D32; --purple: #BA68C8; --orange: #FFA726;
             --cs: 44px;
             --gap: 2px;
@@ -1733,7 +1733,7 @@
                 l.setAttribute("stroke", "#555");
                 l.setAttribute("stroke-dasharray", "5");
             } else {
-                l.setAttribute("stroke", type==='red'?'#B71C1C':(type==='blue'?'#0D47A1':'#F9A825'));
+                l.setAttribute("stroke", type==='red'?'#B71C1C':(type==='blue'?'#0D47A1':'#FDD835'));
             }
             l.setAttribute("stroke-width", isCut ? "6" : "5"); l.classList.add('bridge-line'); l.id = 'line-' + id;
             svg.appendChild(l);
