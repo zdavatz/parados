@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Frankenstein - Where's that green elbow??</title>
+<title>Where WAS that elbow?</title>
 <style>
 :root {
     --bg: #263238;
@@ -681,11 +681,11 @@ h1 {
 <body>
 
 <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
-    <h1 style="margin:5px 0;">FRANKENSTEIN</h1>
+    <h1 style="margin:5px 0;">Where WAS that elbow?</h1>
     <button class="btn-rules" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">Share on WhatsApp</button>
     <button id="theme-toggle" style="margin-bottom:12px; width:auto; padding:4px 11px; font-size:0.8em; background:var(--panel-bg); color:var(--text); border:1px solid var(--text-dim); border-radius:6px; cursor:pointer; margin-top:0; box-shadow:none;" onclick="frankToggleTheme()">☀️ Light</button>
 </div>
-<p class="subtitle">Where's that green elbow?? &mdash; A Memory Game by Walter Prossnitz</p>
+<p class="subtitle">A Memory Game by Walter Prossnitz</p>
 
 <!-- ─── Setup Screen ─── -->
 <div id="setupScreen">
@@ -765,9 +765,8 @@ h1 {
 <div id="rulesModal">
     <div class="modal-content">
         <span class="close" onclick="closeRules()">&times;</span>
-        <h2>Frankenstein &mdash; Rules</h2>
-        <p><strong>Where's that green elbow??</strong><br>
-        A Memory Frankenstein game for 1 &ndash; 4 players, ages 5 &ndash; 99.</p>
+        <h2>Where WAS that elbow? &mdash; Rules</h2>
+        <p data-note="walter-2026-08-20-blurb">One to four players &middot; 5&ndash;15 minutes. This silly little game has turned out to be quite a brain trainer &mdash; a number of players have reported a noticeable increase in their memory capacity after just a few plays. Build from the inside out, or outside in. It's equally fun as a solo game or with up to three other friends. Our age recommendation is seven years and up &mdash; don't be surprised if the youngest player wins.</p>
 
         <h3>Goal</h3>
         <p>Build a complete Frankenstein body from face-down cards. The game continues until
@@ -839,8 +838,8 @@ h1 {
 
 <script>
 /* ═══════════════════════════════════════════════════════════════
-   FRANKENSTEIN - Where's that green elbow??
-   A Memory Frankenstein game for 2-4 players
+   WHERE WAS THAT ELBOW?  (built from Frankenstein parts)
+   A Memory game for 1-4 players by Walter Prossnitz
    ═══════════════════════════════════════════════════════════════ */
 
 // ─── Constants ───
@@ -2097,7 +2096,7 @@ function closeRules() {
 
 function shareOnWhatsApp() {
     const shareUrl = /^(file|parados):$/.test(window.location.protocol) ? "https://game.ywesee.com/parados/" + (window.location.pathname.split("/").pop() || "index.html") : window.location.href;
-    const msg = `Play Frankenstein: ${shareUrl}\n\nGet the Parados app:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
+    const msg = `Play "Where WAS that elbow?": ${shareUrl}\n\nGet the Parados app:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
     if (navigator.share) { navigator.share({ text: msg }).catch(() => {}); return; }
     // No share API (Android WebView, in-app browsers): copy to clipboard.
     // Never wa.me — Android WebView can't dispatch whatsapp:// (ERR_UNKNOWN_URL_SCHEME).

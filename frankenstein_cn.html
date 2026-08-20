@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>科学怪人 —— 那只绿色的手肘去哪了？？</title>
+<title>那只手肘刚才在哪里？</title>
 <style>
 :root {
     --bg: #263238;
@@ -681,11 +681,11 @@ h1 {
 <body>
 
 <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
-    <h1 style="margin:5px 0;">科学怪人</h1>
+    <h1 style="margin:5px 0;">那只手肘刚才在哪里？</h1>
     <button class="btn-rules" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">分享到 WhatsApp</button>
     <button id="theme-toggle" style="margin-bottom:12px; width:auto; padding:4px 11px; font-size:0.8em; background:var(--panel-bg); color:var(--text); border:1px solid var(--text-dim); border-radius:6px; cursor:pointer; margin-top:0; box-shadow:none;" onclick="frankToggleTheme()">☀️ 浅色</button>
 </div>
-<p class="subtitle">那只绿色的手肘去哪了？？ &mdash; Walter Prossnitz 设计的记忆游戏</p>
+<p class="subtitle">Walter Prossnitz 设计的记忆游戏</p>
 
 <!-- ─── Setup Screen ─── -->
 <div id="setupScreen">
@@ -765,9 +765,8 @@ h1 {
 <div id="rulesModal">
     <div class="modal-content">
         <span class="close" onclick="closeRules()">&times;</span>
-        <h2>科学怪人 &mdash; 规则</h2>
-        <p><strong>那只绿色的手肘去哪了？？</strong><br>
-        一款适合 1 &ndash; 4 位玩家、5 &ndash; 99 岁的记忆版科学怪人游戏。</p>
+        <h2>那只手肘刚才在哪里？ &mdash; 规则</h2>
+        <p data-note="walter-2026-08-20-blurb">1–4 位玩家 ・ 5–15 分钟。这个傻乎乎的小游戏其实是相当不错的大脑训练——好几位玩家反映，只玩了几局，记忆力就有了明显提升。你可以由内向外，也可以由外向内地拼装。一个人玩，或者跟最多三位朋友一起玩，同样有趣。我们建议的年龄是七岁以上——如果最小的玩家赢了，别太惊讶。</p>
 
         <h3>目标</h3>
         <p>用正面朝下的牌拼出一具完整的科学怪人身体。游戏持续到
@@ -839,8 +838,8 @@ h1 {
 
 <script>
 /* ═══════════════════════════════════════════════════════════════
-   FRANKENSTEIN - Where's that green elbow??
-   A Memory Frankenstein game for 2-4 players
+   WHERE WAS THAT ELBOW?  (built from Frankenstein parts)
+   A Memory game for 1-4 players by Walter Prossnitz
    ═══════════════════════════════════════════════════════════════ */
 
 // ─── Constants ───
@@ -2097,7 +2096,7 @@ function closeRules() {
 
 function shareOnWhatsApp() {
     const shareUrl = /^(file|parados):$/.test(window.location.protocol) ? "https://game.ywesee.com/parados/" + (window.location.pathname.split("/").pop() || "index.html") : window.location.href;
-    const msg = `来玩科学怪人：${shareUrl}\n\n获取 Parados 应用：\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
+    const msg = `来玩《那只手肘刚才在哪里？》：${shareUrl}\n\n获取 Parados 应用：\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
     if (navigator.share) { navigator.share({ text: msg }).catch(() => {}); return; }
     // No share API (Android WebView, in-app browsers): copy to clipboard.
     // Never wa.me — Android WebView can't dispatch whatsapp:// (ERR_UNKNOWN_URL_SCHEME).

@@ -392,10 +392,13 @@ fn annotate_links(doc: &mut PdfDocument, urls: &[&str]) -> Result<(), String> {
 /// ASCII display name per game (the index must render in every font, so no
 /// localized titles here — CJK titles can't render in the Latin documents).
 fn game_display_name(stem: &str) -> String {
-    let mut base = stem.trim_end_matches("_remote");
-    for suffix in ["_en", "_jp", "_cn", "_ua"] {
+    // Strip the language suffix FIRST — "democracy_remote_cn" ends in "_cn",
+    // not "_remote", so the other order left the raw stem in the index.
+    let mut base = stem;
+    for suffix in ["_en", "_de", "_jp", "_cn", "_ua", "_it"] {
         base = base.trim_end_matches(suffix);
     }
+    let base = base.trim_end_matches("_remote");
     match base {
         "kangaroo" => "The Impatient Kangaroo",
         "divided_loyalties" => "Divided Loyalties",
@@ -403,7 +406,7 @@ fn game_display_name(stem: &str) -> String {
         "makalaina" => "MAKA LAINA",
         "capovolto" => "Capovolto",
         "rainbow_blackjack" => "Rainbow Blackjack",
-        "frankenstein" => "Frankenstein",
+        "frankenstein" => "Where WAS that elbow?",
         other => other,
     }
     .to_string()
@@ -414,6 +417,7 @@ fn lang_tag(lang: &str) -> &'static str {
         "de" => "DE",
         "ja" => "JP",
         "uk" => "UA",
+        "it" => "IT",
         l if l.starts_with("zh") => "CN",
         _ => "EN",
     }
@@ -422,7 +426,7 @@ fn lang_tag(lang: &str) -> &'static str {
 /// One list entry of the cross-reference index, e.g.
 /// "Democracy in Space (DE, Remote)".
 fn index_label(stem: &str, lang: &str) -> String {
-    let remote = if stem.ends_with("_remote") { ", Remote" } else { "" };
+    let remote = if stem.contains("_remote") { ", Remote" } else { "" };
     format!("{} ({}{})", game_display_name(stem), lang_tag(lang), remote)
 }
 

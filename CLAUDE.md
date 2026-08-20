@@ -93,8 +93,40 @@ Othello on a polyomino grid. Place 18 polyominoes, then alternate numbered discs
 **⚠️ DELISTED 2026-08-19 (Walter):** removed from the front page (`index.html`) and rules index (`docs/rules/index.html`) alongside Capovolto — "too many attractions at once causes confusion." **All `rainbow_blackjack*.html` files and rules PDFs stay in the repo**; delisting only, intended to return. (The Frankenstein front-page description's old "shorter and sweeter than Rainbow" line was reworded to drop the reference.)
 2-player tower-building to 21. 36 colored stones + 6 gray jokers. Each colored stone can go in its own tower or the two color-wheel neighbors. Jokers copy previous value; can't be first or consecutive. First to own 3 towers at exactly 21 wins instantly; else most towers. Remote uses PeerJS. Three Share-on-WhatsApp button instances (setup/game/scoring `<h1>`s).
 
-### `frankenstein.html` — Frankenstein
+### `frankenstein.html` (+ `_de`, `_jp`, `_cn`, `_ua`, `_it`) — Where WAS that elbow?
+**⚠️ RENAMED 2026-08-20 (Walter's dictated description + Zeno's call): the game is now „Where WAS that elbow?", the Frankenstein name is dropped from the TITLE.** Walter's 2026-08-20 voice message opens with that title (his WhatsApp label capitalised the WAS). Changed in all 6 variants: `<title>`, the `<h1>` (was `FRANKENSTEIN`), the `.subtitle` (the old „Where's that green elbow??" phrase was removed, the „A Memory Game by Walter Prossnitz" half kept), the rules-modal `<h2>`, the share message, and the top-of-script ASCII banner. Localized: DE `Wo WAR dieser Ellbogen?` · JP `あのひじはどこだった？` · CN `那只手肘刚才在哪里？` · UA `Де БУВ той лікоть?` · IT `Dov'ERA quel gomito?` (DE/UA/IT keep the caps-emphasis trick, JP/CN can't). **Filenames stay `frankenstein*.html`** — the Android/desktop app update lists and every shared link depend on them; renaming files was deliberately NOT done. **The creature is still a Frankenstein** — „Frankie", „Frankenstein body/-Körper", the head art and the „View Frankies" button are gameplay, untouched. `tools/rules_pdf/src/main.rs`'s `game_display_name` maps `frankenstein` → `Where WAS that elbow?` for the PDF cross-reference index.
 Memory game, 1–4 players. Flip cards to build a complete body from torso outward (or reversed). 32/48/64 cards for 2/3/4 players. Strict torso adjacency per limb; head needs a top torso. Build modes: Classic (torso→out), Reverse (extremities→in), Mixed (alternate per player). Color-specific head designs (green/orange/purple/blue) with mix-and-match ear halves. Heads span 2 grid columns. "View Frankies" at game end before new game.
+
+## Game descriptions (Walter, 2026-08-20)
+
+Walter dictated a fresh blurb per game in five voice messages — archived with a
+transcript in `docs/voice/walter-prossnitz_2026-08-20_*.m4a` +
+`Walter_Prossnitz_2026-08-20_game-descriptions_transcript.md`. He labelled them
+**DiS · DL · Makalaina · TIK · Where WAS that elbow?** Each blurb (except TIK's)
+now carries a **player count and a playing time**: DiS 2p/15–45 min · DL 2p/40–80 min ·
+MAKA LAINA 2p/20–40 min · elbow 1–4p/5–15 min · TIK 1p (no time dictated).
+
+**Three places carry them — keep all three in sync:**
+1. `index.html` game cards (`.players` line + `.desc`).
+2. The lead sentence of each game's `README.md` entry (the technical detail after it stays).
+3. **Every rules modal** — a single `<p data-note="walter-2026-08-20-blurb">` inserted
+   right under the modal's first `<h2>`, in **all 6 languages × 48 files** (kangaroo 6,
+   DL 6+6 remote, democracy 6+6 remote, MAKA LAINA 6+6 remote, elbow 6). Grep the
+   `data-note` marker to find them. **DL is the exception**: its modal already opens with
+   Walter's 2026-07-19 „Game Description" tagline, so the new blurb goes *after* that
+   `<p>`, not replacing it. **Frankenstein/elbow is the other exception**: the new blurb
+   *replaced* the old „Where's that green elbow?? / A Memory Frankenstein game for 1–4
+   players, ages 5–99" lede paragraph.
+   → this means **`docs/rules/*.pdf` must be regenerated** after any blurb edit.
+
+**Wording notes (don't silently "fix" them):** DL is now „connect **3 or 4**" (was
+„connect 4") and lost both „Perhaps the craziest Connect Four game ever" (still the DL
+*rules-modal* tagline — that one is unchanged) and „Not for the faint of heart". TIK
+spells the ancestor **„Rush Hour"** (two words) and calls it a „hit", not „super-hit".
+Frankenstein lost the „frankly memorable" pun and the „shorter and sweeter than Rainbow"
+line. **Separator gotcha:** the UA blurbs must use `&middot;`, **not** the CJK middle dot
+`・` — Noto Sans (Latin/Cyrillic) has no glyph for it and the PDF verifier fails the run.
+JP/CN use `・` fine (it comes from the CJK pool).
 
 ## Share on WhatsApp button
 
@@ -149,6 +181,7 @@ One print-ready rules PDF per game HTML file (66: every game × de/en/jp/cn/ua/i
 - **New JP/CN characters:** the CJK fonts are subset at prepare time to the chars used in `*_jp.html`/`*_cn.html`. If a rules edit adds new kanji, `rm tools/rules_pdf/fonts/NotoSans*-Subset.ttf && ./prepare.sh` again.
 - **Don't "simplify" the tool's workarounds** — each one papers over a real printpdf 0.10/azul-layout 0.0.9 bug, all documented in `tools/rules_pdf/README.md`: vendored azul-layout (segfaulting leftover diag writes; `[patch.crates-io]`), styled `<span>`s instead of `<b>`/`<i>` (azul drops inline b/strong text), feature-stripped Latin fonts + pre-subset CJK fonts embedded whole (printpdf's subsetter maps ligature/CJK glyphs to `.notdef`), one font pool per script (fuzzy family matching).
 - `fonts/`, `vendor/`, `target/` are gitignored; `prepare.sh` rebuilds them reproducibly.
+- **Cross-reference index labels (fixed 2026-08-20):** `game_display_name` now strips the **language suffix first** and `_remote` second (the old order left `democracy_remote_cn` → the raw stem in the list), `lang_tag` knows `"it" => "IT"` (Italian PDFs used to be labelled EN), and `index_label` uses `stem.contains("_remote")` instead of `ends_with` (so `…_remote_cn` is tagged Remote). If a new language or game is added, extend all three.
 - **Directory index:** `docs/rules/index.html` is a static, Parados-themed page listing all 20 PDFs grouped by game with language links, so `game.ywesee.com/parados/docs/rules/` resolves (Apache `DirectoryIndex`, no `Options +Indexes`). Linked from `index.html`'s footer ("Rules (PDF)"). Hand-maintained — add a `<a class="pdf-link">` if a new rules PDF ships.
 
 ## Videos (`docs/video/` + `tools/demo_video/`)

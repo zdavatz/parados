@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Франкенштейн — Де той зелений лікоть??</title>
+<title>Де БУВ той лікоть?</title>
 <style>
 :root {
     --bg: #263238;
@@ -681,11 +681,11 @@ h1 {
 <body>
 
 <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
-    <h1 style="margin:5px 0;">ФРАНКЕНШТЕЙН</h1>
+    <h1 style="margin:5px 0;">Де БУВ той лікоть?</h1>
     <button class="btn-rules" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">Поділитися у WhatsApp</button>
     <button id="theme-toggle" style="margin-bottom:12px; width:auto; padding:4px 11px; font-size:0.8em; background:var(--panel-bg); color:var(--text); border:1px solid var(--text-dim); border-radius:6px; cursor:pointer; margin-top:0; box-shadow:none;" onclick="frankToggleTheme()">☀️ Світла</button>
 </div>
-<p class="subtitle">Де той зелений лікоть?? &mdash; Гра на пам'ять від Вальтера Проснітца</p>
+<p class="subtitle">Гра на пам'ять від Вальтера Проснітца</p>
 
 <!-- ─── Setup Screen ─── -->
 <div id="setupScreen">
@@ -765,9 +765,8 @@ h1 {
 <div id="rulesModal">
     <div class="modal-content">
         <span class="close" onclick="closeRules()">&times;</span>
-        <h2>Франкенштейн &mdash; Правила</h2>
-        <p><strong>Де той зелений лікоть??</strong><br>
-        Гра на пам'ять «Франкенштейн» для 1 &ndash; 4 гравців, від 5 до 99 років.</p>
+        <h2>Де БУВ той лікоть? &mdash; Правила</h2>
+        <p data-note="walter-2026-08-20-blurb">Від одного до чотирьох гравців &middot; 5–15 хвилин. Ця дурненька невеличка гра виявилася справжнім тренажером для мозку — кілька гравців повідомили, що вже після кількох партій їхня пам’ять помітно покращилася. Збирайте зсередини назовні або ззовні всередину. Наодинці це так само весело, як і з трьома друзями. Наша вікова рекомендація — від семи років, і не дивуйтеся, якщо переможе наймолодший гравець.</p>
 
         <h3>Мета</h3>
         <p>Зберіть повне тіло Франкенштейна з карток, що лежать сорочкою догори. Гра триває,
@@ -839,8 +838,8 @@ h1 {
 
 <script>
 /* ═══════════════════════════════════════════════════════════════
-   FRANKENSTEIN - Where's that green elbow??
-   A Memory Frankenstein game for 2-4 players
+   WHERE WAS THAT ELBOW?  (built from Frankenstein parts)
+   A Memory game for 1-4 players by Walter Prossnitz
    ═══════════════════════════════════════════════════════════════ */
 
 // ─── Constants ───
@@ -2097,7 +2096,7 @@ function closeRules() {
 
 function shareOnWhatsApp() {
     const shareUrl = /^(file|parados):$/.test(window.location.protocol) ? "https://game.ywesee.com/parados/" + (window.location.pathname.split("/").pop() || "index.html") : window.location.href;
-    const msg = `Грай у Франкенштейна: ${shareUrl}\n\nЗавантаж застосунок Parados:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
+    const msg = `Грай у «Де БУВ той лікоть?»: ${shareUrl}\n\nЗавантаж застосунок Parados:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
     if (navigator.share) { navigator.share({ text: msg }).catch(() => {}); return; }
     // No share API (Android WebView, in-app browsers): copy to clipboard.
     // Never wa.me — Android WebView can't dispatch whatsapp:// (ERR_UNKNOWN_URL_SCHEME).
