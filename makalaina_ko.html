@@ -1,0 +1,2321 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>MAKA LAINA - 전략적 막판 스퍼트</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Public+Sans:wght@400;500;600;700&display=swap">
+    <style>
+        :root {
+            --cs: 42px; --disc-size: calc(var(--cs) - 8px); --collector-size: calc(var(--cs) - 6px);
+            /* Light theme (the original look -- unchanged).  Dark values live
+               in the [data-theme="dark"] block below.  Discs, collectors and
+               the coloured buttons are game state and are NOT themed. */
+            --bg: #f0f2f5;
+            --surface: #ffffff;
+            --surface2: #f5f5f5;
+            --text: #000000;
+            --text-strong: #2c3e50;
+            --muted: #7f8c8d;
+            --border: #bbbbbb;
+            --border-soft: #eeeeee;
+            --board-frame: #2c3e50;
+            --cell: #ffffff;
+            --cell-los: #fffde7;
+            --cell-selected: #e3f2fd;
+            --cell-selected-border: #2196f3;
+            --cell-reachable: #e8f5e9;
+            --panel-info-bg: #f0f7ff;
+            --panel-info-border: #90caf9;
+            --panel-warn-bg: #fdf0f0;
+            --panel-warn-border: #ef9a9a;
+            --chip-warn-bg: #ffddee;
+            --btn-face: #ffffff;
+            --btn-face-hover: #e0e0e0;
+        }
+        :root[data-theme="dark"] {
+            --bg: #12161c;
+            --surface: #1c222b;
+            --surface2: #232a34;
+            --text: #e6e8eb;
+            --text-strong: #dfe6ee;
+            --muted: #98a2ad;
+            --border: #3a434f;
+            --border-soft: #2c343d;
+            --board-frame: #080b0e;
+            --cell: #2a323c;
+            --cell-los: #3d3820;
+            --cell-selected: #1d3f5c;
+            --cell-selected-border: #4aa3e8;
+            --cell-reachable: #1e4029;
+            --panel-info-bg: #16283a;
+            --panel-info-border: #35648f;
+            --panel-warn-bg: #3a2020;
+            --panel-warn-border: #8f4747;
+            --chip-warn-bg: #5a2233;
+            --btn-face: #2b333d;
+            --btn-face-hover: #3a444f;
+        }
+        * { box-sizing: border-box; }
+        body { font-family: 'Public Sans', 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; padding: 10px; margin: 0; min-height: 100vh; }
+        h1 { font-family: 'Space Grotesk', 'Public Sans', sans-serif; font-size: 1.5em; font-weight: 700; letter-spacing: 0.5px; margin: 5px 0; }
+        #parados-brandbar { display: flex; align-items: baseline; gap: 12px; justify-content: center; padding: 6px 0 0; }
+        #parados-brandbar .wordmark { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; letter-spacing: 0.5px; color: var(--text); }
+        #parados-brandbar .wordmark b { color: #ffd700; font-weight: 700; }
+        #parados-brandbar .tag { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--text); opacity: 0.6; }
+        .pill { display: inline-flex; align-items: center; gap: 7px; border: 0; border-radius: 999px; font-family: 'Public Sans', system-ui, sans-serif; font-weight: 600; font-size: 0.9em; padding: 9px 16px; cursor: pointer; background: var(--surface2); color: var(--text); }
+        .pill-share { background: #25D366; color: #0b3d1e; }
+        #game-container { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; width: 100%; }
+        #board {
+            display: grid; grid-template-columns: repeat(12, var(--cs));
+            grid-template-rows: repeat(12, var(--cs)); gap: 1px;
+            background: var(--board-frame); border: 4px solid var(--board-frame); border-radius: 4px;
+        }
+        .cell { width: var(--cs); height: var(--cs); background: var(--cell); display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; }
+        .cell.los { background: var(--cell-los); }
+        .cell.selected { background: var(--cell-selected); border: 2px solid var(--cell-selected-border); box-sizing: border-box; }
+        .cell.reachable { background: var(--cell-reachable); box-shadow: inset 0 0 6px rgba(76, 175, 80, 0.4); }
+        .cell.placeable { background: #b2ff59; box-shadow: inset 0 0 8px rgba(76, 175, 80, 0.6); cursor: crosshair; }
+        @keyframes pulse-placeable { 0%,100% { box-shadow: inset 0 0 6px rgba(76,175,80,0.4); } 50% { box-shadow: inset 0 0 12px rgba(76,175,80,0.8); } }
+        .cell.placeable { animation: pulse-placeable 1.2s ease-in-out infinite; }
+        .disc { width: var(--disc-size); height: var(--disc-size); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: calc(var(--cs) * 0.35); text-shadow: 1px 1px 2px #000; z-index: 2; border: 1px solid rgba(0,0,0,0.1); }
+        .collector { width: var(--collector-size); height: var(--collector-size); border: 3px solid gold; border-radius: 6px; z-index: 3; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        .black { background: #000; }
+        .white { background: #fff; border-color: #000; }
+
+        #ui { width: 100%; max-width: 380px; background: var(--surface); padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .btn { width: 100%; padding: 10px; margin-top: 8px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; transition: 0.2s; font-size: 0.9em; }
+        .btn-rules { background: #3498db; color: white; }
+        .btn-action { background: #9b59b6; color: white; }
+        .btn-cancel { background: #95a5a6; color: white; }
+        .btn-reset { background: #e74c3c; color: white; margin-top: 15px; }
+
+        #draft-panel { display: none; background: var(--panel-info-bg); border-radius: 8px; padding: 12px; margin-top: 10px; text-align: center; border: 2px solid var(--panel-info-border); }
+        #draft-choices { display: flex; gap: 12px; justify-content: center; margin: 10px 0; }
+        #draft-choices .disc { width: 50px; height: 50px; font-size: 1.1em; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+        #draft-choices .disc:hover { transform: scale(1.15); box-shadow: 0 0 12px rgba(33, 150, 243, 0.5); }
+
+        #sacrifice-panel { display: none; background: var(--panel-warn-bg); border-radius: 8px; padding: 12px; margin-top: 10px; text-align: center; border: 2px solid var(--panel-warn-border); }
+        #sacrifice-choices { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 10px 0; }
+        #sacrifice-choices .disc { width: 38px; height: 38px; cursor: pointer; transition: transform 0.2s; }
+        #sacrifice-choices .disc:hover { transform: scale(1.15); box-shadow: 0 0 8px rgba(155, 89, 182, 0.5); }
+
+        #modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 100; justify-content: center; align-items: center; }
+        #modal { background: var(--surface); width: 92%; max-width: 600px; padding: 25px; border-radius: 12px; max-height: 85vh; overflow-y: auto; }
+        .scoring-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85em; }
+        .scoring-table td, .scoring-table th { border: 1px solid var(--border-soft); padding: 5px; text-align: center; }
+        .worthless { color: var(--muted); }
+        .worthless-box { display: inline-block; border: 2px solid #e74c3c; background: var(--chip-warn-bg); padding: 1px 5px; border-radius: 4px; font-weight: bold; }
+        .leader-dot { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: middle; }
+        .leader-dot.black { background: #000; }
+        .leader-dot.white { background: #fff; border: 1px solid #999; }
+        .leader-dot.tied { background: #bbb; }
+
+        #winner-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 200; justify-content: center; align-items: center; }
+        #winner-box { background: var(--surface); padding: 30px; border-radius: 16px; text-align: center; max-width: 90%; width: 400px; }
+        #winner-box h2 { font-size: 1.8em; margin-bottom: 15px; }
+        #winner-box .score-final { font-size: 1.2em; margin: 10px 0; }
+        #winner-box button { margin-top: 15px; padding: 12px 30px; font-size: 1em; cursor: pointer; border: none; border-radius: 8px; background: #3498db; color: white; font-weight: bold; }
+
+        #bag-count { font-size: 0.8em; color: var(--muted); text-align: center; margin-top: 6px; }
+
+        #history-controls { display: none; background: var(--surface2); border-radius: 8px; padding: 10px; margin-top: 10px; text-align: center; border: 2px solid var(--border); }
+        #history-controls .history-nav { display: flex; gap: 6px; justify-content: center; align-items: center; margin-top: 6px; }
+        #history-controls .history-nav button { padding: 6px 14px; cursor: pointer; border: 1px solid var(--border); border-radius: 4px; background: var(--btn-face); font-weight: bold; font-size: 1em; }
+        #history-controls .history-nav button:hover { background: var(--btn-face-hover); }
+        #history-controls .history-nav button:disabled { opacity: 0.4; cursor: default; }
+        #history-label { font-weight: bold; color: var(--text-strong); margin: 0; font-size: 0.9em; }
+        #history-desc { font-size: 0.8em; color: var(--muted); margin: 4px 0 0; }
+
+        @media (max-width: 600px) {
+            #game-container { flex-direction: column; align-items: center; }
+            #ui { max-width: 100%; }
+        }
+    </style>
+<script>
+    // Light / dark theme toggle (Lucas Holowaychuk, 2026-07-12: "One
+    // improvement would be a light/dark mode toggle").  This runs in <head>,
+    // before the body paints, so a dark-mode user never sees a white flash.
+    // Only SURFACES are themed -- the disc palette (COLOR_HEX / ml_colors),
+    // the black/white collectors and the coloured buttons are game state and
+    // stay exactly as they are.  Light stays the DEFAULT, so nothing changes
+    // for anyone who does not touch the button.
+    const ML_THEME_KEY = 'parados_theme';
+    function mlApplyTheme(mode) {
+        document.documentElement.setAttribute('data-theme', mode);
+        const btn = document.getElementById('theme-toggle');
+        if (btn) btn.textContent = mode === 'dark' ? '☀️ 라이트' : '🌙 다크';
+    }
+    function mlToggleTheme() {
+        const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        try { localStorage.setItem(ML_THEME_KEY, next); } catch (e) {}
+        mlApplyTheme(next);
+    }
+    (function () {
+        let saved = null;
+        try { saved = localStorage.getItem(ML_THEME_KEY); } catch (e) {}
+        mlApplyTheme(saved === 'dark' ? 'dark' : 'light');
+        document.addEventListener('DOMContentLoaded', function () {
+            mlApplyTheme(document.documentElement.getAttribute('data-theme'));
+        });
+    })();
+</script>
+</head>
+<body>
+
+    <div id="parados-brandbar">
+        <span class="wordmark">Para<b>D</b>os</span>
+        <span class="tag">Abstract Games</span>
+    </div>
+
+    <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap; margin:4px 0 16px;">
+        <h1 style="margin:5px 0;">MAKA LAINA<span id="position-title" style="color:var(--muted); font-weight:normal;"></span></h1>
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:nowrap;"><button class="pill pill-share" onclick="shareOnWhatsApp()">WhatsApp으로 공유</button><button class="pill" id="theme-toggle" onclick="mlToggleTheme()">🌙 다크</button></div>
+    </div>
+    <div id="setup-panel" style="margin-bottom:15px; text-align:center; background:var(--surface); padding:15px 20px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
+        <div id="ml-resume-slot"></div>
+        <p style="font-weight:bold; margin:0 0 10px; color:var(--text-strong);">새 게임 시작:</p>
+        <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+            <button class="btn" style="width:auto; padding:10px 24px; background:#27ae60; color:white; font-size:1em;" onclick="startRandom()">▶ 시작</button>
+        </div>
+        <p style="margin:10px 0 0; font-size:0.85em; color:var(--muted);">먼저 24개의 디스크가 무작위로 배치됩니다. 그다음 <b>플레이어 1</b>이 두 컬렉터를 모두 놓습니다. <b>플레이어 2</b>가 어느 색으로 플레이할지 고릅니다.</p>
+        <div style="margin-top:14px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+            <button class="btn" style="width:auto; padding:8px 16px; background:#9b59b6; color:white;" onclick="mlOpenEditor(null)">✏️ 편집기 — 사용자 지정 위치</button>
+            <button class="btn" style="width:auto; padding:8px 16px; background:#6d4c41; color:white;" onclick="document.getElementById('ml-opening-file').click()">📥 오프닝 불러오기 (CSV)</button>
+            <input type="file" id="ml-opening-file" accept=".csv,text/csv" style="display:none;" onchange="mlImportOpeningFile(this)">
+        </div>
+        <p style="margin:8px 0 0; font-size:0.8em; color:var(--muted);">두 컬렉터가 모두 담긴 <b>오프닝 내보내기</b> CSV는 프리셋으로 불러와집니다: 디스크<i>와</i> 컬렉터가 고정되며 — 라이브 배치는 없고, 플레이어 2가 여전히 색을 고릅니다.</p>
+        <div id="ml-custom-list" style="margin-top:12px;"></div>
+    </div>
+    <div id="ml-editor-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.92); z-index:2500; overflow-y:auto; padding:15px 8px;">
+        <div style="max-width:760px; margin:0 auto; background:var(--surface); border-radius:8px; padding:15px;">
+            <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:10px;">
+                <h2 style="margin:0; font-size:1.2em;">편집기 — 사용자 지정 MAKA LAINA 위치</h2>
+            </div>
+            <p style="margin:0 0 8px; color:var(--muted); font-size:0.9em;">
+                브러시를 고른 다음, 12×12 보드의 칸을 클릭하여 디스크 배치를 그립니다. <b>컬렉터는 선택 사항입니다:</b> 둘 다(검정 = 플레이어 1, 흰색 = 플레이어 2) 놓으면 <b>프리셋 오프닝</b>이 됩니다 — 라이브 배치는 없고, 플레이어 2가 여전히 색을 고릅니다. 놓지 않으면 디스크만 있는 배치가 되어 플레이어 1이 게임 중에 직접 놓습니다.
+            </p>
+            <div id="ml-editor-brush-bar" style="display:flex; flex-direction:column; gap:5px; margin-bottom:10px;"></div>
+            <details style="margin-bottom:10px; border:1px solid #ddd; border-radius:4px; padding:6px 8px;">
+                <summary style="cursor:pointer; font-size:0.9em; color:var(--muted); font-weight:bold;">🎨 디스크 색상 — 직접 고르기</summary>
+                <div id="ml-editor-colors" style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:8px;"></div>
+                <p style="margin:8px 0 0; color:var(--muted); font-size:0.8em;">이 기기의 모든 MAKA LAINA 게임(보드, 점수표, 편집기)에 적용됩니다. 자동으로 저장됩니다.</p>
+            </details>
+            <div style="overflow:auto; margin-bottom:10px;">
+                <div id="ml-editor-grid" style="display:grid; gap:1px; background:var(--board-frame); padding:2px; border-radius:4px; width:max-content; margin:0 auto;"></div>
+            </div>
+            <div id="ml-editor-summary" style="font-size:0.85em; color:var(--muted); text-align:center; margin-bottom:10px;"></div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:center;">
+                <button class="btn" style="width:auto; background:#27ae60; color:white;" onclick="mlSaveCustomPosition()">💾 저장 (브라우저)</button>
+                <button class="btn" style="width:auto; background:#3498db; color:white;" onclick="mlPlayFromEditor()">▶ 테스트 플레이</button>
+                <button class="btn" style="width:auto; background:#6d4c41; color:white;" onclick="mlExportEditorCSV()">📋 CSV 내보내기</button>
+                <button class="btn" style="width:auto; background:#25D366; color:white;" onclick="mlShareEditorCSV()">📤 WhatsApp으로 공유</button>
+                <button class="btn" style="width:auto; background:#455a64; color:white;" onclick="mlCloseEditor()">✕ 닫기</button>
+            </div>
+        </div>
+    </div>
+    <div id="ml-csv-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:2600; justify-content:center; align-items:center;">
+        <div style="background:var(--surface); width:92%; max-width:640px; padding:20px; border-radius:10px;">
+            <h3 style="margin:0 0 10px;">CSV — 사용자 지정 위치</h3>
+            <p style="margin:0 0 8px; color:var(--muted); font-size:0.9em;">긴 형식. 두 컬렉터를 모두 놓았다면 CSV에 <code>collector_black</code> / <code>collector_white</code> 행이 포함되어 프리셋 오프닝으로 다시 불러와집니다. 그렇지 않으면 디스크만 포함됩니다(플레이어 1이 컬렉터를 게임 중에 놓습니다).</p>
+            <textarea id="ml-csv-output" readonly style="width:100%; height:240px; font-family:monospace; font-size:0.85em; padding:8px; border:1px solid #ccc; border-radius:4px;"></textarea>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; margin-top:10px;">
+                <button class="btn" style="width:auto; background:#3498db; color:white;" onclick="mlCopyCSVToClipboard()">📋 복사</button>
+                <button class="btn" style="width:auto; background:#27ae60; color:white;" onclick="mlDownloadCSV()">💾 다운로드</button>
+                <button class="btn" style="width:auto; background:#455a64; color:white;" onclick="document.getElementById('ml-csv-modal').style.display='none'">✕ 닫기</button>
+            </div>
+        </div>
+    </div>
+    <div id="starter-panel" style="display:none; margin-bottom:15px; text-align:center; background:var(--surface); padding:15px 20px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
+        <p style="font-weight:bold; margin:0 0 4px; color:var(--text-strong);">플레이어 2: 색을 고르세요</p>
+        <p style="margin:0 0 10px; font-size:0.85em; color:var(--muted);">플레이어 1은 나머지 색으로 게임을 시작합니다.</p>
+        <div style="display:flex; gap:12px; justify-content:center;">
+            <button class="btn" style="width:auto; padding:10px 24px; background:#222; color:white; font-size:1em;" onclick="p2PicksColor(1)">&#9632; 검정으로 플레이</button>
+            <button class="btn" style="width:auto; padding:10px 24px; background:#f5f5f5; color:#222; border:2px solid #999; font-size:1em;" onclick="p2PicksColor(2)">&#9633; 흰색으로 플레이</button>
+        </div>
+    </div>
+    <div id="game-container">
+        <div id="board"></div>
+        <div id="ui">
+            <div id="status" style="font-weight: bold; margin-bottom: 10px; color: var(--text-strong);">준비: 위의 ▶ 시작을 누르세요.</div>
+            <button class="btn btn-rules" onclick="toggleRules(true)">규칙 보기</button>
+            <button id="los-toggle" class="btn" style="background:#7f8c8d;color:white;" onclick="toggleLOS()">시야 표시</button>
+            <button id="csv-export-btn" class="btn" style="background:#27ae60;color:white;display:none;" onclick="downloadCSV()">CSV 내보내기</button>
+            <button id="opening-export-btn" class="btn" style="background:#6d4c41;color:white;" onclick="exportOpeningCSV()">📋 오프닝 내보내기 (CSV)</button>
+            <hr>
+            <div id="game-actions" style="display:none;">
+                <button id="undo-btn" class="btn" style="background:#5d4037; color:white;" onclick="undoMove()">↶ 되돌리기</button>
+                <button id="sacrifice-btn" class="btn btn-action" onclick="sacrificeTurn()">희생 & 이동</button>
+                <button id="relinquish-btn" class="btn btn-cancel" onclick="relinquishTurn()" style="display:none;">턴 넘기기</button>
+                <p id="stuck-hint" style="display:none; font-size: 0.75em; color: var(--muted); text-align: center;">유효한 수가 없습니다! 디스크를 희생하거나(상대가 선택) 턴을 넘기세요.</p>
+                <div id="bag-count"></div>
+            </div>
+            <div id="draft-panel">
+                <p id="draft-label" style="font-weight:bold; color:var(--text-strong); margin-bottom:8px;">이 디스크를 당신의 시야 안에 놓으세요:</p>
+                <div id="draft-choices"></div>
+            </div>
+            <div id="sacrifice-panel">
+                <p id="sacrifice-label" style="font-weight:bold; color:var(--text-strong); margin-bottom:8px;">희생: 디스크를 고르세요 (숫자 = 이동 범위)</p>
+                <div id="sacrifice-choices"></div>
+            </div>
+            <table class="scoring-table">
+                <thead><tr><th>색</th><th>&#9632;</th><th>&#9633;</th><th></th></tr></thead>
+                <tbody id="score-body"></tbody>
+            </table>
+            <div id="history-controls">
+                <p id="history-label">수 기록</p>
+                <div class="history-nav">
+                    <button onclick="stepHistory(-999)" title="처음">&#x23EE;</button>
+                    <button onclick="stepHistory(-1)" title="이전">&#x25C0;</button>
+                    <span id="history-pos">0 / 0</span>
+                    <button onclick="stepHistory(1)" title="다음">&#x25B6;</button>
+                    <button onclick="stepHistory(999)" title="마지막">&#x23ED;</button>
+                </div>
+                <p id="history-desc"></p>
+                <button class="btn" style="margin-top:8px; background:#27ae60; color:white;" onclick="downloadCSV()">CSV 내보내기</button>
+            </div>
+            <button class="btn btn-reset" onclick="window.location.reload()">게임 초기화</button>
+        </div>
+    </div>
+
+    <div id="modal-overlay" onclick="toggleRules(false)">
+        <div id="modal" onclick="event.stopPropagation()">
+            <div class="rules-text">
+                <h2>MAKA LAINA 규칙</h2>
+                <p data-note="walter-2026-08-20-blurb">두 명의 플레이어 &middot; 20&ndash;40분. 첫 번째 턴부터 전투가 시작됩니다. MAKA LAINA에서는 몸을 풀 시간이 없습니다. 아주 처음부터 계획을 세우고, 장기 전략을 발전시키면서도 유연하게 대응해야 합니다. 새로운 디스크가 계속 들어오면서 상당한 무작위성이 더해져 게임을 정말 흥미진진하게 만듭니다. 그리고 후반에는 종반 함정을 조심하세요 — 뜻밖의 승자가 쉽게 나올 수 있습니다.</p>
+                <h3>목표</h3>
+                <p>12x12 격자에서 디스크를 수집하여 가장 많은 점수를 얻으세요. 게임은 <b>모든 디스크가 수집되거나</b> 두 플레이어 모두 움직일 수 없을 때까지 계속됩니다.</p>
+                <h3>이동 & 수집</h3>
+                <ul>
+                    <li>당신의 시야(LOS) 안에 <b>있지 않은</b> 디스크를 선택하세요.</li>
+                    <li>그것을 1칸 옮겨 당신의 시야 안으로 들어오게 하세요.</li>
+                    <li>당신의 컬렉터가 그 칸으로 이동해 디스크를 수집합니다.</li>
+                    <li>시야는 8방향으로 뻗으며, 다른 디스크나 컬렉터에 의해 막힙니다.</li>
+                </ul>
+                <h3>드래프트 시스템</h3>
+                <ul>
+                    <li>수집할 때마다 주머니에서 <b>새 디스크 1개</b>를 뽑습니다.</li>
+                    <li>그것을 반드시 <b>당신의 시야 안에</b> 놓아야 합니다.</li>
+                    <li>그 디스크는 즉시 수집할 수 없습니다(시야 안에 있기 때문에).</li>
+                    <li>총 54개의 디스크: 24개는 보드에서 시작하고, 24개는 드래프트로 들어오며, 6개는 숨겨진 채로 남습니다.</li>
+                </ul>
+                <h3>특수 규칙</h3>
+                <ul>
+                    <li><b>숫자 1:</b> 즉시 추가 턴.</li>
+                    <li><b>숫자 6:</b> 앞으로 그 색의 디스크는 당신에게 무가치해집니다.</li>
+                    <li><b>막혔나요?</b> 상대가 당신이 수집한 기본 디스크 중 어느 것을 희생할지 고릅니다: 그 색의 점수는 줄어들지만, 당신의 컬렉터는 그 숫자만큼의 칸을 자유롭게 이동할 수 있습니다. <b>희생할 것이 없나요?</b> 그래도 최대 2칸까지 자유로운 탈출 이동을 할 수 있습니다 — 그래서 초반에 갇히는 것이 곧바로 패배로 이어지지는 않습니다.</li>
+                </ul>
+                <button class="close-btn" onclick="toggleRules(false)" style="display:block; margin:18px auto 0; padding:12px 36px; font-size:1.1em; cursor:pointer; border:none; border-radius:8px; background:#27ae60; color:white; font-weight:bold;">확인!</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="winner-overlay" onclick="this.style.display='none'">
+        <div id="winner-box" onclick="event.stopPropagation()">
+            <h2 id="winner-title"></h2>
+            <div id="winner-scores"></div>
+            <button onclick="window.location.reload()">새 게임</button>
+            <button onclick="downloadCSV()" style="margin-top:10px; padding:12px 30px; font-size:1em; cursor:pointer; border:none; border-radius:8px; background:#27ae60; color:white; font-weight:bold;">CSV 내보내기</button>
+        </div>
+    </div>
+
+<script>
+    let gameState = 'SETUP';
+    let currentPlayer = 1;
+    let collectors = { 1: null, 2: null };
+    let selectedIdx = null;
+    let cells = Array(144).fill(null);
+    let bag = [];
+    let playerFlags = { 1: {}, 2: {} };
+    let scores = { 1: {}, 2: {} };
+    let relinquished = { 1: false, 2: false };
+    let relinquishCount = { 1: 0, 2: 0 };
+    const RELINQUISH_LIMIT = 2;
+    const colors = ['red', 'blue', 'yellow', 'green', 'orange', 'purple'];
+
+    // New state for draft and sacrifice
+    let collectedDiscs = { 1: [], 2: [] };
+    let draftChosen = null;
+
+    let pendingExtraTurn = false;
+    let showLOS = false;
+    let sacrificeRange = 0;
+    let sacrificingPlayer = 0;
+    let isFirstMove = true;
+
+    // Move history for replay
+    let moveHistory = [];
+    let historyIndex = -1;
+    let isReviewing = false;
+
+    const COLOR_HEX = { red: '#e74c3c', blue: '#3498db', yellow: '#d4ac0d', green: '#27ae60', orange: '#e67e22', purple: '#9b59b6' };
+    // Walter-customisable disc colours. COLOR_HEX is the single source of
+    // truth for every disc render (board, score table, editor); a saved
+    // override in localStorage["ml_colors"] is mutated onto it at startup.
+    const COLOR_HEX_DEFAULT = { ...COLOR_HEX };
+    const ML_COLOR_NAMES = ['red', 'blue', 'yellow', 'green', 'orange', 'purple'];
+    function mlLoadColorPrefs() {
+        try { return JSON.parse(localStorage.getItem('ml_colors') || '{}') || {}; }
+        catch (e) { return {}; }
+    }
+    function mlApplyColorPrefs() {
+        const p = mlLoadColorPrefs();
+        ML_COLOR_NAMES.forEach(c => {
+            COLOR_HEX[c] = /^#[0-9a-fA-F]{6}$/.test(p[c]) ? p[c] : COLOR_HEX_DEFAULT[c];
+        });
+    }
+    mlApplyColorPrefs();
+
+    function saveSnapshot(desc) {
+        moveHistory.push({
+            cells: cells.map(c => c ? {...c} : null),
+            collectors: { 1: collectors[1], 2: collectors[2] },
+            scores: { 1: {...scores[1]}, 2: {...scores[2]} },
+            playerFlags: { 1: {...playerFlags[1]}, 2: {...playerFlags[2]} },
+            currentPlayer: currentPlayer,
+            bagLen: bag.length,
+            // Extra state for undo (post-game review path only uses cells/scores/playerFlags above)
+            bag: bag.map(d => ({...d})),
+            gameState,
+            selectedIdx,
+            relinquished: { 1: relinquished[1], 2: relinquished[2] },
+            relinquishCount: { 1: relinquishCount[1], 2: relinquishCount[2] },
+            collectedDiscs: {
+                1: collectedDiscs[1].map(d => ({...d})),
+                2: collectedDiscs[2].map(d => ({...d}))
+            },
+            draftChosen: draftChosen ? {...draftChosen} : null,
+            pendingExtraTurn,
+            sacrificeRange,
+            sacrificingPlayer,
+            isFirstMove,
+            desc: desc
+        });
+        mlSaveGame();
+    }
+
+    function undoMove() {
+        // Need at least 2 snapshots: keep the "Game start ..." entry as the
+        // pristine baseline, undo the most recent move on top of it.
+        if (moveHistory.length <= 1) return;
+        if (gameState === 'END') return;
+        moveHistory.pop();
+        const snap = moveHistory[moveHistory.length - 1];
+
+        for (let i = 0; i < 144; i++) cells[i] = snap.cells[i] ? {...snap.cells[i]} : null;
+        collectors = { 1: snap.collectors[1], 2: snap.collectors[2] };
+        scores = { 1: {...snap.scores[1]}, 2: {...snap.scores[2]} };
+        playerFlags = { 1: {...snap.playerFlags[1]}, 2: {...snap.playerFlags[2]} };
+        currentPlayer = snap.currentPlayer;
+        bag = (snap.bag || []).map(d => ({...d}));
+        gameState = snap.gameState || 'PLAY';
+        selectedIdx = (snap.selectedIdx == null) ? null : snap.selectedIdx;
+        relinquished = snap.relinquished
+            ? { 1: snap.relinquished[1], 2: snap.relinquished[2] }
+            : { 1: false, 2: false };
+        relinquishCount = snap.relinquishCount
+            ? { 1: snap.relinquishCount[1], 2: snap.relinquishCount[2] }
+            : { 1: 0, 2: 0 };
+        collectedDiscs = snap.collectedDiscs
+            ? {
+                1: snap.collectedDiscs[1].map(d => ({...d})),
+                2: snap.collectedDiscs[2].map(d => ({...d}))
+              }
+            : { 1: [], 2: [] };
+        draftChosen = snap.draftChosen ? {...snap.draftChosen} : null;
+        pendingExtraTurn = !!snap.pendingExtraTurn;
+        sacrificeRange = snap.sacrificeRange || 0;
+        sacrificingPlayer = snap.sacrificingPlayer || 0;
+        isFirstMove = !!snap.isFirstMove;
+
+        // Transient panels: hide the sacrifice (opponent-pick) panel; but if we
+        // landed back on a DRAFT_PLACE snapshot, re-show the draft panel so the
+        // drafted disc is in hand again, ready to re-place on another square.
+        document.getElementById('sacrifice-panel').style.display = 'none';
+        if (gameState === 'DRAFT_PLACE' && draftChosen) {
+            showDraftPlacePanel(draftChosen);
+        } else {
+            document.getElementById('draft-panel').style.display = 'none';
+        }
+        // Exit post-game review mode if it was active
+        isReviewing = false;
+
+        updateUI(); render();
+        mlSaveGame();
+    }
+
+    // ---- Auto-save / resume — mirrors Divided Loyalties' "Letztes Spiel
+    // fortsetzen" (Walter, 2026-06-30). A mis-tap by 2mm could lose a whole
+    // game; now the running game is persisted after every committed move (every
+    // saveSnapshot) and undo, and offered as a "▶ Resume last game" button in
+    // the setup panel. We store the FULL moveHistory, so Undo also survives a
+    // resume (better than DL, which resets its undo stack). Only the snapshotted
+    // (committed) game states are ever persisted: PLAY, DRAFT_PLACE,
+    // SACRIFICE_MOVE, END — SACRIFICE_SELECT is never the tail, so resume never
+    // has to rebuild the opponent-pick panel.
+    const ML_SAVEGAME_KEY = 'ml_savegame';
+
+    function mlSaveGame() {
+        if (!moveHistory.length || currentPosition == null) return;
+        try {
+            localStorage.setItem(ML_SAVEGAME_KEY, JSON.stringify({
+                version: 1,
+                currentPosition,
+                showLOS,
+                moveHistory
+            }));
+        } catch (e) { console.warn('mlSaveGame failed:', e); }
+    }
+
+    function mlHasSavedGame() { return !!localStorage.getItem(ML_SAVEGAME_KEY); }
+    function mlClearSavedGame() { localStorage.removeItem(ML_SAVEGAME_KEY); }
+
+    // Copy a snapshot back onto the live state — same field-for-field restore as
+    // undoMove, kept separate so undoMove's proven code stays untouched.
+    function mlRestoreLiveFromSnapshot(snap) {
+        for (let i = 0; i < 144; i++) cells[i] = snap.cells[i] ? {...snap.cells[i]} : null;
+        collectors = { 1: snap.collectors[1], 2: snap.collectors[2] };
+        scores = { 1: {...snap.scores[1]}, 2: {...snap.scores[2]} };
+        playerFlags = { 1: {...snap.playerFlags[1]}, 2: {...snap.playerFlags[2]} };
+        currentPlayer = snap.currentPlayer;
+        bag = (snap.bag || []).map(d => ({...d}));
+        gameState = snap.gameState || 'PLAY';
+        selectedIdx = (snap.selectedIdx == null) ? null : snap.selectedIdx;
+        relinquished = snap.relinquished
+            ? { 1: snap.relinquished[1], 2: snap.relinquished[2] } : { 1: false, 2: false };
+        relinquishCount = snap.relinquishCount
+            ? { 1: snap.relinquishCount[1], 2: snap.relinquishCount[2] } : { 1: 0, 2: 0 };
+        collectedDiscs = snap.collectedDiscs
+            ? { 1: snap.collectedDiscs[1].map(d => ({...d})), 2: snap.collectedDiscs[2].map(d => ({...d})) }
+            : { 1: [], 2: [] };
+        draftChosen = snap.draftChosen ? {...snap.draftChosen} : null;
+        pendingExtraTurn = !!snap.pendingExtraTurn;
+        sacrificeRange = snap.sacrificeRange || 0;
+        sacrificingPlayer = snap.sacrificingPlayer || 0;
+        isFirstMove = !!snap.isFirstMove;
+    }
+
+    function mlResumeSavedGame() {
+        const raw = localStorage.getItem(ML_SAVEGAME_KEY);
+        if (!raw) return false;
+        try {
+            const st = JSON.parse(raw);
+            if (!st || !Array.isArray(st.moveHistory) || !st.moveHistory.length) return false;
+            currentPosition = st.currentPosition != null ? st.currentPosition : 'random';
+            showLOS = !!st.showLOS;
+            moveHistory = st.moveHistory;
+            historyIndex = moveHistory.length - 1;
+            isReviewing = false;
+            mlRestoreLiveFromSnapshot(moveHistory[moveHistory.length - 1]);
+
+            // Leave setup; configure the in-game panels for the restored state.
+            setPositionTitle('');
+            document.getElementById('setup-panel').style.display = 'none';
+            document.getElementById('starter-panel').style.display = 'none';
+            document.getElementById('game-actions').style.display = 'block';
+            document.getElementById('csv-export-btn').style.display = '';
+            document.getElementById('sacrifice-panel').style.display = 'none';
+            if (gameState === 'DRAFT_PLACE' && draftChosen) {
+                showDraftPlacePanel(draftChosen);
+            } else {
+                document.getElementById('draft-panel').style.display = 'none';
+            }
+            const losBtn = document.getElementById('los-toggle');
+            if (losBtn) {
+                losBtn.innerText = showLOS ? '시야 숨기기' : '시야 표시';
+                losBtn.style.background = showLOS ? '#27ae60' : '#7f8c8d';
+            }
+            updateUI(); render();
+            return true;
+        } catch (e) { console.error('mlResumeSavedGame failed:', e); return false; }
+    }
+
+    function mlRenderResume() {
+        const slot = document.getElementById('ml-resume-slot');
+        if (!slot) return;
+        slot.innerHTML = '';
+        if (!mlHasSavedGame()) return;
+        const wrap = document.createElement('div');
+        wrap.style.cssText = 'display:flex; gap:8px; justify-content:center; align-items:stretch; margin-bottom:14px;';
+        const cont = document.createElement('button');
+        cont.className = 'btn';
+        cont.style.cssText = 'width:auto; flex:1; max-width:420px; padding:12px 18px; background:#00695c; color:white; font-size:1em; text-align:center; line-height:1.25;';
+        cont.innerHTML = '▶ 지난 게임 이어하기<br><span style="font-weight:normal; font-size:0.8em; opacity:0.9;">마지막으로 저장된 상태에서 계속하기</span>';
+        cont.onclick = () => { mlResumeSavedGame(); };
+        const drop = document.createElement('button');
+        drop.className = 'btn';
+        drop.textContent = '🗑';
+        drop.title = '저장된 게임 삭제';
+        drop.style.cssText = 'width:auto; background:#8d6e63; color:white; padding:0 16px; font-size:1.1em;';
+        drop.onclick = () => { if (confirm('저장된 게임을 삭제하시겠습니까?')) { mlClearSavedGame(); mlRenderResume(); } };
+        wrap.appendChild(cont); wrap.appendChild(drop);
+        slot.appendChild(wrap);
+    }
+
+    function stepHistory(delta) {
+        if (moveHistory.length === 0) return;
+        const maxIdx = moveHistory.length - 1;
+        if (!isReviewing) {
+            // Enter review mode at last move
+            historyIndex = maxIdx;
+            isReviewing = true;
+        }
+        historyIndex = Math.max(0, Math.min(maxIdx, historyIndex + delta));
+        renderSnapshot(moveHistory[historyIndex]);
+        updateHistoryControls();
+    }
+
+    function renderSnapshot(snap) {
+        // Render board from snapshot
+        for (let i = 0; i < 144; i++) {
+            const el = document.getElementById(`cell-${i}`);
+            el.innerHTML = '';
+            el.className = 'cell';
+            if (snap.cells[i]) {
+                const d = document.createElement('div');
+                if (snap.cells[i].type === 'collector') d.className = `collector ${snap.cells[i].player === 1 ? 'black' : 'white'}`;
+                else { d.className = 'disc'; d.style.backgroundColor = snap.cells[i].color; d.innerText = snap.cells[i].num; }
+                el.appendChild(d);
+            }
+        }
+        // Update scoring table from snapshot
+        renderScoreTable(snap.scores, snap.playerFlags);
+    }
+
+    function updateHistoryControls() {
+        const pos = document.getElementById('history-pos');
+        const desc = document.getElementById('history-desc');
+        pos.innerText = `${historyIndex + 1} / ${moveHistory.length}`;
+        desc.innerText = moveHistory[historyIndex].desc || '';
+    }
+
+    let currentPosition = null;   // 'random' for random start, custom-id for an editor custom, null before setup
+
+    function setPositionTitle(label) {
+        const pt = document.getElementById('position-title');
+        if (pt) pt.textContent = label ? ' — ' + label : '';
+        document.title = label ? 'MAKA LAINA — ' + label : 'MAKA LAINA';
+    }
+
+    // Reset all per-game state. Called by both Random and Custom start paths
+    // before placing discs.
+    function resetGameState() {
+        for (let i = 0; i < 144; i++) cells[i] = null;
+        collectors = { 1: null, 2: null };
+        moveHistory = [];
+        historyIndex = -1;
+        isReviewing = false;
+        document.getElementById('history-controls').style.display = 'none';
+        document.getElementById('draft-panel').style.display = 'none';
+        document.getElementById('sacrifice-panel').style.display = 'none';
+        document.getElementById('winner-overlay').style.display = 'none';
+        playerFlags = { 1: {}, 2: {} };
+        relinquished = { 1: false, 2: false };
+        relinquishCount = { 1: 0, 2: 0 };
+        collectedDiscs = { 1: [], 2: [] };
+        draftChosen = null;
+        pendingExtraTurn = false;
+        selectedIdx = null;
+        sacrificeRange = 0;
+        sacrificingPlayer = 0;
+        isFirstMove = true;
+        colors.forEach(c => { scores[1][c] = 0; scores[2][c] = 0; });
+    }
+
+    function startRandom() {
+        currentPosition = 'random';
+        setPositionTitle('');
+        document.getElementById('setup-panel').style.display = 'none';
+        resetGameState();
+        initBag();
+        // Drop 24 random discs FIRST so Player 1 can see the layout when
+        // deciding where to put the collectors (Walter's rule).
+        for (let i = 0; i < 24; i++) {
+            let r; do { r = Math.floor(Math.random() * 144); } while (cells[r]);
+            cells[r] = bag.pop();
+        }
+        gameState = 'PLACEMENT';
+        updateUI(); render();
+    }
+
+    // True when a saved position carries baked-in collector cells (imported
+    // from an "Export opening" CSV). Legacy `b`/`w` fields are deliberately
+    // NOT honoured here — only the explicit `coll:{b,w}` set by the importer,
+    // and only if both cells are on-board, distinct, and disc-free.
+    function mlPresetCollectors(pos) {
+        const c = pos && pos.coll;
+        if (!c) return null;
+        const b = c.b, w = c.w;
+        if (!Number.isInteger(b) || !Number.isInteger(w)) return null;
+        if (b < 0 || b >= 144 || w < 0 || w >= 144 || b === w) return null;
+        return { b, w };
+    }
+
+    // For custom positions. pos.d is the disc layout. If pos.coll is present
+    // (imported preset opening) both collectors are placed from it and the
+    // game skips PLACEMENT straight to P2_CHOOSE (Walter, 2026-05-18 — live
+    // placement is too slow for a "light" game; fairness still comes from
+    // Player 2's colour pick). Otherwise Player 1 places collectors live, and
+    // legacy pos.b / pos.w are ignored, just like Random.
+    function applyPositionData(pos) {
+        setPositionTitle('');
+        document.getElementById('setup-panel').style.display = 'none';
+
+        resetGameState();
+
+        // Create all 54 discs (pool); used ones come off the pool as we place pos.d.
+        const allDiscs = [];
+        ['red','blue','yellow'].forEach(c => [1,2,2,3,3,3,4,4,4,5,5,6].forEach(n => allDiscs.push({color:c, num:n, type:'primary'})));
+        ['green','orange','purple'].forEach(c => { for(let i=0;i<6;i++) allDiscs.push({color:c, num:'', type:'secondary'}); });
+
+        // Place discs from the custom layout
+        pos.d.forEach(([x, y, color, num]) => {
+            const idx = y * 12 + x;
+            const poolIdx = allDiscs.findIndex(p => p.color === color && p.num === num);
+            if (poolIdx >= 0) {
+                cells[idx] = allDiscs.splice(poolIdx, 1)[0];
+            } else {
+                cells[idx] = {color, num, type: num !== '' ? 'primary' : 'secondary'};
+            }
+        });
+
+        // Remaining: shuffle, remove 6 hidden, rest is bag
+        allDiscs.sort(() => Math.random() - 0.5);
+        allDiscs.splice(0, 6);
+        bag = allDiscs;
+
+        // Preset opening: place both collectors and skip live placement,
+        // but only if their cells are free (a disc row must not sit there).
+        const pc = mlPresetCollectors(pos);
+        if (pc && !cells[pc.b] && !cells[pc.w]) {
+            collectors[1] = pc.b; cells[pc.b] = { type: 'collector', player: 1 };
+            collectors[2] = pc.w; cells[pc.w] = { type: 'collector', player: 2 };
+            goToP2Choose();
+            return;
+        }
+
+        gameState = 'PLACEMENT';
+        updateUI(); render();
+    }
+
+    function loadCustomPosition(customId) {
+        const pos = mlLoadCustomPositions().find(p => p.customId === customId);
+        if (!pos) return;
+        currentPosition = customId;
+        applyPositionData(pos);
+    }
+
+    // Built-in preset opening: parse its CSV the same way the 📥 Load opening
+    // button does, then hand the { d, coll } to applyPositionData — which
+    // places both collectors and goes straight to P2's colour pick.
+    function loadBuiltinOpening(i) {
+        const csv = ML_BUILTIN_OPENING_CSVS[i];
+        if (csv == null) return;
+        const parsed = mlParseOpeningCSV(csv);
+        currentPosition = 'opening' + (i + 1);
+        applyPositionData({ d: parsed.d, coll: parsed.coll });
+    }
+
+    // Called when Player 2 picks their colour after Player 1 has placed both collectors.
+    // Player 1 then plays the OTHER colour and starts the first turn.
+    //   color = 1 (Black)  → P2 plays Black → P1 plays White → currentPlayer = 2
+    //   color = 2 (White)  → P2 plays White → P1 plays Black → currentPlayer = 1
+    function p2PicksColor(color) {
+        currentPlayer = (color === 1) ? 2 : 1;
+        document.getElementById('starter-panel').style.display = 'none';
+        document.getElementById('game-actions').style.display = 'block';
+        document.getElementById('csv-export-btn').style.display = '';
+        gameState = 'PLAY';
+        isFirstMove = true;
+        const starterName = (currentPlayer === 1 ? '검정' : '흰색');
+        saveSnapshot('게임 시작 — ' + starterName + ' 선공 (P2가 ' + (color === 1 ? '검정' : '흰색') + ' 선택)');
+        updateUI(); render();
+    }
+
+    function toggleRules(show) { document.getElementById('modal-overlay').style.display = show ? 'flex' : 'none'; }
+
+    function shareOnWhatsApp() {
+        let shareUrl = /^(file|parados):$/.test(window.location.protocol) ? "https://game.ywesee.com/parados/" + (window.location.pathname.split("/").pop() || "index.html") : window.location.href.split('#')[0];
+        const msg = `MAKA LAINA 플레이: ${shareUrl}\n\nParados 앱 받기:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
+        if (navigator.share) { navigator.share({ text: msg }).catch(() => {}); return; }
+        // No share API (Android WebView, in-app browsers): copy to clipboard.
+        // Never wa.me — Android WebView can't dispatch whatsapp:// (ERR_UNKNOWN_URL_SCHEME).
+        const note = '메시지가 복사되었습니다 — WhatsApp에 붙여넣으세요.';
+        const fallback = () => { const ta = document.createElement('textarea'); ta.value = msg; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); let ok=false; try { ok = document.execCommand('copy'); } catch {} ta.remove(); if (ok) alert(note); else prompt(note, msg); };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(msg).then(() => alert(note)).catch(fallback);
+        else fallback();
+    }
+
+    function toggleLOS() {
+        showLOS = !showLOS;
+        const btn = document.getElementById('los-toggle');
+        btn.innerText = showLOS ? '시야 숨기기' : '시야 표시';
+        btn.style.background = showLOS ? '#27ae60' : '#7f8c8d';
+        render();
+    }
+
+    function initBag() {
+        ['red', 'blue', 'yellow'].forEach(c => [1,2,2,3,3,3,4,4,4,5,5,6].forEach(n => bag.push({color:c, num:n, type:'primary'})));
+        ['green', 'orange', 'purple'].forEach(c => { for(let i=0; i<6; i++) bag.push({color:c, num:'', type:'secondary'}); });
+        bag.sort(() => Math.random() - 0.5);
+        bag.splice(0, 6);
+        colors.forEach(c => { scores[1][c] = 0; scores[2][c] = 0; });
+    }
+
+    function createBoard() {
+        const boardDiv = document.getElementById('board');
+        for (let i = 0; i < 144; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.id = `cell-${i}`;
+            cell.onclick = () => handleClick(i);
+            boardDiv.appendChild(cell);
+        }
+    }
+
+    function handleClick(i) {
+        if (gameState === 'SETUP' || gameState === 'P2_CHOOSE') return;
+        if (gameState === 'PLACEMENT') {
+            if (cells[i]) return;
+            if (!collectors[1]) { collectors[1] = i; cells[i] = {type:'collector', player:1}; }
+            else if (!collectors[2]) { collectors[2] = i; cells[i] = {type:'collector', player:2}; goToP2Choose(); }
+            render(); updateUI();
+        } else if (gameState === 'PLAY') {
+            handleMove(i);
+        } else if (gameState === 'DRAFT_PLACE') {
+            const draftLOS = getLOS(collectors[currentPlayer]);
+            const opponentLOS = isFirstMove ? getLOS(collectors[currentPlayer === 1 ? 2 : 1]) : [];
+            if (!cells[i] && draftLOS.includes(i) && !opponentLOS.includes(i)) {
+                isFirstMove = false;
+                const draftColor = draftChosen.color;
+                const draftNum = draftChosen.num;
+                cells[i] = draftChosen;
+                draftChosen = null;
+                document.getElementById('draft-panel').style.display = 'none';
+                gameState = 'PLAY';
+                const dPName = currentPlayer === 1 ? '검정' : '흰색';
+                if (!pendingExtraTurn) {
+                    currentPlayer = currentPlayer === 1 ? 2 : 1;
+                }
+                pendingExtraTurn = false;
+                saveSnapshot(`${dPName}이(가) ${draftColor} ${draftNum || ''}을(를) 보드에 놓음`);
+                updateUI(); render();
+            }
+        } else if (gameState === 'SACRIFICE_MOVE') {
+            handleSacrificeMove(i);
+        }
+    }
+
+    function goToP2Choose() {
+        gameState = 'P2_CHOOSE';
+        document.getElementById('starter-panel').style.display = 'block';
+        updateUI(); render();
+    }
+
+    function getLOS(idx) {
+        const los = [];
+        const r = Math.floor(idx / 12), c = idx % 12;
+        [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([dr, dc]) => {
+            for (let d = 1; d < 12; d++) {
+                let nr = r + dr*d, nc = c + dc*d;
+                if (nr < 0 || nr >= 12 || nc < 0 || nc >= 12) break;
+                let id = nr * 12 + nc;
+                los.push(id);
+                if (cells[id]) break;
+            }
+        });
+        return los;
+    }
+
+    function hasValidMove(player) {
+        const los = getLOS(collectors[player]);
+        for (let i = 0; i < 144; i++) {
+            if (!cells[i] || cells[i].type === 'collector') continue;
+            if (los.includes(i)) continue;
+            // This disc is NOT in LOS; check if any adjacent empty cell IS in LOS
+            const r = Math.floor(i / 12), c = i % 12;
+            for (let dr = -1; dr <= 1; dr++) {
+                for (let dc = -1; dc <= 1; dc++) {
+                    if (dr === 0 && dc === 0) continue;
+                    const nr = r + dr, nc = c + dc;
+                    if (nr < 0 || nr >= 12 || nc < 0 || nc >= 12) continue;
+                    const adj = nr * 12 + nc;
+                    if (!cells[adj] && los.includes(adj)) return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    function handleMove(i) {
+        const los = getLOS(collectors[currentPlayer]);
+        if (selectedIdx === null) {
+            if (cells[i] && cells[i].type !== 'collector' && !los.includes(i)) {
+                selectedIdx = i; render();
+            }
+        } else {
+            const dist = Math.max(Math.abs(Math.floor(i/12)-Math.floor(selectedIdx/12)), Math.abs((i%12)-(selectedIdx%12)));
+            if (!cells[i] && dist === 1 && getLOS(collectors[currentPlayer]).includes(i)) {
+                processCollection(cells[selectedIdx], i);
+            } else {
+                selectedIdx = null; render();
+            }
+        }
+    }
+
+    function processCollection(disc, newIdx) {
+        const pName = currentPlayer === 1 ? '검정' : '흰색';
+        const colorKey = disc.color + '6';
+        const counted = !playerFlags[currentPlayer][colorKey];
+
+        if (counted) {
+            scores[currentPlayer][disc.color] += (disc.num || 1);
+            if (disc.num === 6) playerFlags[currentPlayer][colorKey] = true;
+        }
+
+        // Track collected disc (primary only, for sacrifice)
+        if (disc.type === 'primary') {
+            collectedDiscs[currentPlayer].push({...disc, counted});
+        }
+
+        // Move collector
+        cells[collectors[currentPlayer]] = null;
+        cells[selectedIdx] = null;
+        collectors[currentPlayer] = newIdx;
+        cells[newIdx] = { type: 'collector', player: currentPlayer };
+        selectedIdx = null;
+        relinquished[1] = relinquished[2] = false;
+        const collectDesc = `${pName}이(가) ${disc.color} ${disc.num || ''} 수집${disc.num === 6 ? ' (무가치!)' : ''}${disc.num === 1 ? ' (추가 턴!)' : ''}`;
+
+        // Check if all discs collected and bag empty
+        const remaining = cells.filter(c => c && c.type !== 'collector').length;
+        if (remaining === 0 && bag.length === 0) {
+            gameState = 'END';
+            saveSnapshot(collectDesc);
+            updateUI(); render();
+            return;
+        }
+
+        // Draft: draw 1 disc from bag, player must place it. Snapshot the
+        // DRAFT_PLACE state (disc already in hand) so undoing the placement
+        // returns the player here, disc ready to re-place on another square.
+        if (bag.length > 0) {
+            pendingExtraTurn = (disc.num === 1);
+            draftChosen = bag.pop();
+            gameState = 'DRAFT_PLACE';
+            saveSnapshot(collectDesc);
+            showDraftPlacePanel(draftChosen);
+            updateUI(); render();
+            return;
+        }
+
+        // No draft (bag empty): switch the turn FIRST, then snapshot — so the
+        // saved state records whose turn it now is. Snapshotting before the
+        // switch made undo restore the previous mover as the current player.
+        if (disc.num !== 1) {
+            currentPlayer = currentPlayer === 1 ? 2 : 1;
+        }
+        saveSnapshot(collectDesc);
+        updateUI(); render();
+    }
+
+    // --- DRAFT SYSTEM (1-disc placement) ---
+
+    function showDraftPlacePanel(disc) {
+        const panel = document.getElementById('draft-panel');
+        panel.style.display = 'block';
+        const label = document.getElementById('draft-label');
+        label.innerText = '이 디스크를 당신의 시야 안에 놓으세요:';
+        const choices = document.getElementById('draft-choices');
+        choices.innerHTML = '';
+        const d = document.createElement('div');
+        d.className = 'disc';
+        d.style.backgroundColor = disc.color;
+        d.innerText = disc.num;
+        d.style.cursor = 'default';
+        d.style.boxShadow = '0 0 12px rgba(76, 175, 80, 0.6)';
+        choices.appendChild(d);
+    }
+
+    // --- SACRIFICE SYSTEM ---
+
+    // Walter's escape rule (2026-05-29): a trapped player with nothing to
+    // sacrifice gets a free move of up to 2 squares instead of being stuck
+    // (which used to be a near-certain loss). This discourages trapping the
+    // opponent too early — an early trap no longer wins on the spot. Returns
+    // true if a free move was set up; false if even a 2-square move is
+    // impossible (truly boxed in).
+    function freeEscapeMove(player) {
+        if (getReachableCells(collectors[player], 2).length === 0) return false;
+        sacrificingPlayer = player;
+        sacrificeRange = 2;
+        currentPlayer = player;
+        gameState = 'SACRIFICE_MOVE';
+        return true;
+    }
+
+    function sacrificeTurn() {
+        if (gameState !== 'PLAY') return;
+        sacrificingPlayer = currentPlayer;
+        const primaryDiscs = collectedDiscs[sacrificingPlayer].filter(d => d.type === 'primary');
+        if (primaryDiscs.length === 0) {
+            // Nothing to sacrifice → free escape move (Walter's rule).
+            const sName = sacrificingPlayer === 1 ? '검정' : '흰색';
+            if (freeEscapeMove(sacrificingPlayer)) {
+                saveSnapshot(`${sName}이(가) 희생할 것이 없음 — 자유 이동 (최대 2)`);
+            } else {
+                // Truly boxed in: relinquish as a last resort.
+                relinquished[sacrificingPlayer] = true;
+                if (relinquished[1] && relinquished[2]) gameState = 'END';
+                else currentPlayer = sacrificingPlayer === 1 ? 2 : 1;
+                saveSnapshot(`${sName}이(가) 강제로 턴 넘김 (탈출 불가)`);
+            }
+            updateUI(); render();
+            return;
+        }
+        // Opponent picks which disc to sacrifice
+        currentPlayer = sacrificingPlayer === 1 ? 2 : 1;
+        gameState = 'SACRIFICE_SELECT';
+        showSacrificePanel();
+        updateUI();
+    }
+
+    function relinquishTurn() {
+        if (gameState !== 'PLAY') return;
+        if (relinquishCount[currentPlayer] >= RELINQUISH_LIMIT) return;
+        const rName = currentPlayer === 1 ? '검정' : '흰색';
+        relinquishCount[currentPlayer]++;
+        relinquished[currentPlayer] = true;
+        const rLeft = RELINQUISH_LIMIT - relinquishCount[currentPlayer];
+        if (relinquished[1] && relinquished[2]) {
+            gameState = 'END';
+        } else {
+            currentPlayer = currentPlayer === 1 ? 2 : 1;
+        }
+        // Snapshot AFTER the switch so undo restores whose turn it now is.
+        saveSnapshot(`${rName}이(가) 턴을 넘김 (${rLeft}회 남음)`);
+        updateUI(); render();
+    }
+
+    function showSacrificePanel() {
+        const panel = document.getElementById('sacrifice-panel');
+        panel.style.display = 'block';
+        document.getElementById('sacrifice-btn').style.display = 'none';
+        document.getElementById('relinquish-btn').style.display = 'none';
+        document.getElementById('stuck-hint').style.display = 'none';
+        const label = document.getElementById('sacrifice-label');
+        const oppName = currentPlayer === 1 ? '검정' : '흰색';
+        const sacName = sacrificingPlayer === 1 ? '검정' : '흰색';
+        label.innerText = `${oppName}: ${sacName}이(가) 희생할 디스크를 고르세요`;
+        const choices = document.getElementById('sacrifice-choices');
+        choices.innerHTML = '';
+        const primaryDiscs = collectedDiscs[sacrificingPlayer].filter(d => d.type === 'primary');
+        primaryDiscs.forEach((disc) => {
+            const d = document.createElement('div');
+            d.className = 'disc';
+            d.style.backgroundColor = disc.color;
+            d.innerText = disc.num;
+            d.title = `희생: ${disc.counted ? disc.color + '에서 ' + disc.num + '점 잃음, ' : ''}최대 ${disc.num}칸 이동`;
+            d.onclick = () => selectSacrificeDisc(disc);
+            choices.appendChild(d);
+        });
+    }
+
+    function selectSacrificeDisc(disc) {
+        sacrificeRange = disc.num;
+
+        // Remove disc from sacrificing player's collection
+        const arr = collectedDiscs[sacrificingPlayer];
+        const removeIdx = arr.indexOf(disc);
+        if (removeIdx >= 0) arr.splice(removeIdx, 1);
+
+        // Subtract value from score only if it was counted
+        if (disc.counted) {
+            scores[sacrificingPlayer][disc.color] -= disc.num;
+        }
+
+        document.getElementById('sacrifice-panel').style.display = 'none';
+        // Switch back to the stuck player for the move phase
+        currentPlayer = sacrificingPlayer;
+        gameState = 'SACRIFICE_MOVE';
+        const sacName = sacrificingPlayer === 1 ? '검정' : '흰색';
+        saveSnapshot(`${sacName}이(가) ${disc.color} ${disc.num} 희생`);
+        updateUI(); render();
+    }
+
+    function handleSacrificeMove(i) {
+        const reachable = getReachableCells(collectors[currentPlayer], sacrificeRange);
+        if (reachable.includes(i)) {
+            const smName = currentPlayer === 1 ? '검정' : '흰색';
+            cells[collectors[currentPlayer]] = null;
+            collectors[currentPlayer] = i;
+            cells[i] = { type: 'collector', player: currentPlayer };
+            sacrificeRange = 0;
+            gameState = 'PLAY';
+            relinquished[1] = relinquished[2] = false;
+            currentPlayer = currentPlayer === 1 ? 2 : 1;
+            saveSnapshot(`${smName}이(가) 희생 후 컬렉터 이동`);
+            updateUI(); render();
+        }
+    }
+
+    function getReachableCells(fromIdx, range) {
+        const reachable = [];
+        const fr = Math.floor(fromIdx / 12), fc = fromIdx % 12;
+        for (let r = 0; r < 12; r++) {
+            for (let c = 0; c < 12; c++) {
+                const dist = Math.max(Math.abs(r - fr), Math.abs(c - fc));
+                const idx = r * 12 + c;
+                if (dist > 0 && dist <= range && !cells[idx]) {
+                    reachable.push(idx);
+                }
+            }
+        }
+        return reachable;
+    }
+
+    // --- UI ---
+
+    function updateUI() {
+        const status = document.getElementById('status');
+        const pLabel = currentPlayer === 1 ? '검정' : '흰색';
+        switch (gameState) {
+            case 'END':
+                status.innerText = computeWinner().shortText;
+                showWinner();
+                if (moveHistory.length > 0) {
+                    document.getElementById('history-controls').style.display = 'block';
+                    historyIndex = moveHistory.length - 1;
+                    updateHistoryControls();
+                }
+                break;
+            case 'PLAY':
+                status.innerText = `턴: ${pLabel}`; break;
+            case 'DRAFT_PLACE':
+                status.innerText = `${pLabel}: 디스크를 당신의 시야 안에 놓으세요`; break;
+            case 'SACRIFICE_SELECT':
+                const oppLabel = currentPlayer === 1 ? '검정' : '흰색';
+                const sacLabel = sacrificingPlayer === 1 ? '검정' : '흰색';
+                status.innerText = `${oppLabel}: ${sacLabel}이(가) 희생할 디스크를 고르세요`; break;
+            case 'SACRIFICE_MOVE':
+                const smLabel = sacrificingPlayer === 1 ? '검정' : '흰색';
+                status.innerText = `${smLabel}: 컬렉터를 이동하세요 (최대 ${sacrificeRange}칸)`; break;
+            case 'PLACEMENT':
+                status.innerText = `플레이어 1: ${collectors[1] ? '흰색' : '검정'} 컬렉터를 놓으세요.`; break;
+            case 'P2_CHOOSE':
+                status.innerText = '플레이어 2: 위에서 색을 고르세요.'; break;
+            case 'SETUP':
+                status.innerText = '위의 ▶ 시작을 누르세요.'; break;
+        }
+
+        renderScoreTable(scores, playerFlags);
+
+        // Bag count
+        const bagEl = document.getElementById('bag-count');
+        if (bagEl) bagEl.innerText = `주머니: 남은 디스크 ${bag.length}개`;
+
+        // Show/hide sacrifice & relinquish buttons based on state
+        const inPlay = gameState === 'PLAY';
+        const stuck = inPlay && !hasValidMove(currentPlayer);
+        const sacBtn = document.getElementById('sacrifice-btn');
+        const relBtn = document.getElementById('relinquish-btn');
+        const stuckHint = document.getElementById('stuck-hint');
+        const canRelinquish = relinquishCount[currentPlayer] < RELINQUISH_LIMIT;
+        if (sacBtn) sacBtn.style.display = stuck ? 'block' : 'none';
+        if (relBtn) {
+            relBtn.style.display = (inPlay && canRelinquish) ? 'block' : 'none';
+            const remaining = RELINQUISH_LIMIT - relinquishCount[currentPlayer];
+            relBtn.innerText = `턴 넘기기 (${remaining}/${RELINQUISH_LIMIT})`;
+        }
+        if (stuckHint) {
+            const noDiscs = collectedDiscs[currentPlayer].filter(d => d.type === 'primary').length === 0;
+            if (stuck && noDiscs) {
+                stuckHint.innerText = '유효한 수가 없고 희생할 것도 없습니다 — “희생 & 이동”을 눌러 최대 2칸 탈출하세요.';
+            } else if (stuck && !canRelinquish) {
+                stuckHint.innerText = '유효한 수가 없습니다! 턴 넘기기가 남지 않았습니다 — 디스크를 희생해야 합니다!';
+            } else if (stuck) {
+                stuckHint.innerText = '유효한 수가 없습니다! 디스크를 희생하거나(상대가 선택) 턴을 넘기세요.';
+            }
+            stuckHint.style.display = stuck ? 'block' : 'none';
+        }
+        const undoBtn = document.getElementById('undo-btn');
+        if (undoBtn) {
+            const canUndo = moveHistory.length > 1 && gameState !== 'END';
+            undoBtn.disabled = !canUndo;
+            undoBtn.style.opacity = canUndo ? '1' : '0.4';
+            undoBtn.style.cursor = canUndo ? 'pointer' : 'default';
+        }
+        // Stuck, no relinquishes left, nothing to sacrifice: grant a free
+        // escape move (Walter's rule) instead of ending the game; only end if
+        // even a 2-square move is impossible (truly boxed in).
+        if (stuck && !canRelinquish) {
+            const primaryDiscs = collectedDiscs[currentPlayer].filter(d => d.type === 'primary');
+            if (primaryDiscs.length === 0) {
+                const fName = currentPlayer === 1 ? '검정' : '흰색';
+                if (freeEscapeMove(currentPlayer)) {
+                    saveSnapshot(`${fName}이(가) 희생할 것이 없음 — 자유 이동 (최대 2)`);
+                    updateUI(); render();
+                } else {
+                    relinquished[currentPlayer] = true;
+                    saveSnapshot(`${fName}이(가) 강제 종료 (탈출 불가)`);
+                    if (relinquished[1] && relinquished[2]) { gameState = 'END'; }
+                    else { currentPlayer = currentPlayer === 1 ? 2 : 1; }
+                    updateUI(); render();
+                }
+            }
+        }
+    }
+
+    function renderScoreTable(sc, flags) {
+        const body = document.getElementById('score-body');
+        body.innerHTML = '';
+        colors.forEach(c => {
+            const s1 = sc[1][c] || 0;
+            const s2 = sc[2][c] || 0;
+            const hex = COLOR_HEX[c];
+            const p1W = flags[1][c+'6'];
+            const p2W = flags[2][c+'6'];
+            const s1Text = p1W ? `<span class="worthless-box" style="border-color:${hex}; background:${hex}22;">${s1}</span>` : s1;
+            const s2Text = p2W ? `<span class="worthless-box" style="border-color:${hex}; background:${hex}22;">${s2}</span>` : s2;
+            const p1Class = p1W ? 'worthless' : '';
+            const p2Class = p2W ? 'worthless' : '';
+            let leaderClass = 'tied';
+            if (s1 > s2) leaderClass = 'black';
+            else if (s2 > s1) leaderClass = 'white';
+            body.innerHTML += `<tr><td style="color:${hex}; font-weight:bold;">${c.toUpperCase()}</td><td class="${p1Class}">${s1Text}</td><td class="${p2Class}">${s2Text}</td><td><span class="leader-dot ${leaderClass}"></span></td></tr>`;
+        });
+    }
+
+    function computeWinner() {
+        let winsP1 = 0, winsP2 = 0, maxSingleP1 = 0, maxSingleP2 = 0;
+        colors.forEach(c => {
+            const s1 = scores[1][c] || 0;
+            const s2 = scores[2][c] || 0;
+            if (s1 > s2) winsP1++;
+            else if (s2 > s1) winsP2++;
+            if (s1 > maxSingleP1) maxSingleP1 = s1;
+            if (s2 > maxSingleP2) maxSingleP2 = s2;
+        });
+        let winner = null, tiebroken = false;
+        if (winsP1 > winsP2) winner = '\uac80\uc815';
+        else if (winsP2 > winsP1) winner = '\ud770\uc0c9';
+        else if (maxSingleP1 > maxSingleP2) { winner = '\uac80\uc815'; tiebroken = true; }
+        else if (maxSingleP2 > maxSingleP1) { winner = '\ud770\uc0c9'; tiebroken = true; }
+        const scoreFmt = `${winsP1}\u2013${winsP2}`;
+        const shortText = winner
+            ? (tiebroken ? `${winner} \uc2b9\ub9ac (\ud0c0\uc774\ube0c\ub808\uc774\ud06c)! ${scoreFmt}` : `${winner} \uc2b9\ub9ac! ${scoreFmt}`)
+            : `\ubb34\uc2b9\ubd80 ${scoreFmt}`;
+        return { winsP1, winsP2, maxSingleP1, maxSingleP2, winner, tiebroken, shortText };
+    }
+
+    function showWinner() {
+        const w = computeWinner();
+        const title = document.getElementById('winner-title');
+        const scoresDiv = document.getElementById('winner-scores');
+        let detail = `\ud68d\ub4dd\ud55c \uc0c9: \uac80\uc815 ${w.winsP1} \u2014 \ud770\uc0c9 ${w.winsP2}`;
+        if (w.winner === '\uac80\uc815') {
+            title.innerText = '\uac80\uc815 \uc2b9\ub9ac!';
+            title.style.color = '#000';
+            if (w.tiebroken) detail += `<br>\ud0c0\uc774\ube0c\ub808\uc774\ucee4: \uac80\uc815\uc758 \ucd5c\uace0 \uc0c9(${w.maxSingleP1})\uc774 \ud770\uc0c9(${w.maxSingleP2})\uc744 \uc55e\uc12c`;
+        } else if (w.winner === '\ud770\uc0c9') {
+            title.innerText = '\ud770\uc0c9 \uc2b9\ub9ac!';
+            title.style.color = '#555';
+            if (w.tiebroken) detail += `<br>\ud0c0\uc774\ube0c\ub808\uc774\ucee4: \ud770\uc0c9\uc758 \ucd5c\uace0 \uc0c9(${w.maxSingleP2})\uc774 \uac80\uc815(${w.maxSingleP1})\uc744 \uc55e\uc12c`;
+        } else {
+            title.innerText = '\ubb34\uc2b9\ubd80\uc785\ub2c8\ub2e4!';
+            title.style.color = '#7f8c8d';
+        }
+        scoresDiv.innerHTML = `<div class="score-final">${detail}</div>`;
+        document.getElementById('winner-overlay').style.display = 'flex';
+    }
+
+    function downloadCSV() {
+        if (moveHistory.length === 0) {
+            alert('내보낼 수 데이터가 없습니다.');
+            return;
+        }
+
+        const rows = [];
+        rows.push('Move,Player,Description,Bag_Remaining,' +
+            colors.map(c => `Black_${c}`).join(',') + ',' +
+            colors.map(c => `White_${c}`).join(',') + ',' +
+            colors.map(c => `Flag_Black_${c}`).join(',') + ',' +
+            colors.map(c => `Flag_White_${c}`).join(',') + ',' +
+            'Black_X,Black_Y,White_X,White_Y,Discs_On_Board');
+
+        moveHistory.forEach((snap, idx) => {
+            const desc = (snap.desc || '').replace(/"/g, '""');
+            const discsOnBoard = snap.cells.filter(c => c && c.type !== 'collector').length;
+            const bx = snap.collectors[1] != null ? (snap.collectors[1] % 12) : '';
+            const by = snap.collectors[1] != null ? Math.floor(snap.collectors[1] / 12) : '';
+            const wx = snap.collectors[2] != null ? (snap.collectors[2] % 12) : '';
+            const wy = snap.collectors[2] != null ? Math.floor(snap.collectors[2] / 12) : '';
+            const row = [
+                idx + 1,
+                snap.currentPlayer === 1 ? '검정' : '흰색',
+                `"${desc}"`,
+                snap.bagLen,
+                ...colors.map(c => snap.scores[1][c] || 0),
+                ...colors.map(c => snap.scores[2][c] || 0),
+                ...colors.map(c => snap.playerFlags[1][c] ? 1 : 0),
+                ...colors.map(c => snap.playerFlags[2][c] ? 1 : 0),
+                bx, by, wx, wy,
+                discsOnBoard
+            ];
+            rows.push(row.join(','));
+        });
+
+        const csvContent = rows.join('\n');
+
+        // POST to server
+        fetch('cgi-bin/save_csv.py', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({game: 'makalaina', csv: csvContent})
+        }).then(r => r.json()).then(d => {
+            if (d.ok) console.log('CSV saved on server: ' + d.filename);
+            else console.warn('Server CSV save failed: ' + (d.error || 'unknown'));
+        }).catch(e => console.warn('Server CSV save failed: ' + e));
+
+        // Local download
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        const now = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        const fname = `makalaina_${pad(now.getHours())}${pad(now.getMinutes())}_${pad(now.getDate())}.${pad(now.getMonth()+1)}.${now.getFullYear()}.csv`;
+        link.download = fname;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+
+    // Serialise the current board (discs AND both collectors) as a position
+    // CSV. Unlike the editor export (disc-only — collectors are normally
+    // live), the in-game "Export opening" keeps the collectors so Walter can
+    // capture a whole opening (Walter, 2026-05-17). collector_black = P1,
+    // collector_white = P2.
+    function buildOpeningCSV() {
+        const lines = ['position_id,element,x,y,color,number'];
+        for (let i = 0; i < 144; i++) {
+            const c = cells[i];
+            if (!c) continue;
+            const x = i % 12, y = Math.floor(i / 12);
+            if (c.type === 'collector') {
+                lines.push(`1,${c.player === 1 ? 'collector_black' : 'collector_white'},${x},${y},,`);
+            } else {
+                lines.push(`1,disc,${x},${y},${c.color},${c.num === '' || c.num == null ? '' : c.num}`);
+            }
+        }
+        return lines.join('\n') + '\n';
+    }
+
+    // Put text on the clipboard so it can be pasted directly into a WhatsApp
+    // message box. navigator.clipboard first, then a temp-textarea +
+    // execCommand fallback (works inside the app WebView).
+    function mlCopyTextToClipboard(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            return navigator.clipboard.writeText(text).then(() => true, () => mlLegacyCopy(text));
+        }
+        return Promise.resolve(mlLegacyCopy(text));
+    }
+    function mlLegacyCopy(text) {
+        try {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            const ok = document.execCommand('copy');
+            document.body.removeChild(ta);
+            return ok;
+        } catch (e) { return false; }
+    }
+
+    async function exportOpeningCSV() {
+        if (collectors[1] == null || collectors[2] == null) {
+            alert('먼저 두 컬렉터를 모두 놓으세요 — 그다음 오프닝을 내보낼 수 있습니다.');
+            return;
+        }
+        const csv = buildOpeningCSV();
+        const filename = 'makalaina_opening.csv';
+        // Copy the opening to the clipboard up front, so it can be pasted as
+        // text into WhatsApp even if the file share is dropped/unavailable.
+        const copied = await mlCopyTextToClipboard(csv);
+        // Fire-and-forget server copy (same endpoint as the move-log export).
+        fetch('cgi-bin/save_csv.py', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ game: 'makalaina_opening', csv })
+        }).then(r => r.json()).then(d => {
+            if (!d.ok) console.warn('Server CSV save failed: ' + (d.error || 'unknown'));
+        }).catch(e => console.warn('Server CSV save failed: ' + e));
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        try {
+            if (navigator.canShare) {
+                const file = new File([blob], filename, { type: 'text/csv' });
+                if (navigator.canShare({ files: [file] })) {
+                    // No `text:` alongside `files:` — Android WhatsApp drops the
+                    // file when both are present (Divided Loyalties lesson).
+                    await navigator.share({ files: [file], title: 'MAKA LAINA 오프닝' });
+                    return;
+                }
+            }
+        } catch (e) {
+            if (e && e.name === 'AbortError') return;
+            console.warn('navigator.share failed, falling back:', e);
+        }
+        // Fallback: download + clipboard — never wa.me on Android WebView.
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+        alert(copied
+            ? `오프닝을 클립보드에 복사했습니다 — WhatsApp 메시지 입력창을 길게 눌러 붙여넣으세요. (${filename}(으)로도 저장됨.)`
+            : `${filename} 저장됨. WhatsApp 메시지에 직접 첨부하세요.`);
+    }
+
+    function render() {
+        const los = showLOS && (gameState === 'PLAY' || gameState === 'DRAFT_PLACE') ? getLOS(collectors[currentPlayer]) : [];
+        const reachable = (gameState === 'SACRIFICE_MOVE') ? getReachableCells(collectors[currentPlayer], sacrificeRange) : [];
+
+        for (let i = 0; i < 144; i++) {
+            const el = document.getElementById(`cell-${i}`);
+            el.innerHTML = '';
+            let cls = 'cell';
+            if (los.includes(i)) cls += ' los';
+            if (selectedIdx === i) cls += ' selected';
+            if (reachable.includes(i)) cls += ' reachable';
+            if (showLOS && gameState === 'DRAFT_PLACE' && !cells[i] && getLOS(collectors[currentPlayer]).includes(i)) {
+                const oppLOS = isFirstMove ? getLOS(collectors[currentPlayer === 1 ? 2 : 1]) : [];
+                if (!oppLOS.includes(i)) cls += ' placeable';
+            }
+            el.className = cls;
+
+            if (cells[i]) {
+                const d = document.createElement('div');
+                if (cells[i].type === 'collector') d.className = `collector ${cells[i].player === 1 ? 'black' : 'white'}`;
+                else {
+                    d.className = 'disc'; d.style.backgroundColor = COLOR_HEX[cells[i].color] || cells[i].color;
+                    d.innerText = cells[i].num;
+                }
+                el.appendChild(d);
+            }
+        }
+    }
+
+    function calcCellSize() {
+        const vw = window.innerWidth - 28; // 10px padding each side + 8px border
+        const vh = window.innerHeight - 80;
+        const maxByWidth = Math.floor((vw - 11) / 12); // 11 gaps of 1px
+        const maxByHeight = Math.floor((vh - 11) / 12);
+        const cs = Math.max(18, Math.min(maxByWidth, maxByHeight, 42));
+        document.documentElement.style.setProperty('--cs', cs + 'px');
+    }
+    calcCellSize();
+    window.addEventListener('resize', calcCellSize);
+
+    createBoard(); render();
+
+    // ---------- Custom-position editor ----------
+    // Token shape: 'CB' / 'CW' for collectors, '<COLOR><NUM>' for primary discs
+    // (R/B/Y × 1-6), '<COLOR>' for secondaries (G/O/P). Paint is keyed by y*12+x.
+    let mlEditorPaint = {};
+    let mlEditorBrush = 'CB';
+    let mlEditingCustomId = null;
+
+    const ML_COLOR_FOR = { R:'red', B:'blue', Y:'yellow', G:'green', O:'orange', P:'purple' };
+    const ML_PRIMARY_LETTERS = ['R','B','Y'];
+    const ML_SECONDARY_LETTERS = ['G','O','P'];
+
+    // Built-in fair openings (Walter, 2026-05-19). Each is a full "Export
+    // opening" CSV — discs PLUS both collectors — so it loads via the preset
+    // flow: no live placement, Player 2 still picks the colour (fairness comes
+    // from that pick, not the disc layout; Walter: "alle diese Startpositionen
+    // sind eigentlich egal, sie müssen nur gerecht sein, ohne FPA"). Stored as
+    // raw CSV text and run through the same mlParseOpeningCSV() the 📥 Load
+    // opening button uses, so behaviour is identical to a loaded CSV. To add
+    // more, just append another CSV string here (in either ML variant).
+    const ML_BUILTIN_OPENING_CSVS = [
+`position_id,element,x,y,color,number
+1,disc,0,0,blue,6
+1,disc,1,0,yellow,1
+1,disc,9,0,red,2
+1,disc,5,1,yellow,3
+1,disc,3,2,green,
+1,disc,7,2,blue,4
+1,disc,1,3,purple,
+1,disc,4,3,green,
+1,collector_black,5,3,,
+1,disc,8,3,yellow,3
+1,disc,3,4,red,4
+1,disc,9,4,yellow,4
+1,disc,4,5,red,3
+1,disc,8,5,purple,
+1,disc,11,5,red,4
+1,disc,2,6,purple,
+1,disc,6,6,blue,3
+1,disc,11,6,yellow,2
+1,collector_white,1,7,,
+1,disc,5,7,purple,
+1,disc,3,8,blue,4
+1,disc,6,9,blue,3
+1,disc,3,10,red,1
+1,disc,7,10,green,
+1,disc,5,11,blue,4
+1,disc,11,11,red,2`,
+`position_id,element,x,y,color,number
+1,disc,1,0,red,2
+1,disc,2,1,purple,
+1,collector_black,8,1,,
+1,disc,11,1,blue,3
+1,disc,5,2,yellow,2
+1,disc,11,4,orange,
+1,disc,0,5,yellow,1
+1,disc,5,5,blue,5
+1,disc,8,5,red,3
+1,disc,11,5,yellow,3
+1,disc,2,6,purple,
+1,disc,3,7,orange,
+1,disc,5,7,orange,
+1,disc,6,7,purple,
+1,disc,0,8,blue,4
+1,disc,5,8,green,
+1,disc,6,8,yellow,4
+1,disc,11,8,red,4
+1,disc,6,9,blue,1
+1,disc,10,9,purple,
+1,disc,2,10,blue,2
+1,collector_white,4,10,,
+1,disc,3,11,green,
+1,disc,4,11,blue,6
+1,disc,5,11,yellow,2
+1,disc,9,11,green,`,
+`position_id,element,x,y,color,number
+1,disc,4,0,blue,2
+1,disc,10,0,red,4
+1,disc,11,1,purple,
+1,disc,4,2,blue,6
+1,disc,5,2,yellow,4
+1,disc,7,2,blue,5
+1,disc,9,2,purple,
+1,disc,0,3,orange,
+1,disc,2,3,yellow,2
+1,disc,7,3,blue,2
+1,disc,4,4,purple,
+1,disc,3,5,yellow,6
+1,disc,5,5,red,5
+1,collector_white,7,5,,
+1,disc,9,5,purple,
+1,disc,9,6,blue,3
+1,collector_black,2,7,,
+1,disc,7,7,orange,
+1,disc,3,8,orange,
+1,disc,3,9,orange,
+1,disc,5,9,yellow,2
+1,disc,8,9,red,4
+1,disc,11,9,red,6
+1,disc,11,10,blue,3
+1,disc,4,11,green,
+1,disc,5,11,orange,`,
+`position_id,element,x,y,color,number
+1,disc,3,0,purple,
+1,disc,7,0,red,3
+1,disc,0,1,green,
+1,collector_white,2,1,,
+1,disc,0,2,green,
+1,disc,4,2,blue,4
+1,disc,5,2,green,
+1,disc,10,2,orange,
+1,disc,11,2,yellow,2
+1,disc,6,3,red,2
+1,disc,5,4,yellow,5
+1,disc,3,5,blue,2
+1,collector_black,9,5,,
+1,disc,5,6,blue,1
+1,disc,9,6,blue,6
+1,disc,0,7,yellow,3
+1,disc,9,7,yellow,3
+1,disc,10,7,blue,3
+1,disc,10,8,yellow,4
+1,disc,7,9,blue,2
+1,disc,0,10,red,2
+1,disc,5,10,purple,
+1,disc,7,10,yellow,4
+1,disc,11,10,green,
+1,disc,1,11,blue,5
+1,disc,2,11,red,3`,
+`position_id,element,x,y,color,number
+1,disc,7,0,green,
+1,disc,8,0,orange,
+1,collector_black,0,1,,
+1,collector_white,5,1,,
+1,disc,7,1,purple,
+1,disc,7,2,yellow,3
+1,disc,5,3,yellow,1
+1,disc,3,4,yellow,4
+1,disc,5,4,green,
+1,disc,6,4,purple,
+1,disc,8,4,yellow,3
+1,disc,2,5,blue,3
+1,disc,3,5,red,4
+1,disc,4,5,orange,
+1,disc,1,6,blue,3
+1,disc,7,6,blue,5
+1,disc,1,7,orange,
+1,disc,11,7,yellow,4
+1,disc,1,8,green,
+1,disc,4,8,yellow,5
+1,disc,7,8,blue,1
+1,disc,0,9,red,6
+1,disc,6,9,yellow,4
+1,disc,0,11,yellow,5
+1,disc,8,11,red,2
+1,disc,11,11,orange,`,
+`position_id,element,x,y,color,number
+1,disc,2,0,red,3
+1,disc,3,1,green,
+1,disc,8,1,red,1
+1,disc,9,1,blue,2
+1,disc,10,1,yellow,4
+1,disc,11,1,blue,2
+1,disc,0,2,blue,3
+1,disc,6,3,orange,
+1,disc,10,3,red,6
+1,disc,4,4,red,4
+1,disc,8,4,purple,
+1,disc,2,5,yellow,2
+1,disc,1,6,yellow,4
+1,disc,9,6,orange,
+1,disc,7,7,green,
+1,disc,10,7,blue,4
+1,disc,0,8,red,5
+1,disc,3,8,purple,
+1,disc,0,9,yellow,2
+1,collector_white,6,9,,
+1,collector_black,9,9,,
+1,disc,11,9,yellow,3
+1,disc,2,10,yellow,5
+1,disc,6,10,blue,3
+1,disc,7,10,green,
+1,disc,5,11,red,2`,
+`position_id,element,x,y,color,number
+1,disc,5,0,yellow,2
+1,disc,9,0,orange,
+1,disc,1,1,red,2
+1,disc,9,1,blue,5
+1,disc,4,2,yellow,5
+1,disc,6,2,purple,
+1,disc,7,2,orange,
+1,disc,10,2,blue,3
+1,disc,6,3,blue,4
+1,disc,1,4,blue,4
+1,disc,0,5,green,
+1,disc,4,5,purple,
+1,disc,10,5,green,
+1,disc,1,7,blue,5
+1,disc,4,7,purple,
+1,disc,5,7,yellow,3
+1,disc,8,7,orange,
+1,collector_white,9,7,,
+1,disc,11,7,blue,3
+1,disc,6,8,green,
+1,disc,8,9,yellow,3
+1,collector_black,3,10,,
+1,disc,10,10,red,5
+1,disc,0,11,yellow,5
+1,disc,1,11,yellow,3
+1,disc,9,11,yellow,4`,
+`position_id,element,x,y,color,number
+1,disc,0,1,purple,
+1,disc,1,1,red,3
+1,disc,3,1,red,3
+1,disc,6,1,green,
+1,collector_white,8,1,,
+1,disc,0,2,yellow,4
+1,disc,5,2,blue,2
+1,disc,6,2,purple,
+1,disc,11,2,yellow,3
+1,disc,1,3,yellow,2
+1,disc,7,3,orange,
+1,disc,4,4,yellow,4
+1,disc,6,5,red,4
+1,disc,2,6,blue,5
+1,disc,3,6,red,1
+1,disc,6,7,blue,4
+1,disc,5,8,yellow,1
+1,disc,8,8,red,6
+1,collector_black,11,8,,
+1,disc,3,9,yellow,5
+1,disc,8,9,blue,5
+1,disc,2,10,purple,
+1,disc,6,10,yellow,3
+1,disc,4,11,orange,
+1,disc,7,11,red,2
+1,disc,10,11,red,3`,
+`position_id,element,x,y,color,number
+1,disc,3,0,blue,3
+1,disc,4,0,red,5
+1,disc,5,0,yellow,3
+1,disc,8,0,yellow,3
+1,disc,10,0,blue,3
+1,disc,4,1,red,6
+1,disc,4,2,yellow,2
+1,disc,7,2,blue,4
+1,disc,10,2,yellow,4
+1,disc,3,3,purple,
+1,disc,4,3,blue,5
+1,disc,8,3,orange,
+1,disc,9,3,orange,
+1,disc,6,4,green,
+1,collector_white,0,5,,
+1,collector_black,9,5,,
+1,disc,9,6,yellow,4
+1,disc,4,7,red,4
+1,disc,1,9,yellow,1
+1,disc,3,9,purple,
+1,disc,8,9,red,3
+1,disc,1,10,red,3
+1,disc,2,10,yellow,3
+1,disc,6,10,blue,1
+1,disc,10,10,purple,
+1,disc,8,11,blue,5`,
+`position_id,element,x,y,color,number
+1,disc,8,0,orange,
+1,disc,9,0,green,
+1,disc,3,1,red,4
+1,disc,4,1,red,6
+1,disc,11,1,yellow,2
+1,collector_white,5,2,,
+1,collector_black,9,2,,
+1,disc,10,2,green,
+1,disc,2,3,purple,
+1,disc,7,3,yellow,4
+1,disc,0,4,orange,
+1,disc,2,4,blue,3
+1,disc,10,4,purple,
+1,disc,6,5,red,3
+1,disc,0,6,red,5
+1,disc,8,6,yellow,4
+1,disc,9,7,purple,
+1,disc,10,7,blue,5
+1,disc,2,9,yellow,6
+1,disc,5,9,blue,6
+1,disc,7,9,yellow,5
+1,disc,11,9,blue,2
+1,disc,1,10,red,1
+1,disc,5,10,orange,
+1,disc,10,10,blue,4
+1,disc,3,11,yellow,3`,
+`position_id,element,x,y,color,number
+1,disc,7,0,purple,
+1,disc,8,0,blue,1
+1,disc,9,0,green,
+1,disc,2,1,yellow,2
+1,disc,7,4,yellow,5
+1,collector_black,10,4,,
+1,disc,6,5,yellow,3
+1,disc,7,5,purple,
+1,disc,0,6,blue,3
+1,disc,3,6,orange,
+1,disc,4,6,yellow,1
+1,disc,9,7,yellow,2
+1,disc,1,8,blue,4
+1,disc,2,8,yellow,3
+1,disc,3,8,orange,
+1,disc,5,8,orange,
+1,collector_white,7,8,,
+1,disc,8,8,blue,5
+1,disc,10,8,red,6
+1,disc,11,8,yellow,5
+1,disc,3,10,blue,5
+1,disc,4,10,blue,6
+1,disc,7,10,yellow,3
+1,disc,8,10,yellow,4
+1,disc,9,10,orange,
+1,disc,0,11,blue,2`,
+`position_id,element,x,y,color,number
+1,disc,1,0,purple,
+1,disc,3,0,yellow,2
+1,disc,9,1,blue,4
+1,collector_white,0,2,,
+1,disc,4,2,red,4
+1,disc,5,2,red,5
+1,collector_black,7,2,,
+1,disc,11,2,orange,
+1,disc,0,3,green,
+1,disc,5,3,blue,4
+1,disc,9,3,yellow,6
+1,disc,10,4,yellow,5
+1,disc,1,5,yellow,4
+1,disc,8,5,blue,6
+1,disc,2,6,blue,2
+1,disc,6,6,purple,
+1,disc,7,6,red,6
+1,disc,3,7,red,2
+1,disc,10,7,orange,
+1,disc,0,8,green,
+1,disc,1,8,green,
+1,disc,7,8,blue,4
+1,disc,8,9,green,
+1,disc,1,10,yellow,3
+1,disc,3,10,red,4
+1,disc,8,11,blue,1`,
+`position_id,element,x,y,color,number
+1,disc,1,0,green,
+1,disc,2,0,yellow,6
+1,disc,0,1,blue,4
+1,disc,2,1,orange,
+1,disc,5,1,orange,
+1,disc,8,1,red,3
+1,collector_white,10,1,,
+1,disc,5,2,blue,4
+1,disc,0,3,yellow,4
+1,disc,9,3,purple,
+1,disc,7,4,blue,6
+1,disc,8,4,yellow,1
+1,disc,3,5,blue,1
+1,disc,9,5,blue,3
+1,disc,11,5,blue,5
+1,disc,3,6,red,5
+1,disc,8,7,blue,3
+1,disc,11,7,red,3
+1,disc,5,8,blue,3
+1,disc,6,9,red,3
+1,disc,7,9,red,1
+1,disc,11,9,red,4
+1,collector_black,2,10,,
+1,disc,4,10,orange,
+1,disc,5,10,blue,4
+1,disc,5,11,red,4`,
+`position_id,element,x,y,color,number
+1,disc,5,0,purple,
+1,disc,8,0,red,5
+1,disc,2,1,green,
+1,disc,4,1,red,4
+1,collector_white,0,2,,
+1,disc,1,2,red,2
+1,disc,8,2,blue,4
+1,disc,2,3,yellow,5
+1,disc,2,4,blue,2
+1,disc,6,4,yellow,6
+1,disc,9,4,orange,
+1,disc,10,4,red,4
+1,disc,3,5,blue,5
+1,disc,5,5,orange,
+1,disc,7,5,purple,
+1,disc,2,6,orange,
+1,disc,9,6,yellow,1
+1,disc,0,8,blue,3
+1,disc,3,8,purple,
+1,disc,4,8,blue,3
+1,disc,11,8,purple,
+1,disc,3,9,red,4
+1,disc,5,9,yellow,3
+1,collector_black,3,10,,
+1,disc,2,11,orange,
+1,disc,4,11,red,3`
+    ];
+
+    function mlLoadCustomPositions() {
+        try { return JSON.parse(localStorage.getItem('ml_custom_positions') || '[]'); }
+        catch (e) { return []; }
+    }
+    function mlSaveCustomPositionsArr(arr) {
+        try { localStorage.setItem('ml_custom_positions', JSON.stringify(arr)); }
+        catch (e) { alert('저장 실패: ' + e.message); }
+    }
+    function mlDeleteCustomPosition(customId) {
+        mlSaveCustomPositionsArr(mlLoadCustomPositions().filter(p => p.customId !== customId));
+        mlRefreshCustomList();
+    }
+
+    function mlOpenEditor(existingPos) {
+        mlEditorPaint = {};
+        if (existingPos) {
+            (existingPos.d || []).forEach(([x, y, color, num]) => {
+                const letter = Object.keys(ML_COLOR_FOR).find(k => ML_COLOR_FOR[k] === color);
+                if (!letter) return;
+                mlEditorPaint[y * 12 + x] = letter + (num === '' || num == null ? '' : num);
+            });
+            // Restore preset collectors so they can be moved/added in the
+            // editor (Walter, 2026-05-19). Only the explicit importer/editor
+            // `coll:{b,w}` drives this — legacy `b`/`w` fields stay ignored.
+            const c = existingPos.coll;
+            if (c && Number.isInteger(c.b) && Number.isInteger(c.w) && c.b !== c.w) {
+                mlEditorPaint[c.b] = 'CB';
+                mlEditorPaint[c.w] = 'CW';
+            }
+            mlEditingCustomId = existingPos.customId || null;
+        } else {
+            mlEditingCustomId = null;
+        }
+        mlEditorBrush = 'R1';
+        // MAKA LAINA positions are nameless (unlike DL, where the name
+        // describes a recognisable shape — Pyramid, E M 3 W, Frankenstein).
+        // ML layouts have no shape, so customs are just numbered.
+        document.getElementById('ml-editor-overlay').style.display = 'block';
+        mlRenderBrushBar();
+        mlRenderColorChooser();
+        mlRenderEditor();
+    }
+
+    function mlCloseEditor() {
+        document.getElementById('ml-editor-overlay').style.display = 'none';
+    }
+
+    function mlEditorClick(idx) {
+        if (mlEditorBrush === 'erase') {
+            delete mlEditorPaint[idx];
+        } else {
+            // Exactly one Black (P1) and one White (P2) collector — painting a
+            // collector clears any previous cell of the same colour.
+            if (mlEditorBrush === 'CB' || mlEditorBrush === 'CW') {
+                Object.keys(mlEditorPaint).forEach(k => {
+                    if (mlEditorPaint[k] === mlEditorBrush) delete mlEditorPaint[k];
+                });
+            }
+            mlEditorPaint[idx] = mlEditorBrush;
+        }
+        mlRenderEditor();
+    }
+
+    function mlBrushSwatch(tok, sel) {
+        const border = sel ? '#FFEB3B' : 'rgba(0,0,0,0.25)';
+        if (tok === 'CB' || tok === 'CW') {
+            const fill = tok === 'CB' ? '#000' : '#fff';
+            return `<span style="display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; background:${fill}; border:3px solid gold; border-radius:6px; outline:3px solid ${border};"></span>`;
+        }
+        const letter = tok[0];
+        const num = tok.slice(1);
+        const bg = COLOR_HEX[ML_COLOR_FOR[letter]];
+        return `<span style="display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; background:${bg}; color:#fff; border-radius:50%; font-weight:bold; font-size:0.85em; text-shadow:1px 1px 2px #000; outline:3px solid ${border};">${num}</span>`;
+    }
+
+    function mlRenderBrushBar() {
+        const bar = document.getElementById('ml-editor-brush-bar');
+        bar.innerHTML = '';
+        const mkRow = (label, tokens, extras) => {
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex; align-items:center; gap:4px; flex-wrap:wrap;';
+            if (label) {
+                const lab = document.createElement('span');
+                lab.textContent = label;
+                lab.style.cssText = 'min-width:60px; font-size:0.85em; color:var(--muted);';
+                row.appendChild(lab);
+            }
+            tokens.forEach(tok => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.style.cssText = 'padding:4px 6px; background:var(--btn-face); border:1px solid var(--border); border-radius:4px; cursor:pointer; line-height:0;';
+                btn.innerHTML = mlBrushSwatch(tok, mlEditorBrush === tok);
+                btn.onclick = () => { mlEditorBrush = tok; mlRenderBrushBar(); };
+                row.appendChild(btn);
+            });
+            (extras || []).forEach(el => row.appendChild(el));
+            bar.appendChild(row);
+        };
+
+        // One row per primary color (1-6)
+        ML_PRIMARY_LETTERS.forEach((L, i) => {
+            const toks = [1,2,3,4,5,6].map(n => L + n);
+            const extras = [];
+            // Hang the eraser off the first row so it's always visible.
+            if (i === 0) {
+                const eraser = document.createElement('button');
+                eraser.type = 'button';
+                eraser.textContent = '✕ 지우기';
+                eraser.style.cssText = `margin-left:auto; padding:6px 10px; background:var(--cell); color:var(--text); border:3px solid ${mlEditorBrush==='erase'?'#FFEB3B':'rgba(0,0,0,0.25)'}; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.85em;`;
+                eraser.onclick = () => { mlEditorBrush = 'erase'; mlRenderBrushBar(); };
+                extras.push(eraser);
+            }
+            mkRow(ML_COLOR_FOR[L].charAt(0).toUpperCase() + ML_COLOR_FOR[L].slice(1), toks, extras);
+        });
+        // Secondaries
+        mkRow('보조', ML_SECONDARY_LETTERS);
+        // Collectors (optional). Painting both turns the position into a
+        // preset opening: discs + collectors fixed, Player 2 still picks the
+        // colour (Walter, 2026-05-19). Leave them out for a disc-only layout.
+        const cap = document.createElement('span');
+        cap.textContent = '검정 = P1 · 흰색 = P2 (프리셋 오프닝은 둘 다 놓거나, 둘 다 놓지 않기)';
+        cap.style.cssText = 'font-size:0.78em; color:var(--muted); margin-left:6px;';
+        mkRow('컬렉터', ['CB', 'CW'], [cap]);
+    }
+
+    // ---- Walter's disc-colour chooser (global, persisted) ----
+    function mlSaveColorPrefs() {
+        const p = {};
+        ML_COLOR_NAMES.forEach(c => { p[c] = COLOR_HEX[c]; });
+        try { localStorage.setItem('ml_colors', JSON.stringify(p)); }
+        catch (e) { alert('색상을 저장할 수 없습니다: ' + e.message); }
+    }
+    function mlSetColor(name, hex) {
+        if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return;
+        COLOR_HEX[name] = hex;
+        mlSaveColorPrefs();
+        mlRenderColorChooser();
+        mlRenderBrushBar();
+        mlRenderEditor();
+        if (typeof render === 'function') { try { render(); } catch (e) {} }
+    }
+    function mlResetColors() {
+        ML_COLOR_NAMES.forEach(c => { COLOR_HEX[c] = COLOR_HEX_DEFAULT[c]; });
+        mlSaveColorPrefs();
+        mlRenderColorChooser();
+        mlRenderBrushBar();
+        mlRenderEditor();
+        if (typeof render === 'function') { try { render(); } catch (e) {} }
+    }
+    function mlRenderColorChooser() {
+        const box = document.getElementById('ml-editor-colors');
+        if (!box) return;
+        box.innerHTML = '';
+        ML_COLOR_NAMES.forEach(name => {
+            const wrap = document.createElement('label');
+            wrap.style.cssText = 'display:inline-flex; flex-direction:column; align-items:center; gap:3px; font-size:0.78em; color:var(--muted); text-transform:capitalize;';
+            const inp = document.createElement('input');
+            inp.type = 'color';
+            inp.value = COLOR_HEX[name];
+            inp.style.cssText = 'width:42px; height:30px; padding:0; border:1px solid #ccc; border-radius:4px; cursor:pointer; background:none;';
+            inp.oninput = () => mlSetColor(name, inp.value);
+            wrap.appendChild(inp);
+            const lab = document.createElement('span');
+            lab.textContent = name;
+            wrap.appendChild(lab);
+            box.appendChild(wrap);
+        });
+        const reset = document.createElement('button');
+        reset.type = 'button';
+        reset.textContent = '↺ 기본값으로 재설정';
+        reset.style.cssText = 'margin-left:auto; padding:6px 10px; background:var(--btn-face); border:1px solid var(--border); border-radius:4px; cursor:pointer; font-size:0.8em;';
+        reset.onclick = mlResetColors;
+        box.appendChild(reset);
+    }
+
+    function mlRenderEditor() {
+        const g = document.getElementById('ml-editor-grid');
+        g.innerHTML = '';
+        const ecs = Math.max(20, Math.min(38, Math.floor((Math.min(window.innerWidth, 760) - 60) / 12)));
+        g.style.gridTemplateColumns = `repeat(12, ${ecs}px)`;
+        g.style.gridTemplateRows = `repeat(12, ${ecs}px)`;
+        const numFont = Math.max(9, Math.floor(ecs * 0.42));
+        for (let i = 0; i < 144; i++) {
+            const c = document.createElement('div');
+            c.style.cssText = `width:${ecs}px; height:${ecs}px; background:var(--cell); display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative;`;
+            const tok = mlEditorPaint[i];
+            if (tok === 'CB' || tok === 'CW') {
+                const col = document.createElement('div');
+                const fill = tok === 'CB' ? '#000' : '#fff';
+                col.style.cssText = `width:${ecs - 6}px; height:${ecs - 6}px; background:${fill}; border:3px solid gold; border-radius:6px; box-shadow:0 2px 4px rgba(0,0,0,0.3);`;
+                c.appendChild(col);
+            } else if (tok) {
+                const letter = tok[0];
+                const num = tok.slice(1);
+                const bg = COLOR_HEX[ML_COLOR_FOR[letter]];
+                const disc = document.createElement('div');
+                disc.style.cssText = `width:${ecs - 8}px; height:${ecs - 8}px; background:${bg}; border-radius:50%; color:#fff; font-weight:bold; font-size:${numFont}px; text-shadow:1px 1px 2px #000; display:flex; align-items:center; justify-content:center; border:1px solid rgba(0,0,0,0.1);`;
+                disc.textContent = num;
+                c.appendChild(disc);
+            }
+            c.onclick = () => mlEditorClick(i);
+            g.appendChild(c);
+        }
+        mlUpdateEditorSummary();
+    }
+
+    function mlUpdateEditorSummary() {
+        const sum = document.getElementById('ml-editor-summary');
+        let discs = 0, cb = false, cw = false;
+        Object.keys(mlEditorPaint).forEach(k => {
+            const t = mlEditorPaint[k];
+            if (t === 'CB') cb = true; else if (t === 'CW') cw = true; else discs++;
+        });
+        const collMsg = (cb && cw)
+            ? '컬렉터 설정됨 → 프리셋 오프닝 (플레이어 2가 여전히 색을 고릅니다).'
+            : (cb || cw)
+                ? '⚠ 컬렉터가 하나만 놓였습니다 — 나머지를 추가하거나, 디스크만 있는 배치로 하려면 제거하세요.'
+                : '컬렉터 없음 → 디스크만 (플레이어 1이 게임 시작 시 직접 놓습니다).';
+        sum.textContent = `놓인 디스크: ${discs}개 (기준 24). ${collMsg}`;
+    }
+
+    function mlPaintToPosition() {
+        const d = [];
+        let cb = null, cw = null;
+        Object.keys(mlEditorPaint).forEach(k => {
+            const idx = parseInt(k);
+            const tok = mlEditorPaint[k];
+            if (tok === 'CB') { cb = idx; return; }
+            if (tok === 'CW') { cw = idx; return; }
+            const x = idx % 12, y = Math.floor(idx / 12);
+            const color = ML_COLOR_FOR[tok[0]];
+            const num = tok.length > 1 ? parseInt(tok.slice(1)) : '';
+            d.push([x, y, color, num]);
+        });
+        const pos = { d };
+        // Both collectors → preset opening; neither → disc-only (live
+        // placement). Exactly one is rejected by mlValidateEditor().
+        if (cb != null && cw != null) pos.coll = { b: cb, w: cw };
+        return pos;
+    }
+
+    function mlValidateEditor() {
+        let discs = 0, cb = false, cw = false;
+        Object.keys(mlEditorPaint).forEach(k => {
+            const t = mlEditorPaint[k];
+            if (t === 'CB') cb = true; else if (t === 'CW') cw = true; else discs++;
+        });
+        if (discs === 0) {
+            alert('디스크를 최소 한 개 놓으세요.');
+            return false;
+        }
+        if (cb !== cw) {
+            alert('두 컬렉터를 모두 놓으세요(플레이어 1은 검정, 플레이어 2는 흰색) — 또는 플레이어 1이 게임 중에 직접 놓는 디스크만 있는 배치로 하려면 둘 다 놓지 마세요.');
+            return false;
+        }
+        return true;
+    }
+
+    function mlSaveCustomPosition() {
+        if (!mlValidateEditor()) return;
+        const pos = mlPaintToPosition();
+        pos.customId = mlEditingCustomId || ('c' + Date.now());
+        const customs = mlLoadCustomPositions();
+        const idx = customs.findIndex(p => p.customId === pos.customId);
+        if (idx >= 0) customs[idx] = pos; else customs.push(pos);
+        mlSaveCustomPositionsArr(customs);
+        mlEditingCustomId = pos.customId;
+        const n = (idx >= 0 ? idx : customs.length - 1) + 1;
+        alert(`위치 ${n} 저장됨.`);
+        mlRefreshCustomList();
+    }
+
+    function mlPlayFromEditor() {
+        if (!mlValidateEditor()) return;
+        const pos = mlPaintToPosition();
+        mlCloseEditor();
+        currentPosition = 'custom';
+        applyPositionData(pos);
+    }
+
+    // Parse an "Export opening" / editor CSV (long format
+    // `position_id,element,x,y,color,number`). Returns { d, coll } where
+    // `d` is the disc layout and `coll` = {b,w} cell indices iff BOTH
+    // collector rows are present (else null → live placement on play).
+    function mlParseOpeningCSV(text) {
+        const d = [];
+        let cb = null, cw = null;
+        text.split(/\r?\n/).forEach(line => {
+            const t = line.trim();
+            if (!t || /^position_id\s*,/i.test(t)) return;
+            const f = t.split(',');
+            if (f.length < 4) return;
+            const element = (f[1] || '').trim();
+            const x = parseInt(f[2], 10), y = parseInt(f[3], 10);
+            if (!Number.isInteger(x) || !Number.isInteger(y)) return;
+            if (x < 0 || x >= 12 || y < 0 || y >= 12) return;
+            if (element === 'disc') {
+                const color = (f[4] || '').trim();
+                const numRaw = (f[5] || '').trim();
+                if (!color) return;
+                d.push([x, y, color, numRaw === '' ? '' : parseInt(numRaw, 10)]);
+            } else if (element === 'collector_black') {
+                cb = y * 12 + x;
+            } else if (element === 'collector_white') {
+                cw = y * 12 + x;
+            }
+        });
+        const coll = (cb != null && cw != null && cb !== cw) ? { b: cb, w: cw } : null;
+        return { d, coll };
+    }
+
+    function mlImportOpeningFile(input) {
+        const file = input.files && input.files[0];
+        input.value = '';                       // allow re-importing the same file
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            let parsed;
+            try { parsed = mlParseOpeningCSV(String(reader.result || '')); }
+            catch (e) { alert('해당 CSV를 읽을 수 없습니다: ' + e.message); return; }
+            if (!parsed.d.length) { alert('해당 CSV에서 디스크 행을 찾을 수 없습니다.'); return; }
+            const pos = { customId: 'c' + Date.now(), d: parsed.d };
+            if (parsed.coll) pos.coll = parsed.coll;
+            const customs = mlLoadCustomPositions();
+            customs.push(pos);
+            mlSaveCustomPositionsArr(customs);
+            mlRefreshCustomList();
+            alert(parsed.coll
+                ? `위치 ${customs.length}(으)로 가져옴 — 프리셋 오프닝 (컬렉터 고정, 플레이어 2가 색을 고릅니다).`
+                : `위치 ${customs.length}(으)로 가져옴 — 디스크 배치만 (플레이어 1이 컬렉터를 게임 중에 놓습니다).`);
+        };
+        reader.onerror = () => alert('파일을 읽을 수 없습니다.');
+        reader.readAsText(file);
+    }
+
+    // CSV in vertical / long format. ML positions are nameless, so the CSV
+    // carries no name (unlike DL's shaped positions). If pos.coll is present
+    // (both collectors painted) it emits collector_black (P1) / collector_white
+    // (P2) rows too — that makes it a reusable preset-opening CSV.
+    function mlBuildCSV(pos, positionId) {
+        const pid = positionId || 1;
+        const lines = ['position_id,element,x,y,color,number'];
+        pos.d.forEach(([x, y, color, num]) => {
+            lines.push(`${pid},disc,${x},${y},${color},${num === '' || num == null ? '' : num}`);
+        });
+        if (pos.coll && Number.isInteger(pos.coll.b) && Number.isInteger(pos.coll.w)) {
+            const b = pos.coll.b, w = pos.coll.w;
+            lines.push(`${pid},collector_black,${b % 12},${Math.floor(b / 12)},,`);
+            lines.push(`${pid},collector_white,${w % 12},${Math.floor(w / 12)},,`);
+        }
+        return { csv: lines.join('\n') + '\n' };
+    }
+
+    function mlExportEditorCSV() {
+        if (!mlValidateEditor()) return;
+        const pos = mlPaintToPosition();
+        const { csv } = mlBuildCSV(pos, 1);
+        document.getElementById('ml-csv-output').value = csv;
+        document.getElementById('ml-csv-modal').style.display = 'flex';
+        document.getElementById('ml-csv-modal').dataset.filename =
+            pos.coll ? 'makalaina_opening.csv' : 'makalaina_position.csv';
+    }
+
+    function mlCopyCSVToClipboard() {
+        const ta = document.getElementById('ml-csv-output');
+        ta.select();
+        try { document.execCommand('copy'); alert('CSV를 클립보드에 복사했습니다.'); }
+        catch (e) { alert('복사 실패; 선택 후 Ctrl/Cmd-C를 누르세요.'); }
+    }
+
+    function mlDownloadCSV() {
+        const csv = document.getElementById('ml-csv-output').value;
+        const filename = document.getElementById('ml-csv-modal').dataset.filename || 'makalaina_custom.csv';
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+    }
+
+    async function mlShareEditorCSV() {
+        if (!mlValidateEditor()) return;
+        const pos = mlPaintToPosition();
+        const { csv } = mlBuildCSV(pos, 1);
+        const filename = pos.coll ? 'makalaina_opening.csv' : 'makalaina_position.csv';
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        try {
+            if (navigator.canShare) {
+                const file = new File([blob], filename, { type: 'text/csv' });
+                if (navigator.canShare({ files: [file] })) {
+                    // No `text:` alongside `files:` — Android WhatsApp drops the file
+                    // when both are present (same lesson as Divided Loyalties share).
+                    await navigator.share({ files: [file], title: pos.coll ? 'MAKA LAINA 오프닝' : 'MAKA LAINA 위치' });
+                    return;
+                }
+            }
+        } catch (e) {
+            if (e && e.name === 'AbortError') return;
+            console.warn('navigator.share failed, falling back:', e);
+        }
+        // Fallback: download only — never wa.me on Android WebView (ERR_UNKNOWN_URL_SCHEME).
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+        alert(`${filename} 저장됨. WhatsApp 메시지에 직접 첨부하세요.`);
+    }
+
+    function mlRefreshCustomList() {
+        const host = document.getElementById('ml-custom-list');
+        if (!host) return;
+        host.innerHTML = '';
+
+        // Built-in fair openings — always available, not stored in
+        // localStorage, not editable (the disc-only editor would strip the
+        // baked-in collectors). Each runs the preset flow via loadBuiltinOpening.
+        const bTitle = document.createElement('p');
+        bTitle.style.cssText = 'font-weight:bold; margin:6px 0; color:var(--text-strong); font-size:0.95em;';
+        bTitle.textContent = '프리셋 오프닝 (컬렉터 고정 — 플레이어 2가 색을 고릅니다):';
+        host.appendChild(bTitle);
+        const bRow = document.createElement('div');
+        bRow.style.cssText = 'display:flex; gap:8px; justify-content:center; flex-wrap:wrap;';
+        ML_BUILTIN_OPENING_CSVS.forEach((_, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'btn';
+            btn.style.cssText = 'width:auto; padding:8px 12px; background:#8e44ad; color:white; margin:0;';
+            btn.textContent = '★ 오프닝 ' + (i + 1);
+            btn.title = '프리셋 오프닝 — 컬렉터 고정, 플레이어 2가 색을 고릅니다';
+            btn.onclick = () => loadBuiltinOpening(i);
+            bRow.appendChild(btn);
+        });
+        host.appendChild(bRow);
+
+        const customs = mlLoadCustomPositions();
+        if (!customs.length) return;
+        const title = document.createElement('p');
+        title.style.cssText = 'font-weight:bold; margin:14px 0 6px; color:var(--text-strong); font-size:0.95em;';
+        title.textContent = '나의 사용자 지정 위치:';
+        host.appendChild(title);
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex; gap:8px; justify-content:center; flex-wrap:wrap;';
+        customs.forEach((p, i) => {
+            const n = i + 1;
+            const wrap = document.createElement('div');
+            wrap.style.cssText = 'display:flex; gap:2px; align-items:stretch;';
+            const isPreset = !!(p.coll && p.coll.b != null && p.coll.w != null);
+            const playBtn = document.createElement('button');
+            playBtn.className = 'btn';
+            playBtn.style.cssText = 'width:auto; padding:8px 12px; background:#8e44ad; color:white; margin:0;';
+            playBtn.textContent = (isPreset ? '★ 오프닝 ' : '★ 위치 ') + n;
+            playBtn.title = isPreset ? '프리셋 오프닝 — 컬렉터 고정, 플레이어 2가 색을 고릅니다' : '';
+            playBtn.onclick = () => loadCustomPosition(p.customId);
+            // The editor now has collector brushes (Walter, 2026-05-19), so it
+            // round-trips a preset's collectors — editing presets is allowed.
+            const editBtn = document.createElement('button');
+            editBtn.className = 'btn';
+            editBtn.style.cssText = 'width:auto; padding:8px 10px; background:#7f8c8d; color:white; margin:0;';
+            editBtn.title = '편집';
+            editBtn.textContent = '✏️';
+            editBtn.onclick = (e) => { e.stopPropagation(); mlOpenEditor(p); };
+            const delBtn = document.createElement('button');
+            delBtn.className = 'btn';
+            delBtn.style.cssText = 'width:auto; padding:8px 10px; background:#c0392b; color:white; margin:0;';
+            delBtn.title = '삭제';
+            delBtn.textContent = '🗑';
+            delBtn.onclick = (e) => {
+                e.stopPropagation();
+                if (confirm(`위치 ${n}을(를) 삭제하시겠습니까?`)) mlDeleteCustomPosition(p.customId);
+            };
+            wrap.appendChild(playBtn);
+            wrap.appendChild(editBtn);
+            wrap.appendChild(delBtn);
+            row.appendChild(wrap);
+        });
+        host.appendChild(row);
+    }
+
+    mlRefreshCustomList();
+    mlRenderResume();
+
+    // #editor — opened from the central startpositionen.html hub: go
+    // straight into a fresh disc-position editor. #loadopening — focus the
+    // setup so Walter can use the 📥 Load opening (CSV) button right away.
+    // #rules — open rules modal (shareable per game/language).
+    if (location.hash === '#editor') {
+        mlOpenEditor(null);
+    } else if (location.hash === '#rules') {
+        toggleRules(true);
+    }
+    window.addEventListener('hashchange', () => {
+        if (location.hash === '#rules') toggleRules(true);
+    });
+</script>
+</body>
+</html>

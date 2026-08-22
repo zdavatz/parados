@@ -59,6 +59,21 @@ if [ ! -f fonts/NotoSansSC-Subset.ttf ]; then
     rm fonts/cn_chars.txt
 fi
 
+# Korean: Noto Sans KR (Hangul). Same variable-font → static Regular → subset
+# pipeline as JP/SC; the actual Hangul syllables come from the *_ko.html files
+# via --text-file, plus the jamo blocks for safety.
+if [ ! -f fonts/NotoSansKR-Subset.ttf ]; then
+    curl -sL -o fonts/NotoSansKR-VF.ttf "$GF_BASE/notosanskr/NotoSansKR%5Bwght%5D.ttf"
+    uv run --with fonttools -- fonttools varLib.instancer --update-name-table \
+        -o fonts/NotoSansKR-Regular.ttf fonts/NotoSansKR-VF.ttf wght=400
+    rm fonts/NotoSansKR-VF.ttf
+    cat ../../*_ko.html src/main.rs > fonts/ko_chars.txt
+    uv run --with fonttools -- pyftsubset fonts/NotoSansKR-Regular.ttf \
+        --text-file=fonts/ko_chars.txt --unicodes="$UNICODES,U+1100-11FF,U+3130-318F" \
+        --layout-features='*' --name-IDs='*' --output-file=fonts/NotoSansKR-Subset.ttf
+    rm fonts/ko_chars.txt
+fi
+
 # ------------------------------------------------- patched azul-layout vendor
 # azul-layout 0.0.9 (printpdf 0.10's HTML layout engine) ships leftover
 # "M12.7 diag" instrumentation: 48 unconditional write_volatile()s to the

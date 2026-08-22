@@ -54,6 +54,7 @@ enum Script {
     Latin, // incl. Cyrillic
     Jp,
     Sc,
+    Kr,
 }
 
 struct L10n {
@@ -114,6 +115,14 @@ fn l10n(lang: &str) -> L10n {
             all_rules: "Todas as regras em PDF",
             font_family: "Noto Sans",
             script: Script::Latin,
+        },
+        "ko" => L10n {
+            play_online: "온라인으로 플레이:",
+            get_app: "Parados 앱 받기:",
+            rules_word: "규칙",
+            all_rules: "모든 게임 규칙 PDF",
+            font_family: "Noto Sans KR",
+            script: Script::Kr,
         },
         _ => L10n {
             play_online: "Play online:",
@@ -435,6 +444,7 @@ fn lang_tag(lang: &str) -> &'static str {
         "uk" => "UA",
         "it" => "IT",
         "es" => "ES",
+        "ko" => "KO",
         l if l.starts_with("pt") => "PT",
         l if l.starts_with("zh") => "CN",
         _ => "EN",
@@ -514,6 +524,10 @@ fn main() -> Result<(), String> {
     pool_fonts.insert(
         Script::Sc,
         BTreeMap::from([("Noto Sans SC".to_string(), read_font("NotoSansSC-Subset.ttf")?)]),
+    );
+    pool_fonts.insert(
+        Script::Kr,
+        BTreeMap::from([("Noto Sans KR".to_string(), read_font("NotoSansKR-Subset.ttf")?)]),
     );
     // No system font scan: output must not depend on the machine.
     let pools: BTreeMap<Script, SharedFontPool> = pool_fonts

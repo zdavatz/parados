@@ -1,0 +1,44 @@
+2c2
+< <html lang="en">
+---
+> <html lang="ko">
+6c6
+<     <title>Divided Loyalties: Epic Master Edition</title>
+---
+>     <title>분열된 충성심: 에픽 마스터 에디션</title>
+140,141c140,141
+<         <h1 style="margin:5px 0;">DIVIDED LOYALTIES<span id="position-title" style="color:#bdbdbd; font-weight:normal;"></span></h1>
+<         <div style="display:flex; align-items:center; gap:10px; flex-wrap:nowrap;"><button class="pill pill-share" onclick="openShareDialog()">Share on WhatsApp</button><button class="pill" id="theme-toggle" onclick="dlToggleTheme()">☀️ Light</button></div>
+---
+>         <h1 style="margin:5px 0;">분열된 충성심<span id="position-title" style="color:#bdbdbd; font-weight:normal;"></span></h1>
+>         <div style="display:flex; align-items:center; gap:10px; flex-wrap:nowrap;"><button class="pill pill-share" onclick="openShareDialog()">WhatsApp으로 공유</button><button class="pill" id="theme-toggle" onclick="dlToggleTheme()">☀️ 라이트</button></div>
+146,147c146,147
+<             <h2>📤 Share on WhatsApp</h2>
+<             <p style="margin:10px 0 0;">Sends a link to the current position.</p>
+---
+>             <h2>📤 WhatsApp으로 공유</h2>
+>             <p style="margin:10px 0 0;">현재 배치로 연결되는 링크를 보냅니다.</p>
+151,152c151,152
+<                     <strong>Include position as CSV</strong>
+<                     <div style="font-size:0.85em; color:#5d4037; margin-top:4px;">Attaches the starting position as a CSV file to the WhatsApp message so the recipient can load the same position.</div>
+---
+>                     <strong>배치를 CSV로 포함</strong>
+>                     <div style="font-size:0.85em; color:#5d4037; margin-top:4px;">시작 배치를 CSV 파일로 WhatsApp 메시지에 첨부하여 받는 사람이 같은 배치를 불러올 수 있게 합니다.</div>
+156,157c156,157
+<                 <button class="btn" style="width:auto; background:#8d6e63; margin-top:0;" onclick="closeShareDialog()">Cancel</button>
+<                 <button class="btn" style="width:auto; background:#25D366; color:white; margin-top:0;" onclick="submitShareDialog()">Send</button>
+---
+>                 <button class="btn" style="width:auto; background:#8d6e63; margin-top:0;" onclick="closeShareDialog()">취소</button>
+>                 <button class="btn" style="width:auto; background:#25D366; color:white; margin-top:0;" onclick="submitShareDialog()">보내기</button>
+164,165c164,165
+<             <h2>Choose starting position</h2>
+<             <p style="margin:8px 0 0;">Pick one of the starting positions — the board pieces will be placed accordingly on the grid.</p>
+---
+>             <h2>시작 배치 선택</h2>
+>             <p style="margin:8px 0 0;">시작 배치 중 하나를 고르세요 — 보드 조각이 그에 맞게 격자에 놓입니다.</p>
+177,178c177,178
+<             <button class="btn" onclick="toggleRules(true)">📜 DETAILED RULES</button>
+<             <div id="turn-indicator" class="current-player blue-turn" style="margin-top:15px;">BLUE'S TURN</div>
+---
+>             <button class="btn" onclick="toggleRules(true)">📜 자세한 규칙</button>
+>             <div id="turn-indicator" class="current-player blue-turn" style="margin-top:15px;">파랑 차례</div>

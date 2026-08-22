@@ -200,10 +200,13 @@ def build():
 
 <h2>Divided Loyalties — Portuguese <span style="font-weight:400;color:#6a7886;">(divided_loyalties_pt.html)</span></h2>
 {dl_table('divided_loyalties_pt.html')}
-<p class="note">All eight DL variants share the same English-stored position names, so every #anchor above works identically across languages.</p>
+
+<h2>Divided Loyalties — Korean <span style="font-weight:400;color:#6a7886;">(divided_loyalties_ko.html)</span></h2>
+{dl_table('divided_loyalties_ko.html')}
+<p class="note">All nine DL variants share the same English-stored position names, so every #anchor above works identically across languages.</p>
 
 <h2>The Impatient Kangaroo <span style="font-weight:400;color:#6a7886;">— DUK (DE) · TIK (EN) · localized names</span></h2>
-<p class="note">7 levels × 8 language variants. Slugs are identical across languages, so a link shares cleanly between players of different languages. The DUK acronym is German-only; English is rebranded TIK; JP/CN/UA/IT/ES/PT use the full localized name.</p>
+<p class="note">7 levels × 9 language variants. Slugs are identical across languages, so a link shares cleanly between players of different languages. The DUK acronym is German-only; English is rebranded TIK; JP/CN/UA/IT/ES/PT/KO use the full localized name.</p>
 
 <h3>German — DUK (kangaroo.html)</h3>
 {kangaroo_table('kangaroo.html')}
@@ -229,6 +232,9 @@ def build():
 <h3>Portuguese (kangaroo_pt.html)</h3>
 {kangaroo_table('kangaroo_pt.html')}
 
+<h3>Korean (kangaroo_ko.html)</h3>
+{kangaroo_table('kangaroo_ko.html')}
+
 <p class="note">Shorthand &amp; variants for kangaroo: numeric #1 … #7 (index in LEVEL_DATABASE) works too. Levels with two starting positions accept a trailing <b>b</b> for variant B: #first-stepsb, #the-blockb, #shiftingb, #the-crossb.</p>
 
 <p class="foot">Generated {today} &nbsp;·&nbsp; Parados repo: {link(REPO)}</p>
@@ -238,7 +244,7 @@ def build():
     out.write_text(html, encoding="utf-8")
     # quick anchor count sanity check
     n = html.count("<a href")
-    print(f"Wrote {out} — {n} hyperlinks (expect 12*8 + 7*8 + 1 = 153).", file=sys.stderr)
+    print(f"Wrote {out} — {n} hyperlinks (expect 12*9 + 7*9 + 1 = 172).", file=sys.stderr)
     return out
 
 
