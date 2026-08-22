@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Divided Loyalties Remote: Epic Master Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Public+Sans:wght@400;500;600;700&display=swap">
     <style>
         /* Dark is the default (DL's original look). Only SURFACE tokens below are
            themed; the game colours (stones/bridges --blue/--yellow/--red/--green/
@@ -31,8 +34,16 @@
             --chat-me: #1565C0; --chat-them: #b26a00; --chat-sys: #5a6b62;
         }
         * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; margin: 0; padding: 10px; min-height: 100vh; }
-        h1 { font-size: 1.5em; margin: 5px 0; }
+        body { font-family: 'Public Sans', 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; margin: 0; padding: 10px; min-height: 100vh; }
+        h1 { font-family: 'Space Grotesk', 'Public Sans', sans-serif; font-size: 1.5em; font-weight: 700; letter-spacing: 0.5px; margin: 5px 0; }
+        /* --- ParaDos Direction A shell (surface-only; game state colours untouched) --- */
+        #parados-brandbar { display: flex; align-items: baseline; gap: 12px; justify-content: center; padding: 6px 0 0; }
+        #parados-brandbar .wordmark { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; letter-spacing: 0.5px; color: var(--text); }
+        #parados-brandbar .wordmark b { color: #ffd700; font-weight: 700; }
+        #parados-brandbar .tag { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--text); opacity: 0.6; }
+        .pill { display: inline-flex; align-items: center; gap: 7px; border: 0; border-radius: 999px; font-family: 'Public Sans', system-ui, sans-serif; font-weight: 600; font-size: 0.9em; padding: 9px 16px; cursor: pointer; background: var(--panel); color: var(--text); }
+        .pill-share { background: #25D366; color: #0b3d1e; }
+        .btn.accent { background: #ffd700; color: #263238; font-weight: 700; }
         #game-layout { display: flex; align-items: flex-start; flex-wrap: wrap; justify-content: center; gap: 15px; width: 100%; }
         #meta-grid { display: grid; grid-template-columns: repeat(11, var(--cs)); grid-template-rows: repeat(11, var(--cs)); gap: var(--gap); position: relative; background: #fff; padding: var(--pad); border-radius: 4px; }
         .cell { width: var(--cs); height: var(--cs); display: flex; align-items: center; justify-content: center; position: relative; }
@@ -83,7 +94,7 @@
         .bridge-line { stroke-linecap: butt; transition: stroke 0.5s; }
         .flash-red { animation: flashRed 0.7s; }
         @keyframes flashRed { 0% { stroke: white; stroke-width: 12; } 50% { stroke: #ff1744; stroke-width: 15; } 100% { stroke: #555; stroke-width: 6; } }
-        .btn { background: #6d4c41; color: white; border: none; padding: 12px; border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 8px; font-size: 0.95em; }
+        .btn { background: #6d4c41; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; width: 100%; font-family: 'Public Sans', system-ui, sans-serif; font-weight: 600; margin-top: 8px; font-size: 0.95em; }
         .inv-slot { background: var(--sunken); padding: 6px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
         .inv-tile { width: 28px; height: 28px; border-radius: 2px; cursor: pointer; border: 2px solid transparent; }
         .inv-tile.blue { background: var(--blue); } .inv-tile.yellow { background: var(--yellow); }
@@ -157,10 +168,15 @@
         </div>
     </div>
 
-    <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
+    <div id="parados-brandbar">
+        <span class="wordmark">Para<b>D</b>os</span>
+        <span class="tag">Abstract Games</span>
+    </div>
+
+    <div style="display:flex; align-items:center; justify-content:center; gap:12px; flex-wrap:wrap; margin:4px 0 10px;">
         <h1 style="margin:5px 0;">DIVIDED LOYALTIES<span id="position-title" style="color:#bdbdbd; font-weight:normal;"></span></h1>
-        <button class="btn" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="openShareDialog()">Auf WhatsApp teilen</button>
-        <button class="btn" id="theme-toggle" style="margin-bottom:12px; width:auto; padding:4px 11px; font-size:0.8em; background:var(--panel); color:var(--text); border:1px solid var(--panel-border); margin-top:0; box-shadow:none;" onclick="dlToggleTheme()">☀️ Hell</button>
+        <button class="pill pill-share" onclick="openShareDialog()">Auf WhatsApp teilen</button>
+        <button class="pill" id="theme-toggle" onclick="dlToggleTheme()">☀️ Hell</button>
     </div>
 
     <div id="share-modal" onclick="closeShareDialog()">
@@ -205,7 +221,7 @@
                 <div style="text-align:center;">GELB<div style="font-weight:normal; font-size:0.85em; margin-top:2px;">Brücken <span id="yellow-score">0</span> · Regionen <span id="yellow-region-score">0</span></div></div>
             </div>
             <div id="inventory-container" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0;"></div>
-            <button class="btn" style="background: #455a64;" onclick="endTurn()">ZUG ABSCHLIESSEN</button>
+            <button class="btn accent" onclick="endTurn()">ZUG ABSCHLIESSEN</button>
             <button class="btn" id="undo-btn" style="background: #5d4037;" onclick="undo()">↶ ZUG ZURÜCK</button>
             <div id="file-io-row" style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px;">
                 <button class="btn" style="background: #00695c; margin-top:0;" onclick="exportGameJSON()" title="Spielstand als Datei speichern">💾 Sichern</button>
