@@ -613,7 +613,7 @@
 <div id="setup-panel" style="max-width:600px; margin:0 auto 16px; text-align:center; background:var(--surface); padding:16px 20px; border-radius:12px; border:1px solid var(--border);">
     <p style="font-weight:bold; margin:0 0 10px; color:var(--accent);">새 게임 시작:</p>
     <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
-        <button class="action-btn" style="width:auto; padding:10px 24px; font-size:1em;" onclick="startRandom()">▶ Start</button>
+        <button class="action-btn" style="width:auto; padding:10px 24px; font-size:1em;" onclick="startRandom()">▶ 시작</button>
         <button class="action-btn" style="width:auto; padding:10px 24px; font-size:1em; background:#6d4c41; color:white;" onclick="document.getElementById('ml-opening-file').click()">📥 오프닝 불러오기 (CSV)</button>
         <input type="file" id="ml-opening-file" accept=".csv,text/csv" style="display:none;" onchange="mlImportOpeningFile(this)">
     </div>
@@ -2293,8 +2293,8 @@ async function exportOpeningCSV() {
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 5000);
     alert(copied
-        ? `Opening copied to clipboard — long-press the WhatsApp message box and Paste it. (Also saved as ${filename}.)`
-        : `Saved ${filename}. Attach it to your WhatsApp message manually.`);
+        ? `오프닝을 클립보드에 복사했습니다 — WhatsApp 메시지 입력창을 길게 눌러 붙여넣으세요. (${filename}(으)로도 저장됨.)`
+        : `${filename} 저장됨. WhatsApp 메시지에 직접 첨부하세요.`);
 }
 
 function render() {
