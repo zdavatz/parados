@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Where WAS that elbow?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Public+Sans:wght@400;500;600;700&display=swap">
 <style>
 :root {
     --bg: #263238;
@@ -43,7 +46,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Public Sans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: var(--bg);
     color: var(--text);
     display: flex;
@@ -59,7 +62,9 @@ h1 {
     color: var(--golden);
     text-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
     margin: 5px 0;
-    letter-spacing: 3px;
+    font-family: 'Space Grotesk', 'Public Sans', sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.5px;
 }
 
 .subtitle {
@@ -675,15 +680,24 @@ h1 {
     .player-select button { width: 100%; }
     #statusBar { font-size: 0.85em; }
 }
+
+/* ─── ParaDos "Direction A" visual shell (surface-only) ─── */
+#parados-brandbar { display:flex; align-items:baseline; gap:12px; justify-content:center; padding:6px 0 0; }
+#parados-brandbar .wordmark { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:20px; letter-spacing:0.5px; color:var(--text); }
+#parados-brandbar .wordmark b { color:#ffd700; font-weight:700; }
+#parados-brandbar .tag { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--text); opacity:0.6; }
+.pill { display:inline-flex; align-items:center; gap:7px; border:0; border-radius:999px; font-family:'Public Sans',system-ui,sans-serif; font-weight:600; font-size:0.9em; padding:9px 16px; cursor:pointer; background:var(--panel-bg); color:var(--text); }
+.pill-share { background:#25D366; color:#0b3d1e; }
 </style>
 <script>(function(){try{var s=localStorage.getItem('parados_theme');document.documentElement.setAttribute('data-theme',s==='light'?'light':'dark');}catch(e){}})();</script>
 </head>
 <body>
 
+<div id="parados-brandbar"><span class="wordmark">Para<b>D</b>os</span> <span class="tag">Abstract Games</span></div>
 <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
     <h1 style="margin:5px 0;">Where WAS that elbow?</h1>
-    <button class="btn-rules" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">Share on WhatsApp</button>
-    <button id="theme-toggle" style="margin-bottom:12px; width:auto; padding:4px 11px; font-size:0.8em; background:var(--panel-bg); color:var(--text); border:1px solid var(--text-dim); border-radius:6px; cursor:pointer; margin-top:0; box-shadow:none;" onclick="frankToggleTheme()">☀️ Light</button>
+    <button class="pill pill-share" onclick="shareOnWhatsApp()">Share on WhatsApp</button>
+    <button id="theme-toggle" class="pill" onclick="frankToggleTheme()">☀️ Light</button>
 </div>
 <p class="subtitle">A Memory Game by Walter Prossnitz</p>
 

@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <title>MAKA LAINA - Lo sprint finale strategico</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Public+Sans:wght@400;500;600;700&family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@700;900&display=swap">
     <style>
         :root {
             --bg: #0e1117;
@@ -24,7 +26,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'DM Sans', sans-serif;
+            font-family: 'Public Sans', 'DM Sans', sans-serif;
             background: var(--bg);
             color: var(--text);
             min-height: 100vh;
@@ -52,13 +54,19 @@
         }
 
         header h1 {
-            font-family: 'Playfair Display', serif;
+            font-family: 'Space Grotesk', 'Public Sans', sans-serif;
             font-weight: 900;
             font-size: 2.2rem;
             letter-spacing: 0.15em;
             color: var(--accent);
             text-shadow: 0 0 40px rgba(201,162,39,0.3);
         }
+        #parados-brandbar { display: flex; align-items: baseline; gap: 12px; justify-content: center; padding: 6px 0 0; }
+        #parados-brandbar .wordmark { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; letter-spacing: 0.5px; color: var(--text); }
+        #parados-brandbar .wordmark b { color: #ffd700; font-weight: 700; }
+        #parados-brandbar .tag { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--text); opacity: 0.6; }
+        .pill { display: inline-flex; align-items: center; gap: 7px; border: 0; border-radius: 999px; font-family: 'Public Sans', system-ui, sans-serif; font-weight: 600; font-size: 0.9em; padding: 9px 16px; cursor: pointer; background: var(--surface2); color: var(--text); }
+        .pill-share { background: #25D366; color: #0b3d1e; }
 
         header .subtitle {
             font-size: 0.7rem;
@@ -590,9 +598,14 @@
 
 <!-- GAME -->
 <header>
+    <div id="parados-brandbar">
+        <span class="wordmark">Para<b>D</b>os</span>
+        <span class="tag">Abstract Games</span>
+    </div>
+
     <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
         <h1 style="margin:5px 0;">MAKA LAINA<span id="position-title" style="color:#7f8c8d; font-weight:normal;"></span></h1>
-        <button class="action-btn" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">Condividi su WhatsApp</button>
+        <button class="pill pill-share" onclick="shareOnWhatsApp()">Condividi su WhatsApp</button>
     </div>
     <div class="subtitle">Lo sprint finale strategico</div>
 </header>

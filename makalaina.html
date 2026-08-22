@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>MAKA LAINA - The Strategic Endspurt</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Public+Sans:wght@400;500;600;700&display=swap">
     <style>
         :root {
             --cs: 42px; --disc-size: calc(var(--cs) - 8px); --collector-size: calc(var(--cs) - 6px);
@@ -56,8 +59,14 @@
             --btn-face-hover: #3a444f;
         }
         * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; padding: 10px; margin: 0; min-height: 100vh; }
-        h1 { font-size: 1.5em; margin: 5px 0; }
+        body { font-family: 'Public Sans', 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; padding: 10px; margin: 0; min-height: 100vh; }
+        h1 { font-family: 'Space Grotesk', 'Public Sans', sans-serif; font-size: 1.5em; font-weight: 700; letter-spacing: 0.5px; margin: 5px 0; }
+        #parados-brandbar { display: flex; align-items: baseline; gap: 12px; justify-content: center; padding: 6px 0 0; }
+        #parados-brandbar .wordmark { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; letter-spacing: 0.5px; color: var(--text); }
+        #parados-brandbar .wordmark b { color: #ffd700; font-weight: 700; }
+        #parados-brandbar .tag { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--text); opacity: 0.6; }
+        .pill { display: inline-flex; align-items: center; gap: 7px; border: 0; border-radius: 999px; font-family: 'Public Sans', system-ui, sans-serif; font-weight: 600; font-size: 0.9em; padding: 9px 16px; cursor: pointer; background: var(--surface2); color: var(--text); }
+        .pill-share { background: #25D366; color: #0b3d1e; }
         #game-container { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; width: 100%; }
         #board {
             display: grid; grid-template-columns: repeat(12, var(--cs));
@@ -156,10 +165,15 @@
 </head>
 <body>
 
+    <div id="parados-brandbar">
+        <span class="wordmark">Para<b>D</b>os</span>
+        <span class="tag">Abstract Games</span>
+    </div>
+
     <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
         <h1 style="margin:5px 0;">MAKA LAINA<span id="position-title" style="color:var(--muted); font-weight:normal;"></span></h1>
-        <button class="btn" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">Share on WhatsApp</button>
-        <button class="btn" id="theme-toggle" style="margin-bottom:12px; width:auto; padding:4px 11px; font-size:0.8em; background:var(--surface2); color:var(--text); border:1px solid var(--border); margin-top:0; box-shadow:none;" onclick="mlToggleTheme()">🌙 Dark</button>
+        <button class="pill pill-share" onclick="shareOnWhatsApp()">Share on WhatsApp</button>
+        <button class="pill" id="theme-toggle" onclick="mlToggleTheme()">🌙 Dark</button>
     </div>
     <div id="setup-panel" style="margin-bottom:15px; text-align:center; background:var(--surface); padding:15px 20px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
         <div id="ml-resume-slot"></div>

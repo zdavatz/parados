@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Democracy in Space</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Public+Sans:wght@400;500;600;700&display=swap">
     <style>
         /* Dark is the default (Democracy's original look). Only SURFACE tokens are themed;
            game state (player colours --p1/--p2, --accent connections, --warn, the board
@@ -13,7 +16,7 @@
         :root { --bg: #0b0e14; --p1: #e94560; --p2: #00d2ff; --accent: #f0a500; --panel: #16213e; --warn: #ffcc00; --text: #ffffff; --panel-border: #444; --sunken: #0b0e14; --cs: 45px; }
         :root[data-theme="light"] { --bg: #e9edf2; --panel: #ffffff; --text: #14203a; --panel-border: #c3cddd; --sunken: #eef2f8; }
         * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; margin: 0; padding: 10px; min-height: 100vh; }
+        body { font-family: 'Public Sans', 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; margin: 0; padding: 10px; min-height: 100vh; }
         #network-panel { background: var(--panel); padding: 10px; border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--accent); width: 100%; max-width: 960px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 0.85rem; }
         .short-id { font-family: monospace; font-size: 1rem; color: var(--accent); background: #000; padding: 4px 8px; border-radius: 4px; }
         .main-container { display: flex; gap: 15px; align-items: flex-start; flex-wrap: wrap; justify-content: center; width: 100%; }
@@ -76,6 +79,13 @@
             #sidebar { max-width: 100%; }
             #network-panel { font-size: 0.8rem; }
         }
+        h1 { font-family: 'Space Grotesk', 'Public Sans', sans-serif; font-weight: 700; letter-spacing: 0.5px; }
+        #parados-brandbar { display:flex; align-items:baseline; gap:12px; justify-content:center; padding:6px 0 0; }
+        #parados-brandbar .wordmark { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:20px; letter-spacing:0.5px; color:var(--text); }
+        #parados-brandbar .wordmark b { color:#ffd700; font-weight:700; }
+        #parados-brandbar .tag { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--text); opacity:0.6; }
+        .pill { display:inline-flex; align-items:center; gap:7px; border:0; border-radius:999px; font-family:'Public Sans',system-ui,sans-serif; font-weight:600; font-size:0.9em; padding:9px 16px; cursor:pointer; background:var(--panel); color:var(--text); }
+        .pill-share { background:#25D366; color:#0b3d1e; }
     </style>
     <script>(function(){try{var s=localStorage.getItem('parados_theme');document.documentElement.setAttribute('data-theme',s==='light'?'light':'dark');}catch(e){}})();</script>
 </head>
@@ -108,10 +118,11 @@
     </div>
 </div>
 
+<div id="parados-brandbar"><span class="wordmark">Para<b>D</b>os</span> <span class="tag">Abstract Games</span></div>
 <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
     <h1 style="margin:5px 0; color: var(--accent);">DEMOCRACY IN SPACE</h1>
-    <button class="btn" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">Share on WhatsApp</button>
-    <button class="btn" id="theme-toggle" style="margin-bottom:12px; width:auto; padding:4px 11px; font-size:0.8em; background:var(--panel); color:var(--text); border:1px solid var(--panel-border); margin-top:0; box-shadow:none;" onclick="demoToggleTheme()">☀️ Light</button>
+    <button class="pill pill-share" onclick="shareOnWhatsApp()">Share on WhatsApp</button>
+    <button class="pill" id="theme-toggle" onclick="demoToggleTheme()">☀️ Light</button>
 </div>
 
 <div id="network-panel">
