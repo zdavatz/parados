@@ -99,6 +99,22 @@ fn l10n(lang: &str) -> L10n {
             font_family: "Noto Sans",
             script: Script::Latin,
         },
+        "es" => L10n {
+            play_online: "Jugar en línea:",
+            get_app: "Consigue la app de Parados:",
+            rules_word: "Reglas",
+            all_rules: "Todas las reglas en PDF",
+            font_family: "Noto Sans",
+            script: Script::Latin,
+        },
+        l if l.starts_with("pt") => L10n {
+            play_online: "Jogar online:",
+            get_app: "Baixe o app Parados:",
+            rules_word: "Regras",
+            all_rules: "Todas as regras em PDF",
+            font_family: "Noto Sans",
+            script: Script::Latin,
+        },
         _ => L10n {
             play_online: "Play online:",
             get_app: "Get the Parados app:",
@@ -418,6 +434,8 @@ fn lang_tag(lang: &str) -> &'static str {
         "ja" => "JP",
         "uk" => "UA",
         "it" => "IT",
+        "es" => "ES",
+        l if l.starts_with("pt") => "PT",
         l if l.starts_with("zh") => "CN",
         _ => "EN",
     }
