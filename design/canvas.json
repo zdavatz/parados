@@ -1,0 +1,21 @@
+{
+  "pages": [
+    { "id": "page-1", "name": "All games · Direction A" },
+    { "id": "page-2", "name": "Other directions (B / C)" }
+  ],
+  "artboards": [
+    { "file": "Main.dc.html", "title": "Divided Loyalties · Dark", "page": "page-1", "x": 0, "y": 0, "w": 880, "h": 820 },
+    { "file": "MainLight.dc.html", "title": "Divided Loyalties · Light", "page": "page-1", "x": 960, "y": 0, "w": 880, "h": 820 },
+    { "file": "GameKangaroo.dc.html", "title": "The Impatient Kangaroo", "page": "page-1", "x": 0, "y": 940, "w": 880, "h": 820 },
+    { "file": "GameDemocracy.dc.html", "title": "Democracy in Space", "page": "page-1", "x": 960, "y": 940, "w": 880, "h": 820 },
+    { "file": "GameMakaLaina.dc.html", "title": "MAKA LAINA", "page": "page-1", "x": 0, "y": 1880, "w": 880, "h": 820 },
+    { "file": "GameFrankenstein.dc.html", "title": "Where WAS that elbow?", "page": "page-1", "x": 960, "y": 1880, "w": 880, "h": 820 },
+    { "file": "DirectionB-Editorial.dc.html", "title": "B · Editorial Warm", "page": "page-2", "x": 0, "y": 0, "w": 880, "h": 820 },
+    { "file": "DirectionC-Bold.dc.html", "title": "C · Bold Geometric", "page": "page-2", "x": 960, "y": 0, "w": 880, "h": 820 }
+  ],
+  "annotations": [
+    { "id": "note-system", "page": "page-1", "x": 0, "y": -170, "w": 500, "text": "Direction A · Refined Slate — one shared shell across all five games.\nSame header (ParaDos wordmark + How to play / Share / theme toggle), same status cards, same board frame, same pill buttons. Space Grotesk + Public Sans.\nTop row shows DL in DARK and LIGHT — the shared parados_theme toggle. The other four are shown dark (default); each gets the same light treatment.\nGame state stays FIXED in both themes: kangaroo dishes, DL stones/board grays, MAKA LAINA discs + black/white collectors, Democracy red/blue colonies, Frankenstein body-part colours." },
+    { "id": "note-others", "page": "page-2", "x": 0, "y": -130, "w": 420, "text": "B / C kept for reference. A is the chosen path. Idea worth keeping from C: the capital-D block as a small logo mark — could pair with A's cleaner chrome once Walter's logo lands." }
+  ],
+  "launch": { "view": "canvas", "page": "page-1" }
+}
