@@ -124,6 +124,14 @@ fn l10n(lang: &str) -> L10n {
             font_family: "Noto Sans KR",
             script: Script::Kr,
         },
+        "fr" => L10n {
+            play_online: "Jouer en ligne :",
+            get_app: "Téléchargez l'app Parados :",
+            rules_word: "Règles",
+            all_rules: "Toutes les règles de jeu en PDF",
+            font_family: "Noto Sans",
+            script: Script::Latin,
+        },
         _ => L10n {
             play_online: "Play online:",
             get_app: "Get the Parados app:",
@@ -420,7 +428,7 @@ fn game_display_name(stem: &str) -> String {
     // Strip the language suffix FIRST — "democracy_remote_cn" ends in "_cn",
     // not "_remote", so the other order left the raw stem in the index.
     let mut base = stem;
-    for suffix in ["_en", "_de", "_jp", "_cn", "_ua", "_it"] {
+    for suffix in ["_en", "_de", "_jp", "_cn", "_ua", "_it", "_es", "_pt", "_ko", "_fr"] {
         base = base.trim_end_matches(suffix);
     }
     let base = base.trim_end_matches("_remote");
@@ -445,6 +453,7 @@ fn lang_tag(lang: &str) -> &'static str {
         "it" => "IT",
         "es" => "ES",
         "ko" => "KO",
+        "fr" => "FR",
         l if l.starts_with("pt") => "PT",
         l if l.starts_with("zh") => "CN",
         _ => "EN",
