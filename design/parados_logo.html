@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ParaDos Logo — Walter's mark</title>
+<style>
+/* Recreated 2026-08-29 from Walter's logo screenshot as pure HTML/CSS+SVG.
+   The mark is point-symmetric: one "person" unit (head circle, body dome,
+   angle bracket) drawn once and repeated rotated 180° — the two figures
+   interlock like two players facing each other.
+   Colours: crimson #ea375d, grid #d33152 (52px), strokes white, width 7. */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: 'Public Sans', 'Segoe UI', Tahoma, sans-serif;
+    background: #263238;
+    color: #eceff1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+    padding: 40px 20px;
+}
+h1 { font-size: 1.4em; font-weight: 600; }
+.stage {
+    width: 304px;
+    height: 310px;
+    background-color: #ea375d;
+    background-image:
+        linear-gradient(#d33152 1px, transparent 1px),
+        linear-gradient(90deg, #d33152 1px, transparent 1px);
+    background-size: 52px 52px;
+    background-position: -6px 19px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+}
+.row { display: flex; align-items: flex-end; gap: 18px; }
+.row svg { border-radius: 8px; display: block; }
+.hint { color: #90a4ae; font-size: 0.9em; max-width: 480px; text-align: center; line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<h1>ParaDos — Walter's mark (HTML/CSS + SVG)</h1>
+
+<div class="stage">
+<svg width="300" height="300" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+    <g id="unit" fill="none" stroke="#ffffff" stroke-width="7">
+        <!-- head -->
+        <circle cx="120" cy="61.5" r="17.5"/>
+        <!-- neck -->
+        <path d="M120 80.5 V89.5" stroke-width="5"/>
+        <!-- body dome + bar (bar right-to-left, then arc over the top) -->
+        <path d="M126 139.5 H68 A53.6 53.6 0 0 1 175 142.5"/>
+        <!-- inner vertical at the bar end -->
+        <path d="M122.5 118.5 V139.5"/>
+        <!-- left vertical + bottom bar -->
+        <path d="M69 149.5 V206.5 H135"/>
+    </g>
+    <use href="#unit" transform="rotate(180 150 150)"/>
+</svg>
+</div>
+
+<!-- Small sizes: thicker strokes (11 / neck 8) keep the mark legible as a badge. -->
+<div class="row">
+    <svg width="64" height="64" viewBox="0 0 300 300">
+        <rect width="300" height="300" fill="#ea375d"/>
+        <g id="unit-s" fill="none" stroke="#ffffff" stroke-width="11">
+            <circle cx="120" cy="61.5" r="17.5"/>
+            <path d="M120 80.5 V89.5" stroke-width="8"/>
+            <path d="M126 139.5 H68 A53.6 53.6 0 0 1 175 142.5"/>
+            <path d="M122.5 118.5 V139.5"/>
+            <path d="M69 149.5 V206.5 H135"/>
+        </g>
+        <use href="#unit-s" transform="rotate(180 150 150)"/>
+    </svg>
+    <svg width="40" height="40" viewBox="0 0 300 300">
+        <rect width="300" height="300" fill="#ea375d"/>
+        <use href="#unit-s"/>
+        <use href="#unit-s" transform="rotate(180 150 150)"/>
+    </svg>
+    <svg width="30" height="30" viewBox="0 0 300 300">
+        <rect width="300" height="300" fill="#ea375d"/>
+        <use href="#unit-s"/>
+        <use href="#unit-s" transform="rotate(180 150 150)"/>
+    </svg>
+</div>
+
+<p class="hint">The big mark uses the original stroke width (7); the badge sizes
+below use width 11 so the lines stay visible at 30–64px. Standalone file:
+<code>design/parados_logo.svg</code>. In use: the badge behind Walter's name in
+<code>index.html</code>'s header.</p>
+
+</body>
+</html>

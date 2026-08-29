@@ -1,0 +1,27 @@
+<svg width="300" height="300" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+  <!-- ParaDos "two players" mark: one person unit (head, body dome, angle),
+       repeated point-symmetrically (rotated 180°) so the two figures interlock.
+       Recreated 2026-08-29 from Walter's logo screenshot. -->
+  <defs>
+    <pattern id="grid" width="52" height="52" x="46" y="19" patternUnits="userSpaceOnUse">
+      <rect width="52" height="1" fill="#d33152"/>
+      <rect width="1" height="52" fill="#d33152"/>
+    </pattern>
+    <g id="unit" fill="none" stroke="#ffffff" stroke-width="7">
+      <!-- head -->
+      <circle cx="120" cy="61.5" r="17.5"/>
+      <!-- neck -->
+      <path d="M120 80.5 V89.5" stroke-width="5"/>
+      <!-- body dome + bar (bar right-to-left, then arc over the top) -->
+      <path d="M126 139.5 H68 A53.6 53.6 0 0 1 175 142.5"/>
+      <!-- inner vertical at the bar end -->
+      <path d="M122.5 118.5 V139.5"/>
+      <!-- left vertical + bottom bar -->
+      <path d="M69 149.5 V206.5 H135"/>
+    </g>
+  </defs>
+  <rect width="300" height="300" fill="#ea375d"/>
+  <rect width="300" height="300" fill="url(#grid)"/>
+  <use href="#unit"/>
+  <use href="#unit" transform="rotate(180 150 150)"/>
+</svg>
