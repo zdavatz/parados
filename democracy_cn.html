@@ -334,21 +334,8 @@
         }
 
         if (willConnect) {
-            if (!anyRimCompletelyFree()) {
-                let involvesRim = isOnRim(dr, dc);
-                if (!involvesRim) {
-                    for (const [or, oc] of ORTHO) {
-                        const nr = dr + or, nc = dc + oc;
-                        if (nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE && tempBoard[nr][nc]) {
-                            if (tempBoard[nr][nc].player !== sat.player && isOnRim(nr, nc)) {
-                                involvesRim = true; break;
-                            }
-                        }
-                    }
-                }
-                if (involvesRim)
-                    return { reason: "只有当某条边缘完全空出时，才能进行涉及边缘卫星的连接。", rule: "规则 4" };
-            }
+            if (!anyRimCompletelyFree())
+                return { reason: "只有当某条后排（边缘）完全空出后，才能进行连接。", rule: "" };
 
             if (wouldViolateRule12(tempBoard, dr, dc, sat.player))
                 return { reason: "两颗同色且已连接的卫星不得正交相邻。", rule: "规则 12" };

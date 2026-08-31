@@ -358,21 +358,8 @@
         }
 
         if (willConnect) {
-            if (!anyRimCompletelyFree()) {
-                let involvesRim = isOnRim(dr, dc);
-                if (!involvesRim) {
-                    for (const [or, oc] of ORTHO) {
-                        const nr = dr + or, nc = dc + oc;
-                        if (nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE && tempBoard[nr][nc]) {
-                            if (tempBoard[nr][nc].player !== sat.player && isOnRim(nr, nc)) {
-                                involvesRim = true; break;
-                            }
-                        }
-                    }
-                }
-                if (involvesRim)
-                    return { reason: "가장자리 위성과의 연결은 한 가장자리가 완전히 비었을 때에만 가능합니다.", rule: "Rule 4" };
-            }
+            if (!anyRimCompletelyFree())
+                return { reason: "연결은 뒷줄 하나가 완전히 비워진 뒤에야 가능합니다.", rule: "" };
 
             if (wouldViolateRule12(tempBoard, dr, dc, sat.player))
                 return { reason: "같은 색의 연결된 위성 두 개는 직교로 인접할 수 없습니다.", rule: "Rule 12" };

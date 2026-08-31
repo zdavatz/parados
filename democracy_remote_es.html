@@ -358,21 +358,8 @@
         }
 
         if (willConnect) {
-            if (!anyRimCompletelyFree()) {
-                let involvesRim = isOnRim(dr, dc);
-                if (!involvesRim) {
-                    for (const [or, oc] of ORTHO) {
-                        const nr = dr + or, nc = dc + oc;
-                        if (nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE && tempBoard[nr][nc]) {
-                            if (tempBoard[nr][nc].player !== sat.player && isOnRim(nr, nc)) {
-                                involvesRim = true; break;
-                            }
-                        }
-                    }
-                }
-                if (involvesRim)
-                    return { reason: "Las conexiones con satélites de borde solo cuando un borde esté completamente libre.", rule: "Regla 4" };
-            }
+            if (!anyRimCompletelyFree())
+                return { reason: "Las conexiones solo son posibles cuando una fila trasera esté completamente libre.", rule: "" };
 
             if (wouldViolateRule12(tempBoard, dr, dc, sat.player))
                 return { reason: "Dos satélites conectados del mismo color no pueden ser adyacentes ortogonalmente.", rule: "Regla 12" };
