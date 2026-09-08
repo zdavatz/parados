@@ -148,8 +148,8 @@
     <div id="sidebar">
         <div id="score-panel">
             <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-                <span><b style="color:var(--p1)">Red:</b> <span id="p1-score">0</span> colonies</span>
-                <span><b style="color:var(--p2)">Blue:</b> <span id="p2-score">0</span> colonies</span>
+                <span><b style="color:var(--p1)">빨강:</b> <span id="p1-score">0</span> 식민지</span>
+                <span><b style="color:var(--p2)">파랑:</b> <span id="p2-score">0</span> 식민지</span>
             </div>
             <div id="colony-list"></div>
         </div>
@@ -286,12 +286,12 @@
                     });
 
                     const colId = existing ? existing.id : nextColonyId - 1;
-                    const ownerName = owner === 1 ? 'Red' : 'Blue';
+                    const ownerName = owner === 1 ? '빨강' : '파랑';
                     const isNew = !existing;
                     if (isNew) {
-                        logChat(0, `New colony #${colId}: ${group.length} sats., Red=${v1} Blue=${v2} → ${ownerName} wins`);
+                        logChat(0, `새 식민지 #${colId}: 위성 ${group.length}개, 빨강=${v1} 파랑=${v2} → ${ownerName} 우세`);
                     } else if (existing.owner !== owner) {
-                        logChat(0, `Colony #${colId} flips! Red=${v1} Blue=${v2} → now ${ownerName}`);
+                        logChat(0, `식민지 #${colId} 뒤집힘! 빨강=${v1} 파랑=${v2} → 이제 ${ownerName}`);
                     }
                 }
             }
@@ -344,12 +344,12 @@
     // MOVE VALIDATION
     // ============================================================, or a { reason, rule } object if invalid
     function getMoveRejection(sr, sc, dr, dc) {
-        if (board[dr][dc]) return { reason: "Cell is occupied.", rule: "" };
+        if (board[dr][dc]) return { reason: "칸이 이미 차 있습니다.", rule: "" };
         const sat = board[sr][sc];
         const dist = Math.max(Math.abs(dr - sr), Math.abs(dc - sc));
 
         if (!(sr === dr || sc === dc || Math.abs(dr - sr) === Math.abs(dc - sc)))
-            return { reason: "Only straight lines or diagonals.", rule: "Rule 5a" };
+            return { reason: "직선 또는 대각선으로만 이동할 수 있습니다.", rule: "규칙 5a" };
 
         const tempBoard = board.map(row => row.map(cell => cell ? {...cell} : null));
         tempBoard[dr][dc] = { ...tempBoard[sr][sc] };
@@ -359,10 +359,10 @@
 
         if (willConnect) {
             if (dist !== sat.val)
-                return { reason: `Connection move must be exactly ${sat.val} cells (not ${dist}).`, rule: "Rule 5c" };
+                return { reason: `연결 이동은 정확히 ${sat.val}칸이어야 합니다 (${dist}칸 아님).`, rule: "규칙 5c" };
         } else {
             if (dist > sat.val)
-                return { reason: `This satellite can move max. ${sat.val} cells.`, rule: "Rule 5b" };
+                return { reason: `이 위성은 최대 ${sat.val}칸까지 이동할 수 있습니다.`, rule: "규칙 5b" };
         }
 
         if (willConnect) {
@@ -370,7 +370,7 @@
                 return { reason: "연결은 뒷줄 하나가 완전히 비워진 뒤에야 가능합니다.", rule: "" };
 
             if (wouldViolateRule12(tempBoard, dr, dc, sat.player))
-                return { reason: "Two connected same-color satellites may not be orthogonally adjacent.", rule: "Rule 12" };
+                return { reason: "같은 색의 연결된 위성 두 개는 직교로 인접할 수 없습니다.", rule: "규칙 12" };
 
             const colonyViolation = getColonyViolationReason(tempBoard, dr, dc, sat.player);
             if (colonyViolation) return colonyViolation;
@@ -391,7 +391,7 @@
             const col = getColonyAt(nr, nc);
             if (col) {
                 if (col.crowned)
-                    return { reason: `This colony already has 6 satellites (max) and is crowned.`, rule: "Rule 8a" };
+                    return { reason: `이 식민지는 이미 위성 6개(최대)로 왕관을 썼습니다.`, rule: "규칙 8a" };
                 neighborGroups.add(col.id);
                 col.cells.forEach(([cr, cc]) => allNeighborCells.add(`${cr},${cc}`));
             } else {
@@ -407,10 +407,10 @@
         }
 
         if (neighborGroups.size > 1)
-            return { reason: "This move would merge two colonies — not allowed.", rule: "Rule 8b" };
+            return { reason: "이 이동은 두 식민지를 합치게 됩니다 — 허용되지 않습니다.", rule: "규칙 8b" };
 
         if (allNeighborCells.size + 1 > 6)
-            return { reason: `Colony would have ${allNeighborCells.size + 1} satellites — max is 6.`, rule: "Rule 8a" };
+            return { reason: `식민지의 위성이 ${allNeighborCells.size + 1}개가 됩니다 — 최대 6개입니다.`, rule: "규칙 8a" };
 
         return null;
     }
@@ -424,7 +424,7 @@
     // ============================================================
     function executeMove(sr, sc, dr, dc) {
         const sat = board[sr][sc];
-        const playerName = sat.player === 1 ? 'Red' : 'Blue';
+        const playerName = sat.player === 1 ? '빨강' : '파랑';
         board[dr][dc] = sat;
         board[sr][sc] = null;
 
@@ -443,7 +443,7 @@
         }
 
         if (madeConnection) {
-            logChat(0, `${playerName} ${sat.val}: (${sr},${sc})→(${dr},${dc}) ⚡ connects with ${connectedWith.join(', ')}`);
+            logChat(0, `${playerName} ${sat.val}: (${sr},${sc})→(${dr},${dc}) ⚡ ${connectedWith.join(', ')}와(과) 연결`);
             rebuildColonies();
         } else {
             logChat(0, `${playerName} ${sat.val}: (${sr},${sc})→(${dr},${dc})`);
@@ -469,11 +469,11 @@
             if (p1c === 12 && firstPlayerDone === 0) {
                 firstPlayerDone = 1;
                 graceMovesLeft = 3;
-                logChat(0, "Red has all connected! Blue gets 3 grace moves.");
+                logChat(0, "빨강이 모두 연결했습니다! 파랑에게 유예 이동 3회가 주어집니다.");
             } else if (p2c === 12 && firstPlayerDone === 0) {
                 firstPlayerDone = 2;
                 graceMovesLeft = 3;
-                logChat(0, "Blue has all connected! Red gets 3 grace moves.");
+                logChat(0, "파랑이 모두 연결했습니다! 빨강에게 유예 이동 3회가 주어집니다.");
             }
         } else if (graceMovesLeft > 0) {
             graceMovesLeft--;
@@ -489,16 +489,16 @@
         const p2c = colonies.filter(c => c.owner === 2).length;
         let msg;
         if (p1c > p2c) {
-            msg = `🏆 RED wins! (${p1c}–${p2c} colonies)`;
+            msg = `🏆 빨강 승리! (식민지 ${p1c}–${p2c})`;
         } else if (p2c > p1c) {
-            msg = `🏆 BLUE wins! (${p2c}–${p1c} colonies)`;
+            msg = `🏆 파랑 승리! (식민지 ${p2c}–${p1c})`;
         } else {
             const sorted = [...colonies].sort((a, b) => a.total - b.total);
             if (sorted.length > 0) {
                 const lowest = sorted[0];
-                msg = `🏆 ${lowest.owner === 1 ? 'RED' : 'BLUE'} wins on tiebreak! (Colony value ${lowest.total})`;
+                msg = `🏆 ${lowest.owner === 1 ? '빨강' : '파랑'} 동점 결정으로 승리! (식민지 값 ${lowest.total})`;
             } else {
-                msg = "Draw!";
+                msg = "무승부!";
             }
         }
         return msg;
@@ -624,7 +624,7 @@
                 checkEndGame();
                 render();
 
-                logChat(0, `Satellite displaced and seat taken! (Rule 11)`);
+                logChat(0, `위성을 밀어내고 자리를 차지했습니다! (규칙 11)`);
             } else {
                 displaceState = null;
                 selected = null;
@@ -811,11 +811,11 @@
         wb.innerText = gameEnded ? winnerText() : '';
         wb.style.display = gameEnded ? 'block' : 'none';
 
-        document.getElementById('conn-count').innerText = `Connected: ${totalConnected} / 24`;
+        document.getElementById('conn-count').innerText = `연결됨: ${totalConnected} / 24`;
         document.getElementById('turn-txt').innerText = gameEnded
-            ? "🔒 GAME ENDED" : `${currentPlayer===1?'Red':'Blue'} player's turn`;
+            ? "🔒 게임 종료" : `${currentPlayer===1?'빨강':'파랑'} 플레이어 차례`;
         document.getElementById('grace-txt').innerText =
-            graceMovesLeft > 0 ? `⚡ ${graceMovesLeft} grace moves` : '';
+            graceMovesLeft > 0 ? `⚡ 유예 이동 ${graceMovesLeft}회` : '';
     }
 
     function renderScore() {
@@ -830,8 +830,8 @@
             const div = document.createElement('div');
             div.className = 'colony-entry';
             const oc = col.owner === 1 ? 'colony-owner-1' : 'colony-owner-2';
-            div.innerHTML = `<span>Colony #${col.id} (${col.cells.length} sats.)${col.crowned?' 👑':''}</span>
-                <span>R:${col.v1} B:${col.v2} → <span class="${oc}">${col.owner===1?'Red':'Blue'}</span></span>`;
+            div.innerHTML = `<span>식민지 #${col.id} (위성 ${col.cells.length}개)${col.crowned?' 👑':''}</span>
+                <span>R:${col.v1} B:${col.v2} → <span class="${oc}">${col.owner===1?'빨강':'파랑'}</span></span>`;
             list.appendChild(div);
         });
     }
@@ -966,7 +966,7 @@
     // ============================================================
     function logChat(role, msg) {
         const box = document.getElementById('chat-messages');
-        const name = role===0?"SYS":(role===1?"RED":"BLUE");
+        const name = role===0?"SYS":(role===1?"빨강":"파랑");
         const color = role===1?"#e94560":(role===2?"#00d2ff":"#ffcc00");
         box.innerHTML += `<div><span style="color:${color};font-weight:bold;">${name}:</span> ${msg}</div>`;
         box.scrollTop = box.scrollHeight;
@@ -979,11 +979,11 @@
 
     function shareOnWhatsApp() {
         const shareUrl = /^(file|parados):$/.test(window.location.protocol) ? "https://game.ywesee.com/parados/" + (window.location.pathname.split("/").pop() || "index.html") : window.location.href;
-        const msg = `Play Democracy in Space: ${shareUrl}\n\nGet the Parados app:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
+        const msg = `Democracy in Space 플레이하기: ${shareUrl}\n\nParados 앱 받기:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
         if (navigator.share) { navigator.share({ text: msg }).catch(() => {}); return; }
         // No share API (Android WebView, in-app browsers): copy to clipboard.
         // Never wa.me — Android WebView can't dispatch whatsapp:// (ERR_UNKNOWN_URL_SCHEME).
-        const note = 'Message copied — paste it into WhatsApp.';
+        const note = '메시지가 복사되었습니다 — WhatsApp에 붙여넣으세요.';
         const fallback = () => { const ta = document.createElement('textarea'); ta.value = msg; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); let ok=false; try { ok = document.execCommand('copy'); } catch {} ta.remove(); if (ok) alert(note); else prompt(note, msg); };
         if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(msg).then(() => alert(note)).catch(fallback);
         else fallback();
@@ -1002,7 +1002,7 @@
 
     setupGame();
     render();
-    logChat(0, "Local 2-player mode.");
+    logChat(0, "로컬 2인 모드.");
 
     // #rules deep-link — share rules per game/language
     function applyRulesHash() {
@@ -1015,7 +1015,7 @@
     function demoApplyTheme(mode) {
         document.documentElement.setAttribute('data-theme', mode);
         var b = document.getElementById('theme-toggle');
-        if (b) b.textContent = mode === 'dark' ? '☀️ Light' : '🌙 Dark';
+        if (b) b.textContent = mode === 'dark' ? '☀️ 라이트' : '🌙 다크';
     }
     function demoToggleTheme() {
         var n = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
