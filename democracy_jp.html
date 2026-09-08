@@ -40,6 +40,7 @@
         .colony-owner-2 { color: var(--p2); }
         #chat-messages { flex-grow: 1; overflow-y: auto; font-size: 0.82rem; background: var(--sunken); padding: 8px; border-radius: 4px; margin-bottom: 8px; border: 1px solid var(--panel-border); min-height: 80px; }
         .btn { padding: 8px 12px; cursor: pointer; background: #333; border: 1px solid #555; color: white; border-radius: 4px; font-size: 0.85rem; }
+        .btn:disabled { opacity: 0.4; cursor: default; }
         #rules-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 1000; justify-content: center; align-items: center; overflow-y: auto; }
         .modal-content { background: #1a1f29; border: 2px solid var(--accent); padding: 20px; border-radius: 12px; max-width: 650px; width: 92%; max-height: 90vh; overflow-y: auto; line-height: 1.5; font-size: 0.9rem; margin: 20px; }
         .modal-content h3 { color: var(--accent); margin: 12px 0 6px; }
@@ -123,6 +124,7 @@
 
 <div id="top-bar">
     <div><strong>モード:</strong> <span style="color:#0f0;">ローカル（2人）</span></div>
+    <button class="btn" id="undo-btn" onclick="undoMove()" disabled>↶ 一手戻す</button>
     <button class="btn" onclick="toggleRules()">ルール</button>
 </div>
 
@@ -168,6 +170,34 @@
 
     // Displacement state (Rule 11)
     let displaceState = null;
+
+    // Undo (Walter, 2026-09-08: "we have to be able to take a move back, like
+    // we can in most of the other games"). A snapshot of the full game state is
+    // pushed right before each committed move — a normal move and the
+    // displacement commit are the only two mutation points. Undo pops one
+    // snapshot and restores everything, including the chat log, so the
+    // "…verbindet mit…" / end-of-game lines of the undone move vanish too.
+    let undoStack = [];
+    function pushUndo() {
+        undoStack.push({
+            board: board.map(row => row.map(s => s ? { ...s } : null)),
+            colonies: JSON.parse(JSON.stringify(colonies)),
+            nextColonyId, currentPlayer, gameEnded, graceMovesLeft, firstPlayerDone,
+            chat: document.getElementById('chat-messages').innerHTML,
+        });
+    }
+    function undoMove() {
+        const snap = undoStack.pop();
+        if (!snap) return;
+        board = snap.board; colonies = snap.colonies; nextColonyId = snap.nextColonyId;
+        currentPlayer = snap.currentPlayer; gameEnded = snap.gameEnded;
+        graceMovesLeft = snap.graceMovesLeft; firstPlayerDone = snap.firstPlayerDone;
+        document.getElementById('chat-messages').innerHTML = snap.chat;
+        selected = null; displaceState = null;
+        document.getElementById('displace-banner').style.display = 'none';
+        hideToast();
+        render();
+    }
 
     // ============================================================
     // RIM LOGIC (Rule 4)
@@ -550,6 +580,7 @@
 
             if (isValidTarget) {
                 hideToast();
+                pushUndo();
                 board[r][c] = ds.opponentSat;
                 board[ds.opponentR][ds.opponentC] = null;
 
@@ -602,6 +633,7 @@
             const rejection = getMoveRejection(selected.r, selected.c, r, c);
             if (!rejection) {
                 hideToast();
+                pushUndo();
                 executeMove(selected.r, selected.c, r, c);
                 selected = null;
                 checkEndGame();
@@ -691,6 +723,7 @@
         board = Array(SIZE).fill().map(() => Array(SIZE).fill(null));
         colonies = []; nextColonyId = 1;
         currentPlayer = 1; gameEnded = false;
+        undoStack = [];
         graceMovesLeft = -1; firstPlayerDone = 0;
 
         const makeVals = () => [1,1,1,2,2,2,3,3,3,4,4,4].sort(() => Math.random() - 0.5);
@@ -761,6 +794,7 @@
         }));
 
         drawConnections(connectionPairs);
+        document.getElementById('undo-btn').disabled = undoStack.length === 0;
         renderScore();
 
         document.getElementById('conn-count').innerText = `接続済み: ${totalConnected} / 23`;
