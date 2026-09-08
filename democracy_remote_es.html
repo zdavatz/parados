@@ -52,6 +52,7 @@
         .displace-target { background: rgba(255, 165, 0, 0.35) !important; box-shadow: inset 0 0 10px rgba(255, 165, 0, 0.5); border: 1px solid orange; }
         .displace-source { box-shadow: 0 0 12px orange !important; }
         #displace-banner { display: none; background: linear-gradient(90deg, #1a1f29, #2a1500, #1a1f29); border: 1px solid orange; color: orange; padding: 6px 16px; border-radius: 6px; font-size: 0.85rem; text-align: center; margin-bottom: 6px; width: 100%; max-width: 960px; }
+        #winner-banner { display: none; background: linear-gradient(90deg, #1a1f29, #2a2300, #1a1f29); border: 2px solid gold; color: gold; padding: 10px 16px; border-radius: 6px; font-size: 1.15rem; font-weight: bold; text-align: center; margin-bottom: 6px; width: 100%; max-width: 960px; }
         #turn-bar { margin-bottom: 8px; width: 100%; max-width: 960px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px; font-size: 0.9rem; }
         .star { position: absolute; width: 2px; height: 2px; border-radius: 50%; }
         .star::before, .star::after { content: ''; position: absolute; border-radius: 50%; }
@@ -136,11 +137,12 @@
 
 <div id="turn-bar">
     <span id="turn-txt" style="font-weight:bold;">Turno del jugador Rojo</span>
-    <span id="conn-count">Conectados: 0 / 23</span>
+    <span id="conn-count">Conectados: 0 / 24</span>
     <span id="grace-txt" style="color: var(--warn); font-size:0.85rem;"></span>
 </div>
 
 <div id="displace-banner">⚡ Desplaza el satélite rival (máximo 2 celdas, en línea recta)</div>
+<div id="winner-banner"></div>
 
 <div id="rule-toast"></div>
 
@@ -477,7 +479,7 @@
         }
     }
 
-    function announceWinner() {
+    function winnerText() {
         const p1c = colonies.filter(c => c.owner === 1).length;
         const p2c = colonies.filter(c => c.owner === 2).length;
         let msg;
@@ -494,7 +496,11 @@
                 msg = "¡Empate!";
             }
         }
-        logChat(0, msg);
+        return msg;
+    }
+
+    function announceWinner() {
+        logChat(0, winnerText());
     }
 
     // ============================================================
@@ -815,8 +821,16 @@
 
         drawConnections(connectionPairs);
         renderScore();
+        // Prominent winner banner (Walter, 2026-09-08: who won was only a line at
+        // the bottom of the log — "it could be more prominent, especially since in
+        // the tie-break it is not so obvious"). Derived from state in render(), so
+        // it also shows on the remote joiner (SYNC carries gameEnded + colonies)
+        // and disappears again on undo.
+        const wb = document.getElementById('winner-banner');
+        wb.innerText = gameEnded ? winnerText() : '';
+        wb.style.display = gameEnded ? 'block' : 'none';
 
-        document.getElementById('conn-count').innerText = `Conectados: ${totalConnected} / 23`;
+        document.getElementById('conn-count').innerText = `Conectados: ${totalConnected} / 24`;
         document.getElementById('turn-txt').innerText = gameEnded
             ? "🔒 PARTIDA TERMINADA" : `Turno del jugador ${currentPlayer===1?'Rojo':'Azul'}`;
         document.getElementById('grace-txt').innerText =
