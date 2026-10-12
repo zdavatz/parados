@@ -204,10 +204,10 @@ footer {
 }
 #theme-toggle:hover { background: var(--card-bg); }
 
-/* App-store row under the byline (Zeno, 2026-10-12: "ios and android buttons are
-   missing"). Same chip look as #theme-toggle; URLs = the ones in every game's
+/* App-store row in the footer (Zeno, 2026-10-12: "ios and android buttons are
+   missing" → then "place the links at the bottom of the page"). Same chip look as #theme-toggle; URLs = the ones in every game's
    share message. */
-.app-stores { display:flex; justify-content:center; flex-wrap:wrap; gap:10px; margin:14px 0 0; }
+.app-stores { display:flex; justify-content:center; flex-wrap:wrap; gap:10px; margin:16px 0 4px; }
 .app-stores a {
     display:inline-flex; align-items:center; gap:7px;
     padding: 7px 16px; border-radius: 18px;
@@ -255,11 +255,6 @@ footer a:hover { text-decoration: underline; }
             <use href="#wp-unit" transform="rotate(180 150 150)"/>
         </svg></a>
         &amp; Zeno R.R. Davatz</p>
-    <div class="app-stores">
-        <a href="https://apps.apple.com/us/app/parados/id6760842713" target="_blank" rel="noopener" title="Parados im App Store (iPhone, iPad, Mac)"> iOS / Mac <span class="k">App Store</span></a>
-        <a href="https://play.google.com/store/apps/details?id=com.ywesee.parados" target="_blank" rel="noopener" title="Parados bei Google Play">▶ Android <span class="k">Google Play</span></a>
-        <a href="https://apps.microsoft.com/detail/9N7RTWZQQ0K7" target="_blank" rel="noopener" title="Parados im Microsoft Store">⊞ Windows <span class="k">Microsoft Store</span></a>
-    </div>
 </header>
 
 <div class="games-grid">
@@ -425,6 +420,11 @@ footer a:hover { text-decoration: underline; }
     <a href="https://game.ywesee.com/parados/docs/video/index.html">Videos</a> &middot;
     <a href="https://github.com/zdavatz/parados">GitHub</a> &middot;
     All games run entirely in your browser &mdash; no accounts, no downloads.
+    <div class="app-stores">
+        <a href="https://apps.apple.com/us/app/parados/id6760842713" target="_blank" rel="noopener" title="Parados im App Store (iPhone, iPad, Mac)"> iOS / Mac <span class="k">App Store</span></a>
+        <a href="https://play.google.com/store/apps/details?id=com.ywesee.parados" target="_blank" rel="noopener" title="Parados bei Google Play">▶ Android <span class="k">Google Play</span></a>
+        <a href="https://apps.microsoft.com/detail/9N7RTWZQQ0K7" target="_blank" rel="noopener" title="Parados im Microsoft Store">⊞ Windows <span class="k">Microsoft Store</span></a>
+    </div>
     <div style="margin-top:16px;">
         <button id="theme-toggle" onclick="toggleIndexTheme()">☀️ Light</button>
     </div>
