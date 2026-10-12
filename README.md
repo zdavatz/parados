@@ -6,6 +6,8 @@ Games by Walter Prossnitz
 
 **[Play all games](https://game.ywesee.com/parados/)**
 
+Or get the Parados app: [iOS / Mac — App Store](https://apps.apple.com/us/app/parados/id6760842713) · [Android — Google Play](https://play.google.com/store/apps/details?id=com.ywesee.parados) · [Windows — Microsoft Store](https://apps.microsoft.com/detail/9N7RTWZQQ0K7). The same three store buttons sit under the byline on the landing page.
+
 Walter's crimson logo mark (two interlocked "person" figures, point-symmetric) is recreated as pure SVG in [`design/parados_logo.svg`](design/parados_logo.svg) (+ demo page [`design/parados_logo.html`](design/parados_logo.html)); a 30px badge version sits behind his name in the `index.html` header and links to his e-mail.
 
 ## Share
