@@ -732,6 +732,7 @@
             <li>Você deve colocá-lo <b>na sua linha de visão</b>.</li>
             <li>O disco não pode ser coletado imediatamente (ele está na sua LDV).</li>
             <li>54 discos no total: 24 começam no tabuleiro, 24 entram pelo draft, 6 permanecem ocultos.</li>
+            <li><b>Proteção de abertura:</b> nas <b>duas primeiras compras</b> de cada jogador, o disco novo não pode ser colocado na linha de visão do adversário (sem bloquear) &mdash; assim a disposição inicial não dá nenhuma vantagem injusta.</li>
         </ul>
         <h3>Mecânicas especiais</h3>
         <ul>
@@ -916,6 +917,13 @@ const discColorMap = {
 // Draft and sacrifice state
 let collectedDiscs = { 1: [], 2: [] };
 let draftChosen = null;
+// Opening protection (Walter, 2026-10-15): during each player's FIRST TWO
+// drafts the new disc may not be placed in the opponent's line of sight.
+// Was a single boolean (P1's very first draft only) — Walter: "extend this
+// to the first 2 moves for BOTH players. This will remove any unfair
+// advantage arising from an opening setup." Counts drafted placements per
+// player; the rule applies while openingDrafts[currentPlayer] < 2.
+let openingDrafts = { 1: 0, 2: 0 };
 
 let pendingExtraTurn = false;
 let sacrificeRange = 0;
@@ -1487,6 +1495,7 @@ function mlApplyOpening(parsed) {
         playerFlags = { 1: {}, 2: {} };
         relinquished = { 1: false, 2: false };
         relinquishCount = { 1: 0, 2: 0 };
+        openingDrafts = { 1: 0, 2: 0 };
         collectedDiscs = { 1: [], 2: [] };
         draftChosen = null;
         pendingExtraTurn = false;
@@ -1600,8 +1609,10 @@ function handleClick(i, isRemote) {
         handleMove(i, isRemote);
     } else if (gameState === 'DRAFT_PLACE') {
         const draftLOS = getLOS(collectors[currentPlayer]);
-        if (!cells[i] && draftLOS.includes(i)) {
+        const opponentLOS = openingDrafts[currentPlayer] < 2 ? getLOS(collectors[currentPlayer === 1 ? 2 : 1]) : [];
+        if (!cells[i] && draftLOS.includes(i) && !opponentLOS.includes(i)) {
             if (!isRemote) sendNet({ type: 'click', idx: i });
+            openingDrafts[currentPlayer]++;
             const draftColor = draftChosen.color;
             const draftNum = draftChosen.num;
             cells[i] = draftChosen;
@@ -1666,6 +1677,7 @@ function applyP2Choice(color, isRemote) {
     document.getElementById('p2-choose-panel').style.display = 'none';
     currentPlayer = (color === 1) ? 2 : 1;
     gameState = 'PLAY';
+    openingDrafts = { 1: 0, 2: 0 };
     document.getElementById('csv-export-btn').style.display = '';
     saveSnapshot('Início do jogo — ' + (currentPlayer === 1 ? 'Preto' : 'Branco') + ' começa jogando (o J2 escolheu ' + (color === 1 ? 'Preto' : 'Branco') + ')');
     if (myRole === 'host') setTimeout(() => syncState(), 50);
@@ -1689,6 +1701,7 @@ function syncState() {
         pendingExtraTurn,
         sacrificeRange,
         sacrificingPlayer,
+        openingDrafts: { ...openingDrafts },
         currentPosition
     });
 }
@@ -1708,6 +1721,7 @@ function applySyncState(data) {
     if (data.pendingExtraTurn !== undefined) pendingExtraTurn = data.pendingExtraTurn;
     if (data.sacrificeRange !== undefined) sacrificeRange = data.sacrificeRange;
     if (data.sacrificingPlayer !== undefined) sacrificingPlayer = data.sacrificingPlayer;
+    if (data.openingDrafts !== undefined) openingDrafts = { ...data.openingDrafts };
     if (data.currentPosition !== undefined) {
         currentPosition = data.currentPosition;
         setPositionTitle('');
@@ -2308,7 +2322,10 @@ function render() {
         if (los.includes(i)) cls += ' los';
         if (selectedIdx === i) cls += ' selected';
         if (reachable.includes(i)) cls += ' reachable';
-        if (showLOS && gameState === 'DRAFT_PLACE' && !cells[i] && getLOS(collectors[currentPlayer]).includes(i)) cls += ' placeable';
+        if (showLOS && gameState === 'DRAFT_PLACE' && !cells[i] && getLOS(collectors[currentPlayer]).includes(i)) {
+            const oppLOS = openingDrafts[currentPlayer] < 2 ? getLOS(collectors[currentPlayer === 1 ? 2 : 1]) : [];
+            if (!oppLOS.includes(i)) cls += ' placeable';
+        }
         el.className = cls;
 
         if (cells[i]) {

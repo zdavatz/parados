@@ -732,6 +732,7 @@
             <li>それを<b>自分の視線内に</b>置かなければなりません。</li>
             <li>そのディスクはすぐには収集できません（自分の視線内にあるため）。</li>
             <li>ディスクは合計 54 枚：24 枚が盤上に配置され、24 枚がドラフトで入り、6 枚は隠されたままです。</li>
+            <li><b>序盤の保護：</b>各プレイヤーの<b>最初の2回のドラフト</b>では、新しいディスクを相手の視線上に置くことはできません（ブロック禁止）。これにより、初期配置による不公平な有利がなくなります。</li>
         </ul>
         <h3>特殊ルール</h3>
         <ul>
@@ -916,6 +917,13 @@ const discColorMap = {
 // Draft and sacrifice state
 let collectedDiscs = { 1: [], 2: [] };
 let draftChosen = null;
+// Opening protection (Walter, 2026-10-15): during each player's FIRST TWO
+// drafts the new disc may not be placed in the opponent's line of sight.
+// Was a single boolean (P1's very first draft only) — Walter: "extend this
+// to the first 2 moves for BOTH players. This will remove any unfair
+// advantage arising from an opening setup." Counts drafted placements per
+// player; the rule applies while openingDrafts[currentPlayer] < 2.
+let openingDrafts = { 1: 0, 2: 0 };
 
 let pendingExtraTurn = false;
 let sacrificeRange = 0;
@@ -1487,6 +1495,7 @@ function mlApplyOpening(parsed) {
         playerFlags = { 1: {}, 2: {} };
         relinquished = { 1: false, 2: false };
         relinquishCount = { 1: 0, 2: 0 };
+        openingDrafts = { 1: 0, 2: 0 };
         collectedDiscs = { 1: [], 2: [] };
         draftChosen = null;
         pendingExtraTurn = false;
@@ -1600,8 +1609,10 @@ function handleClick(i, isRemote) {
         handleMove(i, isRemote);
     } else if (gameState === 'DRAFT_PLACE') {
         const draftLOS = getLOS(collectors[currentPlayer]);
-        if (!cells[i] && draftLOS.includes(i)) {
+        const opponentLOS = openingDrafts[currentPlayer] < 2 ? getLOS(collectors[currentPlayer === 1 ? 2 : 1]) : [];
+        if (!cells[i] && draftLOS.includes(i) && !opponentLOS.includes(i)) {
             if (!isRemote) sendNet({ type: 'click', idx: i });
+            openingDrafts[currentPlayer]++;
             const draftColor = draftChosen.color;
             const draftNum = draftChosen.num;
             cells[i] = draftChosen;
@@ -1666,6 +1677,7 @@ function applyP2Choice(color, isRemote) {
     document.getElementById('p2-choose-panel').style.display = 'none';
     currentPlayer = (color === 1) ? 2 : 1;
     gameState = 'PLAY';
+    openingDrafts = { 1: 0, 2: 0 };
     document.getElementById('csv-export-btn').style.display = '';
     saveSnapshot('ゲーム開始 — ' + (currentPlayer === 1 ? '黒' : '白') + ' が先攻（P2 は ' + (color === 1 ? '黒' : '白') + ' を選択）');
     if (myRole === 'host') setTimeout(() => syncState(), 50);
@@ -1689,6 +1701,7 @@ function syncState() {
         pendingExtraTurn,
         sacrificeRange,
         sacrificingPlayer,
+        openingDrafts: { ...openingDrafts },
         currentPosition
     });
 }
@@ -1708,6 +1721,7 @@ function applySyncState(data) {
     if (data.pendingExtraTurn !== undefined) pendingExtraTurn = data.pendingExtraTurn;
     if (data.sacrificeRange !== undefined) sacrificeRange = data.sacrificeRange;
     if (data.sacrificingPlayer !== undefined) sacrificingPlayer = data.sacrificingPlayer;
+    if (data.openingDrafts !== undefined) openingDrafts = { ...data.openingDrafts };
     if (data.currentPosition !== undefined) {
         currentPosition = data.currentPosition;
         setPositionTitle('');
@@ -2308,7 +2322,10 @@ function render() {
         if (los.includes(i)) cls += ' los';
         if (selectedIdx === i) cls += ' selected';
         if (reachable.includes(i)) cls += ' reachable';
-        if (showLOS && gameState === 'DRAFT_PLACE' && !cells[i] && getLOS(collectors[currentPlayer]).includes(i)) cls += ' placeable';
+        if (showLOS && gameState === 'DRAFT_PLACE' && !cells[i] && getLOS(collectors[currentPlayer]).includes(i)) {
+            const oppLOS = openingDrafts[currentPlayer] < 2 ? getLOS(collectors[currentPlayer === 1 ? 2 : 1]) : [];
+            if (!oppLOS.includes(i)) cls += ' placeable';
+        }
         el.className = cls;
 
         if (cells[i]) {
